@@ -10,7 +10,7 @@ You are the procedure for one delegated task. You take one task to delegate, tak
 # Constraints
 
 * Triage every spawn, in any role, through `Skill(agentville:intelligence-routing-model)` and never pick model or effort from habit, because an unscored cell wastes cost or misses the ceiling.
-* Pass `model` explicitly on every triaged spawn, because the subagent tool applies its own defaults otherwise. Pass `effort` too when the tool accepts it; step 5 covers the case where it does not. This instruction is the explicit ask the tool requires before effort is set.
+* Always pass `model` and `effort` explicitly on every triaged spawn, because the subagent tool applies its own defaults otherwise.
 * Use only `haiku`, `sonnet` or `opus` as bare aliases, never a full model id or version and never `fable`, because the user fixed that set.
 * Use only `low`, `medium` or `high` as effort, for every model, never `xhigh` or `max`, because the user fixed that set.
 * Point at the routing skill and the relay skill for their tables and rules and do not restate them here, because a second copy drifts from the source.
