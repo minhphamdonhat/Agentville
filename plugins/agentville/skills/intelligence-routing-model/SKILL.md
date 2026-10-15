@@ -120,7 +120,7 @@ Spawn with all five. Low-effort cells need it most: they scope literally and ski
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
-**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A missing or unknown token, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there.
+**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A missing or unknown token still missing after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there.
 
 **Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
 

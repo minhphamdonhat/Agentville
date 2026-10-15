@@ -137,7 +137,7 @@ Don't:
 Read the child's final text and find its status token on the first line. It is a relay §4 token: `completed`, `partial`, `blocked` or `failed`. No other vocabulary is accepted. Then check the evidence. Each material claim needs an evidence pointer and a label; a success stated as `tests pass` with no command and result is not evidence. Check the report's deviations and open items against the brief's scope, and check that the child took no irreversible or production action that `irreversible-approval` did not permit.
 
 Apply this guard to every child:
-* A missing or unknown token counts as `failed`.
+* A missing or unknown token gets one follow-up through the message tool asking for the token and its evidence; if the reply still has no valid token, the report counts as `failed`.
 * `completed` over empty, truncated or contradictory evidence, or over a check that did not pass, counts as `failed`.
 * Otherwise the token stands: `completed` with quoted evidence is accepted; `partial`, `blocked` and `failed` are not.
 
@@ -162,7 +162,7 @@ Do:
 * Correct a running worker with `Use the v2 schema, not v1 (overrides the brief's v1 decision). Nothing else changes.`
 * Failure was a flaky tool timeout on a worker; send a follow-up: `Retry the same command once; nothing else changes.`
 * A reviewer's report is incomplete; spawn a fresh reviewer, with the earlier report fenced as untrusted context.
-* Haiku report is missing a token; spawn Sonnet `high` fresh, with the earlier report fenced as untrusted context.
+* Haiku report still has no token after the reminder; spawn Sonnet `high` fresh, with the earlier report fenced as untrusted context.
 * The worker skipped two files it understood and needs one more effort rung; spawn a fresh worker at the raised rung within the bounds, because a follow-up cannot change a child's model or effort. Use a follow-up only for a correction at the same cell, such as `Also cover the two skipped files; nothing else changes.`
 
 Don't:
