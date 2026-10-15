@@ -120,7 +120,9 @@ Spawn with all five. Low-effort cells need it most: they scope literally and ski
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
-**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A missing or unknown token, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there. **Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
+**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A missing or unknown token, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there.
+
+**Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
 
 **Verifier and audit.** Verify in a fresh context; for judgement checks the verifier sits at or above the worker's tier, and a different tier applies only where a peer-or-higher one exists, so Opus work is verified by Opus in a fresh context. A Haiku verifier runs ground-truth checks only (tests, build, schema, diff against spec), never judges a higher tier's work. Verifiers check independently, not rate rationale. Each run, re-check a random sample of accepted Haiku output on a higher tier.
 
