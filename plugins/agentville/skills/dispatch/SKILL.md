@@ -52,7 +52,7 @@ Don't:
 
 ### 2. Choose the role
 
-Every child is `general-purpose`; the role is named in the brief, with its scope. Pick one role by what the task is. A worker implements, explores, drafts or does file I/O. A validator runs independent checks against the running system and writes artefacts, but never product code. A reviewer reads a diff and artefacts and runs nothing. Spawn nothing but `general-purpose`; the role changes the brief, not the agent type.
+Every child is `general-purpose`; the role is named in the brief, with its scope. Use `role-hint` when given; otherwise pick the role by what the task is. A worker implements, explores, drafts or does file I/O. A validator runs independent checks against the running system and writes artefacts, but never product code. A reviewer reads a diff and artefacts and runs nothing. Spawn nothing but `general-purpose`; the role changes the brief, not the agent type.
 
 Because a `general-purpose` child can edit, the brief states a reviewer's read-only scope in full, and `spawn:` records `reviewer read-only unenforced` for every reviewer spawn.
 
