@@ -22,11 +22,15 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates and installs it. |
 
+## Rules
+
+The standing rules for the root agent ship in `rules/root-agent.md`.
+
 ## How they fit
 
 `orchestrate` decides how much process a request deserves and runs its stages. It sends every delegated piece of work through `dispatch`, one spawn at a time.
 
-`dispatch` writes each brief to the `relay` standard, picks the model and effort with `intelligence-routing-model`, and writes the user-facing message to the `voice` standard.
+`dispatch` writes each brief to the `relay` standard and picks the model and effort with `intelligence-routing-model`.
 
 Version 0.1.0 spawns only the built-in `general-purpose` agent, with the worker, validator or reviewer role set in the brief. Custom agents are planned for later revisions.
 
