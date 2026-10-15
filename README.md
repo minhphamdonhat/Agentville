@@ -16,7 +16,7 @@ Each skill is invoked as `/agentville:<name>`.
 | Skill | Purpose |
 | --- | --- |
 | `/agentville:orchestrate` | Routes every user request to a direct, clarify, fast or plan path and runs the stages that path needs. |
-| `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
+| `/agentville:dispatch` | Takes one delegated task through sharpening, role choice, model and effort routing, brief, spawn, report reading and failure handling. |
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
@@ -28,8 +28,10 @@ Each skill is invoked as `/agentville:<name>`.
 
 `dispatch` writes each brief to the `relay` standard, picks the model and effort with `intelligence-routing-model`, and writes the user-facing message to the `voice` standard.
 
-`skill-smith` stands alone. You can use it without any of the others.
+Version 0.1.0 spawns only the built-in `general-purpose` agent, with the worker, validator or reviewer role set in the brief. Custom agents are planned for later revisions.
 
-## Dependencies
+`skill-smith` stands alone.
 
-None of the six skills refers to a skill outside the plugin by its `anthropic-skills:` name. `skill-smith` calls `/skill-creator` for evals and description tuning, so install that skill alongside it if you want `skill-smith` to test what it drafts. Its helper scripts need `python3`.
+## External dependencies
+
+`skill-smith` calls `/skill-creator` for evals and description tuning, so install that skill alongside it if you want `skill-smith` to test what it drafts. Its helper scripts need `python3`.

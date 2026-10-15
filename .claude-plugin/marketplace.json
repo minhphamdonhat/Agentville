@@ -5,8 +5,7 @@
   "plugins": [
     {
       "name": "agentville",
-      "source": "./plugins/agentville",
-      "description": "A storybook for founding a town of agents, from the first worker to a self-governing village"
+      "source": "./plugins/agentville"
     }
   ]
 }
