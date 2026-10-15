@@ -120,7 +120,7 @@ Spawn with all five. Low-effort cells need it most: they scope literally and ski
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
-**Haiku additions.** Every Haiku report opens `status: OK` or `status: FAILED` and quotes its evidence. Missing status, or `OK` over an empty, truncated or contradictory tool result, counts as FAILED: small models fabricate there. Keep thinking on when a Haiku worker must call tools and return structured output.
+**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A missing or unknown token, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there. **Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
 
 **Verifier and audit.** Verify in a fresh context; for judgement checks the verifier sits at or above the worker's tier, and a different tier applies only where a peer-or-higher one exists, so Opus work is verified by Opus in a fresh context. A Haiku verifier runs ground-truth checks only (tests, build, schema, diff against spec), never judges a higher tier's work. Verifiers check independently, not rate rationale. Each run, re-check a random sample of accepted Haiku output on a higher tier.
 
@@ -205,6 +205,6 @@ Run before each Agent(...) call.
 
 1. Spec names a check; cell comes from C and adjusted D (§1–§3).
 2. Haiku cell passes the whole gate; no Sonnet `max`, default Sonnet `xhigh` or unevaluated Haiku `xhigh`/`max`; human gate on irreversible steps (§4, §5).
-3. Brief has five contract fields, Haiku brief demands `status: OK|FAILED` with evidence, verifier is fresh and peer-or-higher (§6).
+3. Brief has five contract fields, every brief demands `status: <token>` with evidence, verifier is fresh and peer-or-higher (§6).
 4. Failure move matches failure class; Haiku left on structure, not confidence (§7).
 5. Request fits the tier: Haiku rejects non-default sampling parameters, prefill and the old computer tool, so no shared request template across tiers; forced `tool_choice` yields no thinking; with thinking disabled, a per-message effort change returns 400; confirm the model the worker actually ran on (§5, §6).
