@@ -120,7 +120,7 @@ Spawn with all five. Low-effort cells need it most: they scope literally and ski
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
-**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A missing or unknown token still missing after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there.
+**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, blocked or failed) and quotes its evidence. A status token that is still missing or unknown after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there.
 
 **Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
 
@@ -141,7 +141,7 @@ Failure type names the dial: **did worker lack knowledge, or lack effort?**
 
 **Wrong approach does not respond to effort.** Self-review rarely rejects its own premise; use a fresh-context reviewer.
 
-**Haiku escalates on structure, not confidence.** A structural trigger beats an effort raise: failed check, missing status, empty or contradictory tool result, or budget overrun → leave Haiku (`low`/`medium` → Sonnet `medium`, `high` → Sonnet `high`). Only a pure effort failure whose structure passed stays on Haiku at +1 effort. This rule overrides the table's "restart at next tier's `medium`". Flagged ambiguity → back to step 1. Never gate on Haiku's self-reported confidence. Provisional: no Haiku cascade study exists.
+**Haiku escalates on structure, not confidence.** A structural trigger beats an effort raise: failed check, status still missing after the reminder, empty or contradictory tool result, or budget overrun → leave Haiku (`low`/`medium` → Sonnet `medium`, `high` → Sonnet `high`). Only a pure effort failure whose structure passed stays on Haiku at +1 effort. This rule overrides the table's "restart at next tier's `medium`". Flagged ambiguity → back to step 1. Never gate on Haiku's self-reported confidence. Provisional: no Haiku cascade study exists.
 
 **Escalation ladder** (effort and ceiling failures): Haiku `low` (one-step starts only) → Haiku `medium` → Haiku `high` → Sonnet `high` → Opus `medium` → Opus `high` → Opus `xhigh` only if horizon >30 min → Opus `max` only per §5.4. Otherwise stop at Opus `high` per the last failure-table row.
 
