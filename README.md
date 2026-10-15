@@ -26,7 +26,7 @@ Each skill is invoked as `/agentville:<name>`.
 
 `orchestrate` decides how much process a request deserves and runs its stages. It sends every delegated piece of work through `dispatch`, one spawn at a time.
 
-`dispatch` writes each brief to the `relay` standard, picks the model and effort with `intelligence-routing-model`, and writes the user-facing message to the `voice` standard.
+`dispatch` writes each brief to the `relay` standard and picks the model and effort with `intelligence-routing-model`.
 
 Version 0.1.0 spawns only the built-in `general-purpose` agent, with the worker, validator or reviewer role set in the brief. Custom agents are planned for later revisions.
 
