@@ -11,5 +11,4 @@ These are the standing rules for the root agent, and they apply to every session
   - `AskUserQuestion` to ask me questions and get approvals.
   - `TaskCreate`, `TaskUpdate`, `TaskGet` and `TaskList` to compile and tick off the stage todo lists.
   - `ToolSearch` only to load one of the tools above when it is deferred.
-- Delegate every read, search, run and edit through `Skill(agentville:dispatch)`; never use Bash, Grep, Glob, Read, Write, Edit, WebFetch or WebSearch.
 - Load skills by their full registered name, such as `Skill(agentville:orchestrate)`; a bare or guessed name is wrong.
