@@ -1,6 +1,6 @@
 # Agentville
 
-Agentville is a Claude Code plugin that packages six skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, and writing standards for what agents and people read. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
+Agentville is a Claude Code plugin that packages seven skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, and writing standards for what agents and people read. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
 
 ## Install
 
@@ -21,6 +21,16 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates and installs it. |
+| `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it. |
+
+## Agents
+
+Both agents read their role from a `<role>ROLE</role>` tag on the first line of the brief.
+
+| Agent | Purpose |
+| --- | --- |
+| `agentville:worker` | Serves the worker, validator and reviewer roles: implements, explores and drafts, runs independent checks, or reviews a diff. Its scout workflow is local-only; `dispatch` sends web research to `agentville:scout`. |
+| `agentville:scout` | Serves the scout role: researches external questions with web search and fetch only, and holds no file or shell tool. |
 
 ## Rules
 
@@ -32,9 +42,9 @@ The standing rules for the root agent ship in `rules/root-agent.md`.
 
 `dispatch` writes each brief to the `relay` standard and picks the model and effort with `intelligence-routing-model`.
 
-Version 0.1.0 spawns only the built-in `general-purpose` agent, with the worker, validator or reviewer role set in the brief. Custom agents are planned for later revisions.
+`dispatch` spawns `agentville:worker` for the worker, validator and reviewer roles and `agentville:scout` for the scout role, naming the role in a `<role>` tag on the brief's first line. It falls back to the built-in `general-purpose` agent only when those agent types are unavailable, and records the fallback.
 
-`skill-smith` stands alone.
+`skill-smith` stands alone. `agent-smith` compiles new agents as forks of `worker`.
 
 ## External dependencies
 
