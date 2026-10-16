@@ -380,6 +380,30 @@ class TestEval(Base):
         self.assertIn("<role>worker</role>", text)
         self.assertIn("You are **ci-triage**.", text)
 
+    def test_prompts_keep_sandbox_with_report(self):
+        self.fill_cases()
+        rc, out, err = run(EVAL, "prompts", self.agent, BASE, self.cases, self.out)
+        self.assertEqual(rc, 0, err)
+        sb = os.path.join(self.out, "sandbox", "triage-1.compiled")
+        with open(os.path.join(sb, "child.txt"), "w") as f:
+            f.write("effect")
+        with open(os.path.join(self.out, "triage-1.compiled.out.md"), "w") as f:
+            f.write(GOOD_REPORT)
+        rc, out, err = run(EVAL, "prompts", self.agent, BASE, self.cases, self.out)
+        self.assertEqual(rc, 0, err)
+        self.assertTrue(os.path.isfile(os.path.join(sb, "child.txt")))
+        self.assertFalse(os.path.exists(os.path.join(self.out, "sandbox", "triage-1.base", "child.txt")))
+
+    def test_case_role_defaults_to_first_workflow(self):
+        self.fill_cases()
+        data = json.loads(read(self.cases))
+        del data["cases"][0]["role"]
+        with open(self.cases, "w") as f:
+            json.dump(data, f)
+        rc, out, err = run(EVAL, "check", self.agent, self.cases)
+        self.assertEqual(rc, 0, err)
+        self.assertIn("role=worker", out)
+
     def test_run_without_cli(self):
         self.fill_cases()
         rc, out, _ = run(EVAL, "run", self.agent, BASE, self.cases, self.out, env={"PATH": "/nonexistent"})

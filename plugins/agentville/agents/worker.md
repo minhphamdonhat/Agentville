@@ -125,7 +125,7 @@ Role: scout
 ### Process
 
 1. **Read the brief.** Load `Skill(agentville:relay)`. Name each source the question needs.
-2. **Check the tools.** When a needed source is on the web and this agent holds no web tool, stop and return `blocked` with the source named.
+2. **Check the tools.** When a needed source is on the web and this agent holds no web tool, stop and return `blocked` with the source named and `spawn-request: agent=agentville:scout role=scout brief=<question>`.
 3. **Research.** Search the local sources with `Grep`, `Glob` and `Read`, and run read-only `Bash` such as `--help` output.
 4. **Report.** Give each finding with its source and a claim label, as Return to parent says.
 

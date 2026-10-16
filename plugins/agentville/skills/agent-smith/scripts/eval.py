@@ -142,6 +142,14 @@ def init(args):
     return 0
 
 
+def case_role(agent, case):
+    """The case's role, else the Role of the agent's first workflow (the agent's own default), else worker."""
+    if case.get("role"):
+        return case["role"]
+    wfs = agent["workflows"]
+    return (wfs[0]["role"] if wfs else None) or "worker"
+
+
 def check_cases(agent, cases):
     """Return a list of problems; print one case: line per case."""
     problems, seen = [], set()
@@ -157,7 +165,7 @@ def check_cases(agent, cases):
             problems.append(f"{cid}: unknown workflow {c.get('workflow')}")
         else:
             covered.add(c["workflow"])
-        if c.get("role", "worker") not in measure.ROLES:
+        if case_role(agent, c) not in measure.ROLES:
             problems.append(f"{cid}: unknown role {c.get('role')}")
         if not isinstance(c.get("prompt"), str) or not c["prompt"].strip():
             problems.append(f"{cid}: empty prompt")
@@ -166,7 +174,7 @@ def check_cases(agent, cases):
         problems += check_files(cid, c)
         if "[[" in json.dumps(c):
             problems.append(f"{cid}: unfilled [[...]]")
-        print(f"case: {cid} | {c.get('workflow')} | role={c.get('role', 'worker')}")
+        print(f"case: {cid} | {c.get('workflow')} | role={case_role(agent, c)}")
     for n in sorted(names - covered):
         problems.append(f"workflow {n} has no case")
     return problems
@@ -184,8 +192,8 @@ def check(args):
     return 1 if problems else 0
 
 
-def case_prompt(case):
-    role = case.get("role", "worker")
+def case_prompt(case, agent):
+    role = case_role(agent, case)
     text = case["prompt"].strip()
     return text if "<role>" in text else f"<role>{role}</role>\n{text}"
 
@@ -216,12 +224,15 @@ def prompts(args):
             pf = os.path.join(out, f"{c['id']}.{label}.prompt.md")
             with open(pf, "w", encoding="utf-8") as f:
                 if a is None:
-                    f.write(case_prompt(c) + "\n")
+                    f.write(case_prompt(c, agent) + "\n")
                 else:
                     f.write("Act as the agent defined between the AGENT markers, then do the task.\n\n"
-                            "<<<AGENT\n" + body(a) + "AGENT>>>\n\n" + case_prompt(c) + "\n")
+                            "<<<AGENT\n" + body(a) + "AGENT>>>\n\n" + case_prompt(c, agent) + "\n")
             of = os.path.join(out, f"{c['id']}.{label}.out.md")
-            cwd = build_sandbox(out, c, label, [])
+            if os.path.isfile(of) and os.path.isdir(sandbox_dir(out, c["id"], label)):
+                cwd = sandbox_dir(out, c["id"], label)
+            else:
+                cwd = build_sandbox(out, c, label, [])
             print(f"dispatch: {c['id']} | {label} | {pf} | cwd={cwd} | save report to {of}")
     return 0
 
@@ -317,7 +328,7 @@ def run(args):
         for label in LABELS:
             aname, allowed, denied = tools[label]
             sandbox = build_sandbox(out, c, label, copies)
-            cmd = build_command(cli, aname, allowed, case_prompt(c), workdir, opts["--model"], pdir, denied)
+            cmd = build_command(cli, aname, allowed, case_prompt(c, agent), workdir, opts["--model"], pdir, denied)
             of = os.path.join(out, f"{c['id']}.{label}.out.md")
             print(f"command: {c['id']} | {label} | cwd={sandbox} | " + " ".join(json.dumps(x) for x in cmd[1:]))
             if not execute:
