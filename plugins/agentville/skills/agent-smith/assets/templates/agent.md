@@ -6,7 +6,7 @@ tools: [[Comma-separated tools the user approved; never Agent unless the user as
 disallowedTools: [[Comma-separated tools to deny, or delete this line]]
 ---
 
-<!-- Drafting instructions; delete every comment that is not a core marker once followed. A {{ CORE name }} line is replaced by stage.py fork with the base worker's core block, markers included; never edit text between core:begin and core:end. Keep the six H1 sections in this order: Role, Constraints, Communication, Workflows, Exception handler, Return to parent. No model or effort key in the frontmatter. Each workflow is an H2 `## Workflow: <name>` with a `Role:` line and the H3s Input, Process and Output, in that order. A step may load a Skill(namespace:name) or hand a spawn request back; it never spawns. -->
+<!-- Drafting instructions; delete every comment that is not a core marker once followed. A {{ CORE name }} line is replaced by stage.py fork with the base worker's core block, markers included; never edit text between core:begin and core:end. Keep the five H1 sections in this order: Role, Constraints, Workflows, Exception handler, Return to parent. No model or effort key in the frontmatter. Each workflow is an H2 `## Workflow: <name>` with a `Role:` line and the H3s Input, Process and Output, in that order. A step may load a Skill(namespace:name) or hand a spawn request back; it never spawns. -->
 
 # Role
 
@@ -21,10 +21,6 @@ You are **[[agent-name]]**.
 {{ CORE constraints }}
 
 6. **[[Extending rule title]]:** [[the rule, with a one-clause reason]].
-
-# Communication
-
-{{ CORE communication }}
 
 # Workflows
 

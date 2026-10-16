@@ -14,8 +14,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_BASE = os.path.join(os.path.dirname(HERE), "assets", "base", "worker.md")
-SECTIONS = ["Role", "Constraints", "Communication", "Workflows", "Exception handler", "Return to parent"]
-CORE_HOME = {"identity": "Role", "constraints": "Constraints", "communication": "Communication",
+SECTIONS = ["Role", "Constraints", "Workflows", "Exception handler", "Return to parent"]
+CORE_HOME = {"identity": "Role", "constraints": "Constraints",
              "return": "Return to parent"}
 ROLES = {"worker", "validator", "reviewer", "scout"}
 ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools"}
@@ -156,8 +156,13 @@ def parse_agent(path):
             h3 = spans(headings(part, 3), e)
             wf["h3"] = [t for t, _, _ in h3]
             for t, a, b in h3:
+                examples = False
                 for _, line, fen in [r for r in part if a < r[0] < b]:
                     if fen:
+                        continue
+                    if re.match(r"^(Do|Don't):\s*$", line):
+                        examples = True
+                    if examples:
                         continue
                     if t == "Input" and line.startswith("* "):
                         mm = INPUT_RE.match(line.rstrip())

@@ -4,7 +4,7 @@ Read by SKILL.md step 3. It defines the slots of an agent's contract, the order 
 
 ## Slots
 
-A slot is one decision of the contract. A slot is settled when the user has answered it or accepted its recommended answer. The final round shows every slot as `<slot>: <value>`, in the order below. The core sections (identity, core constraints, Communication, Return to parent) are fixed by the base worker and are never a slot.
+A slot is one decision of the contract. A slot is settled when the user has answered it or accepted its recommended answer. The final round shows every slot as `<slot>: <value>`, in the order below. The core sections (identity, core constraints, Return to parent) are fixed by the base worker and are never a slot.
 
 | Slot | Prerequisites | Recommended answer comes from |
 |---|---|---|
