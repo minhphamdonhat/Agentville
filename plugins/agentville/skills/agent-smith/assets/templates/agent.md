@@ -6,7 +6,7 @@ tools: [[Comma-separated tools the user approved; never Agent unless the user as
 disallowedTools: [[Comma-separated tools to deny, or delete this line]]
 ---
 
-<!-- Drafting instructions; delete every comment that is not a core marker once followed. A {{ CORE name }} line is replaced by stage.py fork with the base worker's core block, markers included; never edit text between core:begin and core:end. Keep the five H1 sections in this order: Role, Constraints, Workflows, Exception handler, Return to parent. No model or effort key in the frontmatter. Each workflow is an H2 `## Workflow: <name>` with a `Role:` line and the H3s Input, Process and Output, in that order. A step may load a Skill(namespace:name) or hand a spawn request back; it never spawns. -->
+<!-- Drafting instructions; delete every comment that is not a core marker once followed. A {{ CORE name }} line is replaced by stage.py fork with the base worker's core block, markers included; never edit text between core:begin and core:end. Keep the four H1 sections in this order: Role, Constraints, Workflows, Exception handler. No model or effort key in the frontmatter. Each workflow is an H2 `## <Name>` (one capitalised word, no "Workflow:" prefix) with a `Role:` line and the H3s Input, Process and Output, in that order. A step may load a Skill(namespace:name) or hand a spawn request back; it never spawns. -->
 
 # Role
 
@@ -24,7 +24,7 @@ You are **[[agent-name]]**.
 
 # Workflows
 
-## Workflow: [[workflow-name]]
+## [[Workflow-name]]
 
 Role: [[worker | validator | reviewer | scout]]
 
@@ -36,7 +36,7 @@ Role: [[worker | validator | reviewer | scout]]
 ### Process
 
 1. **[[Step title].]** [[What to do, the tool by name, the literal command; or load `Skill(namespace:name)`; or stop and hand back a spawn request.]]
-2. **Report.** Write the report as Return to parent says, with this workflow's output fields.
+2. **Report.** Write the report as Constraints says, with this workflow's Output fields.
 
 ### Output
 
@@ -46,8 +46,4 @@ Role: [[worker | validator | reviewer | scout]]
 # Exception handler
 
 * **[[Condition]]:** [[what to do, and the status token to report: completed, partial, blocked or failed]].
-* **Needs another agent:** return `blocked` with a `spawn-request:` as Return to parent says.
-
-# Return to parent
-
-{{ CORE return }}
+* **Needs another agent:** return `blocked` with a `spawn-request:` as Constraints says.

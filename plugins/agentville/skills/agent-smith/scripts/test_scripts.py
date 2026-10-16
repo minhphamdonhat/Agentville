@@ -61,7 +61,7 @@ FILLED = {
         "You are patient and precise.",
     "[[Extending rule title]]": "Logs first",
     "[[the rule, with a one-clause reason]]": "read the log before the code, because the log names the test",
-    "[[workflow-name]]": "triage",
+    "[[Workflow-name]]": "Triage",
     "[[worker | validator | reviewer | scout]]": "worker",
     "* **[[input-name]]:** required - default: none - [[What it is, with a literal example.]]":
         "* **log:** required - default: none - The CI log path.",
@@ -117,13 +117,13 @@ class TestMeasure(Base):
         self.assertEqual(rc, 0, out)
         self.assertEqual(fails(out), set())
         self.assertEqual(kv(out)["workflows"], ["1"])
-        for c in ("identity", "constraints", "return"):
+        for c in ("identity", "constraints"):
             self.assertIn(f"{c} | identical", kv(out)["core"])
 
     def test_02_filled_fork_passes(self):
         rc, out = self.measure(self.filled())
         self.assertEqual(rc, 0, out)
-        self.assertIn("triage | role=worker | inputs=2 | steps=2 | outputs=cause,fix", kv(out)["workflow"])
+        self.assertIn("Triage | role=worker | inputs=2 | steps=2 | outputs=cause,fix", kv(out)["workflow"])
 
     def test_03_template_fork_has_leftovers_only(self):
         path, _ = self.fork()
@@ -188,17 +188,16 @@ class TestMeasure(Base):
         self.assertIn("A6", fails(out))
         _, out = self.measure(BASE_TEXT.replace("* **steps:** always -", "* **steps:** sometimes -"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("## Workflow: execute", "## Workflow: Bad Name"))
+        _, out = self.measure(BASE_TEXT.replace("## Execute", "## Bad Name"))
         self.assertIn("A6", fails(out))
-        lo = BASE_TEXT.index("## Workflow: execute")
+        lo = BASE_TEXT.index("## Execute")
         hi = BASE_TEXT.index("# Exception handler")
         _, out = self.measure(BASE_TEXT[:lo] + BASE_TEXT[hi:])
         self.assertIn("A6", fails(out))
 
     def test_13_exception_handler_needs_items(self):
         lo = BASE_TEXT.index("# Exception handler") + len("# Exception handler\n")
-        hi = BASE_TEXT.index("# Return to parent")
-        _, out = self.measure(BASE_TEXT[:lo] + "\n" + BASE_TEXT[hi:])
+        _, out = self.measure(BASE_TEXT[:lo] + "\n")
         self.assertIn("A7", fails(out))
 
     def test_14_leftovers(self):
@@ -210,7 +209,7 @@ class TestMeasure(Base):
     def test_15_foreign_namespace_fails(self):
         _, out = self.measure(BASE_TEXT.replace("agentville:relay", "anthropic-skills" + ":relay", 1))
         self.assertIn("A9", fails(out))
-        rc, out = self.measure(BASE_TEXT.replace("Load `Skill(agentville:relay)`. Restate", "Load `Skill(relay)`. Restate"))
+        rc, out = self.measure(BASE_TEXT.replace("1. **Read the brief.** Restate", "1. **Read the brief.** Load `Skill(relay)`. Restate"))
         self.assertEqual(rc, 0)
         self.assertIn("A9", warns(out))
 
@@ -228,10 +227,10 @@ class TestMeasure(Base):
         self.assertEqual(run(MEASURE, self.write("no frontmatter\n"))[0], 2)
         self.assertEqual(run(MEASURE, self.write(BASE_TEXT), "--base", os.path.join(self.tmp, "x.md"))[0], 2)
 
-    def test_20_return_core_needs_status_line(self):
+    def test_20_constraints_core_needs_status_line(self):
         rc, out = self.measure(BASE_TEXT)
         self.assertEqual(kv(out)["status_line_rule"], ["yes"])
-        weak = BASE_TEXT.replace("The first line is always `status: TOKEN`", "The first line is a token")
+        weak = BASE_TEXT.replace("every report opens with `status: TOKEN`", "every report opens with a token")
         base = self.write(weak, "weak-base.md")
         rc, out = self.measure(weak, "--base", base)
         self.assertEqual(rc, 1)
@@ -274,7 +273,7 @@ class TestStage(Base):
 
     def test_fork_pastes_core_and_name(self):
         path, out = self.fork("ci-triage")
-        self.assertEqual(kv(out)["core"], ["constraints, identity, return"])
+        self.assertEqual(kv(out)["core"], ["constraints, identity"])
         text = read(path)
         self.assertNotRegex(text, r"(?m)^\{\{ CORE")
         self.assertIn("name: ci-triage", text)
@@ -362,13 +361,13 @@ class TestEval(Base):
     def test_check_needs_case_per_workflow(self):
         rc, out, _ = run(EVAL, "init", BASE, self.cases)
         data = json.loads(read(self.cases))
-        self.assertEqual({c["workflow"] for c in data["cases"]}, {"execute"})
+        self.assertEqual({c["workflow"] for c in data["cases"]}, {"Execute"})
         data["cases"] = []
         with open(self.cases, "w") as f:
             json.dump(data, f)
         rc, out, _ = run(EVAL, "check", BASE, self.cases)
         self.assertEqual(rc, 1)
-        self.assertIn("workflow execute has no case", out)
+        self.assertIn("workflow Execute has no case", out)
 
     def test_prompts_for_dispatch(self):
         self.fill_cases()

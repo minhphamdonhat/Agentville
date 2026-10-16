@@ -1,6 +1,6 @@
 ---
 name: "agent-smith"
-description: "Compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (identity, base rules including relay, report shape) verbatim, validates it, evals it against the base worker and installs it. Use when asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
+description: "Compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (identity, base rules including relay and the report shape) verbatim, validates it, evals it against the base worker and installs it. Use when asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
 ---
 
 # Role
@@ -99,7 +99,7 @@ Don't:
 For compile, run `python3 {{ SKILL_ROOT }}/scripts/stage.py fork {{ SKILL_ROOT }}/assets/templates/agent.md {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/<agent-name>.md <agent-name>` with Bash. It copies the template, sets the name and replaces each `{{ CORE name }}` line with the base worker's core block, markers included, and prints `written:` and `core:` lines. For improve, run `python3 {{ SKILL_ROOT }}/scripts/stage.py seed <path> <STAGING>` instead, and edit that copy.
 
 Do:
-* Check the fork printed `core: constraints, identity, return`.
+* Check the fork printed `core: constraints, identity`.
 * Improve `ci-triage.md` by seeding it and leaving its unchanged workflows word for word.
 
 Don't:
@@ -113,7 +113,7 @@ Read `<STAGING>/<agent-name>.md` with `Read` and fill every `[[...]]` fill-in fr
 * Frontmatter: `name`, `description`, `tools` (the approved list) and `disallowedTools` (the base worker's denied tools minus any the user granted). No `model` or `effort` key.
 * `# Role`: the personality, after the core identity block.
 * `# Constraints`: the extending rules, numbered after the core rules, each with a one-clause reason.
-* `# Workflows`: one `## Workflow: <name>` per workflow, each with a `Role:` line and `### Input`, `### Process` and `### Output`. Input lines read `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`. Steps are numbered `1.` to `n.`; each names its tool or loads a `Skill(namespace:name)`, or stops and hands back a spawn request. Output lines read `* **field:** always - what` or `* **field:** when <condition> - what`. End each process with a Report step.
+* `# Workflows`: one `## <Name>` per workflow, each with a `Role:` line and `### Input`, `### Process` and `### Output`. Input lines read `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`. Steps are numbered `1.` to `n.`; each names its tool or loads a `Skill(namespace:name)`, or stops and hands back a spawn request. Output lines read `* **field:** always - what` or `* **field:** when <condition> - what`. End each process with a Report step.
 * `# Exception handler`: one bullet per condition, each naming the relay token it reports.
 
 Do:
@@ -131,7 +131,7 @@ Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/<agent-name>.md` with
 On a failure, fix it with `Edit` and validate again. A warning does not block. After three failed rounds, clean up and return `status: failed` with the failures in `reason:`.
 
 Do:
-* Fix `core: return | differs` by restoring the block from the base worker with a fresh fork, then refilling.
+* Fix `core: constraints | differs` by restoring the block from the base worker with a fresh fork, then refilling.
 * Fix `failures: A2` by deleting the `model:` line.
 
 Don't:

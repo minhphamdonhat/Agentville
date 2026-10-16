@@ -14,9 +14,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_BASE = os.path.join(os.path.dirname(HERE), "assets", "base", "worker.md")
-SECTIONS = ["Role", "Constraints", "Workflows", "Exception handler", "Return to parent"]
-CORE_HOME = {"identity": "Role", "constraints": "Constraints",
-             "return": "Return to parent"}
+SECTIONS = ["Role", "Constraints", "Workflows", "Exception handler"]
+CORE_HOME = {"identity": "Role", "constraints": "Constraints"}
 ROLES = {"worker", "validator", "reviewer", "scout"}
 ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools"}
 FORBIDDEN_KEYS = {"model", "effort"}
@@ -27,13 +26,14 @@ HEAD_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
 CORE_END_RE = re.compile(r"^<!-- core:end ([a-z-]+) -->\s*$")
+WF_TITLE_RE = re.compile(r"^[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$")
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 INPUT_RE = re.compile(r"^\* \*\*([a-z0-9][a-z0-9-]*):\*\* (required|optional) - default: (.+?) - (.+)$")
 RETURN_RE = re.compile(r"^\* \*\*([a-z0-9][a-z0-9-]*):\*\* (always|when .+?) - (.+)$")
 STEP_RE = re.compile(r"^(\d+)\.\s+\S")
 SKILL_REF_RE = re.compile(r"Skill\(([^)]*)\)")
-STATUS_LINE = "The first line is always `status: TOKEN`"
-EVERY_FIELD = "every output field of the workflow in use"
+STATUS_LINE = "every report opens with `status: TOKEN`"
+EVERY_FIELD = "every Output field of the workflow in use"
 
 
 class ReadError(Exception):
@@ -145,8 +145,8 @@ def parse_agent(path):
         lo, hi = sec["Workflows"]
         sub = [r for r in rows if lo < r[0] < hi]
         for title, i, e in spans(headings(sub, 2), hi):
-            m = re.match(r"^Workflow:\s*(\S+)\s*$", title)
-            wf = {"title": title, "name": m.group(1) if m else None, "role": None,
+            m = WF_TITLE_RE.match(title)
+            wf = {"title": title, "name": title if m else None, "role": None,
                   "h3": [], "inputs": [], "bad_inputs": 0, "steps": [], "outputs": [], "bad_outputs": 0}
             part = [r for r in rows if i < r[0] < e]
             for _, line, fen in part:
@@ -265,8 +265,8 @@ def measure(path, base_path, allow_agent):
             fails.add("A5")
             out.append("core_error: constraints core is not first in Constraints")
 
-    # A16 the return core makes every report open with a status line and carry every workflow field
-    ret = a["core"].get("return")
+    # A16 the constraints core makes every report open with a status line and carry every workflow field
+    ret = a["core"].get("constraints")
     status_rule = bool(ret) and STATUS_LINE in ret[2] and EVERY_FIELD in ret[2]
     out.append("status_line_rule: " + ("yes" if status_rule else "no"))
     if not status_rule:
@@ -277,7 +277,7 @@ def measure(path, base_path, allow_agent):
     out.append(f"workflows: {len(wfs)}")
     names = []
     for wf in wfs:
-        ok = (wf["name"] is not None and NAME_RE.match(wf["name"]) and wf["role"] in ROLES
+        ok = (wf["name"] is not None and wf["role"] in ROLES
               and wf["h3"] == ["Input", "Process", "Output"] and wf["inputs"] and not wf["bad_inputs"]
               and wf["steps"] and wf["steps"] == list(range(1, len(wf["steps"]) + 1))
               and wf["outputs"] and not wf["bad_outputs"])

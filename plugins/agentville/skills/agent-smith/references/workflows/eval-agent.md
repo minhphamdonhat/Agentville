@@ -53,7 +53,7 @@ Don't:
 
 ### 4. Grade
 
-Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its first line is `status: TOKEN` with a relay token (and the case's `status`, when set), it holds the core fields `changed`, `checks` and `next`, every output field of the case's workflow (`always` and `when` alike, as the return core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
+Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its first line is `status: TOKEN` with a relay token (and the case's `status`, when set), it holds the core fields `changed`, `checks` and `next`, every output field of the case's workflow (`always` and `when` alike, as the constraints core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
 
 Do:
 * Record `score: compiled 4/4 vs base 2/4`, `result: pass`.

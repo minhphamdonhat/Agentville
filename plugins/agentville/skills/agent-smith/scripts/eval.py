@@ -128,7 +128,7 @@ def init(args):
     cases = []
     for wf in agent["workflows"]:
         cases.append({
-            "id": f"{wf['name']}-1", "workflow": wf["name"], "role": wf["role"] or "worker",
+            "id": f"{wf['name'].lower()}-1", "workflow": wf["name"], "role": wf["role"] or "worker",
             "prompt": f"[[A relay brief that exercises the {wf['name']} workflow]]",
             "status": "[[completed | partial | blocked | failed]]",
             "expect": ["[[text the report must contain]]"], "forbid": [],
