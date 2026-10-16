@@ -116,8 +116,8 @@ class TestMeasure(Base):
         rc, out = self.measure(BASE_TEXT)
         self.assertEqual(rc, 0, out)
         self.assertEqual(fails(out), set())
-        self.assertEqual(kv(out)["workflows"], ["4"])
-        for c in ("identity", "constraints", "communication", "return"):
+        self.assertEqual(kv(out)["workflows"], ["1"])
+        for c in ("identity", "constraints", "return"):
             self.assertIn(f"{c} | identical", kv(out)["core"])
 
     def test_02_filled_fork_passes(self):
@@ -161,36 +161,36 @@ class TestMeasure(Base):
         self.assertIn("identity | differs", kv(out)["core"])
 
     def test_09_core_missing_or_misplaced_fails(self):
-        start = BASE_TEXT.index("<!-- core:begin communication -->")
-        end = BASE_TEXT.index("<!-- core:end communication -->") + len("<!-- core:end communication -->")
+        start = BASE_TEXT.index("<!-- core:begin identity -->")
+        end = BASE_TEXT.index("<!-- core:end identity -->") + len("<!-- core:end identity -->")
         block = BASE_TEXT[start:end]
         _, out = self.measure(BASE_TEXT.replace(block, "1. Talk plainly."))
-        self.assertIn("communication | missing", kv(out)["core"])
+        self.assertIn("identity | missing", kv(out)["core"])
         moved = BASE_TEXT.replace(block, "1. Talk plainly.").replace("# Exception handler\n", "# Exception handler\n\n" + block + "\n")
         _, out = self.measure(moved)
-        self.assertIn("communication | misplaced", kv(out)["core"])
+        self.assertIn("identity | misplaced", kv(out)["core"])
 
     def test_10_extending_rule_before_core_fails(self):
         _, out = self.measure(BASE_TEXT.replace("# Constraints\n\n", "# Constraints\n\n0. **Extra:** first.\n\n", 1))
         self.assertIn("A5", fails(out))
 
     def test_11_section_order(self):
-        text = BASE_TEXT.replace("# Communication", "# Talk")
+        text = BASE_TEXT.replace("# Exception handler", "# Talk")
         _, out = self.measure(text)
         self.assertIn("A4", fails(out))
 
     def test_12_workflow_rules(self):
-        _, out = self.measure(BASE_TEXT.replace("Role: scout\n", ""))
+        _, out = self.measure(BASE_TEXT.replace("Role: worker\n", ""))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("Role: scout\n", "Role: wizard\n"))
+        _, out = self.measure(BASE_TEXT.replace("Role: worker\n", "Role: wizard\n"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("3. **Research.**", "5. **Research.**"))
+        _, out = self.measure(BASE_TEXT.replace("3. **Break it down.**", "5. **Break it down.**"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("* **sources:** always -", "* **sources:** sometimes -"))
+        _, out = self.measure(BASE_TEXT.replace("* **steps:** always -", "* **steps:** sometimes -"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("## Workflow: scout", "## Workflow: review"))
+        _, out = self.measure(BASE_TEXT.replace("## Workflow: execute", "## Workflow: Bad Name"))
         self.assertIn("A6", fails(out))
-        lo = BASE_TEXT.index("## Workflow: implement")
+        lo = BASE_TEXT.index("## Workflow: execute")
         hi = BASE_TEXT.index("# Exception handler")
         _, out = self.measure(BASE_TEXT[:lo] + BASE_TEXT[hi:])
         self.assertIn("A6", fails(out))
@@ -274,7 +274,7 @@ class TestStage(Base):
 
     def test_fork_pastes_core_and_name(self):
         path, out = self.fork("ci-triage")
-        self.assertEqual(kv(out)["core"], ["communication, constraints, identity, return"])
+        self.assertEqual(kv(out)["core"], ["constraints, identity, return"])
         text = read(path)
         self.assertNotRegex(text, r"(?m)^\{\{ CORE")
         self.assertIn("name: ci-triage", text)
@@ -362,13 +362,13 @@ class TestEval(Base):
     def test_check_needs_case_per_workflow(self):
         rc, out, _ = run(EVAL, "init", BASE, self.cases)
         data = json.loads(read(self.cases))
-        self.assertEqual({c["workflow"] for c in data["cases"]}, {"implement", "validate", "review", "scout"})
-        data["cases"] = data["cases"][:1]
+        self.assertEqual({c["workflow"] for c in data["cases"]}, {"execute"})
+        data["cases"] = []
         with open(self.cases, "w") as f:
             json.dump(data, f)
         rc, out, _ = run(EVAL, "check", BASE, self.cases)
         self.assertEqual(rc, 1)
-        self.assertIn("workflow scout has no case", out)
+        self.assertIn("workflow execute has no case", out)
 
     def test_prompts_for_dispatch(self):
         self.fill_cases()

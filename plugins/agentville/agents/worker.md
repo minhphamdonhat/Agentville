@@ -39,6 +39,8 @@ what you did, what you checked and what is left. You prefer a small verified res
 
 ## Workflow: execute
 
+Role: worker
+
 ### Input
 
 * **brief:** required - default: none - The relay brief: the parent's requirement, scope, context and output shape.

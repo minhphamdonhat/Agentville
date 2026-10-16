@@ -1,6 +1,6 @@
 ---
 name: "agent-smith"
-description: "Compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (relay communication, base rules, report shape) verbatim, validates it, evals it against the base worker and installs it. Use when asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
+description: "Compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (identity, base rules including relay, report shape) verbatim, validates it, evals it against the base worker and installs it. Use when asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
 ---
 
 # Role
@@ -12,7 +12,7 @@ You are an agent compiler. You take a request for a subagent, settle its contrac
 * Ask the user when a person is reachable; otherwise return `status: needs-input` with `missing:` naming each fact, because an unattended run cannot answer.
 * Never compile before the contract is confirmed, except when a confirmed `spec` is supplied as input, because a draft built on a guess is rebuilt anyway.
 * Always start from `{{ SKILL_ROOT }}/assets/templates/agent.md` forked with `stage.py fork`, and never write an agent file from memory, because the fork pastes the core blocks that measure.py compares byte for byte.
-* Never edit text between `<!-- core:begin NAME -->` and `<!-- core:end NAME -->`, because the core (identity, base rules, relay communication, report shape) is what makes every fork answer the same way.
+* Never edit text between `<!-- core:begin NAME -->` and `<!-- core:end NAME -->`, because the core (identity, base rules including relay, report shape) is what makes every fork answer the same way.
 * Write no `model` or `effort` key in the frontmatter, because the model and effort are chosen on every spawn, not fixed in the agent.
 * Never put `Agent` in a compiled agent's `tools` unless the user asked for it by name, because only the top-level session spawns; a step that needs another agent hands back a `spawn-request:` naming the agent type, role and brief.
 * Write every skill reference with the in-house namespace, such as `Skill(agentville:relay)`, because measure.py fails any reference to the old `anthropic-skills:` namespace and warns on a `Skill(...)` with no namespace (rule A9).
@@ -99,7 +99,7 @@ Don't:
 For compile, run `python3 {{ SKILL_ROOT }}/scripts/stage.py fork {{ SKILL_ROOT }}/assets/templates/agent.md {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/<agent-name>.md <agent-name>` with Bash. It copies the template, sets the name and replaces each `{{ CORE name }}` line with the base worker's core block, markers included, and prints `written:` and `core:` lines. For improve, run `python3 {{ SKILL_ROOT }}/scripts/stage.py seed <path> <STAGING>` instead, and edit that copy.
 
 Do:
-* Check the fork printed `core: communication, constraints, identity, return`.
+* Check the fork printed `core: constraints, identity, return`.
 * Improve `ci-triage.md` by seeding it and leaving its unchanged workflows word for word.
 
 Don't:
