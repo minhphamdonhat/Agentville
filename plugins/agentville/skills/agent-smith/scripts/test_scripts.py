@@ -228,6 +228,16 @@ class TestMeasure(Base):
         self.assertEqual(run(MEASURE, self.write("no frontmatter\n"))[0], 2)
         self.assertEqual(run(MEASURE, self.write(BASE_TEXT), "--base", os.path.join(self.tmp, "x.md"))[0], 2)
 
+    def test_20_return_core_needs_status_line(self):
+        rc, out = self.measure(BASE_TEXT)
+        self.assertEqual(kv(out)["status_line_rule"], ["yes"])
+        weak = BASE_TEXT.replace("The first line is always `status: TOKEN`", "The first line is a token")
+        base = self.write(weak, "weak-base.md")
+        rc, out = self.measure(weak, "--base", base)
+        self.assertEqual(rc, 1)
+        self.assertEqual(fails(out), {"A16"})
+        self.assertEqual(kv(out)["status_line_rule"], ["no"])
+
     def test_19_base_copy_matches_plugin_worker(self):
         if not (os.path.isfile(PLUGIN_WORKER) and os.path.isfile(BASE)):
             self.skipTest("no plugin agents/worker.md next to this skill")
@@ -305,12 +315,13 @@ class TestStage(Base):
         self.assertEqual(run(STAGE, "bogus")[0], 2)
 
 
-GOOD_REPORT = """completed
+GOOD_REPORT = """status: completed
 outcome: done.
 changed: no edits
 checks: none, read-only
 next: none
 cause: tests/test_retry.py
+fix: none
 """
 
 
@@ -386,7 +397,9 @@ class TestEval(Base):
         self.assertIn('"--agent" "ci-triage"', cmds[0])
         self.assertIn('"--model" "sonnet"', cmds[0])
         self.assertFalse(os.path.exists(os.path.join(self.tmp, "bin", "claude.ran")))
-        self.assertTrue(os.path.isfile(os.path.join(self.out, "sandbox", ".claude", "agents", "worker.md")))
+        self.assertTrue(os.path.isfile(os.path.join(self.out, "sandbox", "triage-1.base", ".claude", "agents",
+                                                    "worker.md")))
+        self.assertEqual(kv(out)["runs"], ["2"])
 
     def test_run_command_line(self):
         self.fill_cases()
@@ -444,7 +457,7 @@ class TestEval(Base):
         rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
         self.assertEqual(rc, 1)
         line = [l for l in kv(out)["grade"] if l.startswith("triage-1 | compiled")][0]
-        for reason in ("no status token", "missing core field checks", "missing workflow field cause",
+        for reason in ("first line is not status: TOKEN", "missing core field checks", "missing workflow field cause",
                        "missing expected text"):
             self.assertIn(reason, line)
         self.assertEqual(kv(out)["score"], ["compiled 0/1 vs base 1/1"])
@@ -455,6 +468,92 @@ class TestEval(Base):
         rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
         self.assertEqual(rc, 1)
         self.assertEqual(kv(out)["result"], ["not run"])
+
+    def set_case(self, **kw):
+        self.fill_cases()
+        data = json.loads(read(self.cases))
+        data["cases"][0].update(kw)
+        with open(self.cases, "w") as f:
+            json.dump(data, f)
+
+    def test_status_line_required(self):
+        self.fill_cases()
+        os.makedirs(self.out)
+        for label, first in (("compiled", "completed"), ("base", "**status:** completed")):
+            with open(os.path.join(self.out, f"triage-1.{label}.out.md"), "w") as f:
+                f.write(first + GOOD_REPORT[GOOD_REPORT.index("\n"):])
+        rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
+        self.assertEqual(rc, 1)
+        compiled, base = kv(out)["grade"]
+        self.assertIn("first line is not status: TOKEN", compiled)
+        self.assertIn("| base | pass", base)
+
+    def test_when_fields_required(self):
+        self.fill_cases()
+        os.makedirs(self.out)
+        with open(os.path.join(self.out, "triage-1.compiled.out.md"), "w") as f:
+            f.write(GOOD_REPORT.replace("fix: none\n", ""))
+        rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
+        self.assertIn("missing workflow field fix", kv(out)["grade"][0])
+
+    def test_check_rejects_bad_files(self):
+        for kw in ({"files": {"../x": "a"}}, {"files": {".claude/agents/x.md": "a"}}, {"files": {"/abs": "a"}},
+                   {"files": {"a.txt": 1}}, {"files": {"a.txt": "a"}, "unchanged": ["b.txt"]},
+                   {"expect_files": {"../y": "z"}}):
+            self.set_case(**kw)
+            rc, out, _ = run(EVAL, "check", self.agent, self.cases)
+            self.assertEqual(rc, 1, kw)
+            os.remove(self.cases)
+        self.set_case(files={"app/a.txt": "old\n", "b.txt": "keep\n"}, expect_files={"app/a.txt": "new"},
+                      unchanged=["b.txt"])
+        rc, out, _ = run(EVAL, "check", self.agent, self.cases)
+        self.assertEqual(rc, 0, out)
+
+    def test_fixture_files_and_file_checks(self):
+        self.set_case(files={"app/a.txt": "old\n", "b.txt": "keep\n"}, expect_files={"app/a.txt": "NEW"},
+                      unchanged=["b.txt"])
+        report = json.dumps({"result": GOOD_REPORT})
+        # The fake edits the fixture only when it sees it in its cwd, and leaves a stale file behind.
+        env = self.fake_claude("test -f b.txt || exit 3; echo new > app/a.txt; touch stale.txt\ncat <<'EOF'\n"
+                               + report + "\nEOF")
+        rc, out, err = run(EVAL, "run", self.agent, BASE, self.cases, self.out, "--execute", env=env)
+        self.assertEqual(kv(out)["run_errors"], ["0"], out + err)
+        rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
+        self.assertEqual(rc, 0, out)
+        sb = os.path.join(self.out, "sandbox", "triage-1.compiled")
+        self.assertTrue(os.path.isfile(os.path.join(sb, "stale.txt")))
+        env = self.fake_claude("echo changed > b.txt\ncat <<'EOF'\n" + report + "\nEOF")
+        run(EVAL, "run", self.agent, BASE, self.cases, self.out, "--execute", env=env)
+        self.assertFalse(os.path.exists(os.path.join(sb, "stale.txt")))
+        rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
+        self.assertEqual(rc, 1)
+        self.assertIn("file app/a.txt lacks: NEW", kv(out)["grade"][0])
+        self.assertIn("file changed: b.txt", kv(out)["grade"][0])
+        shutil.rmtree(os.path.join(self.out, "sandbox"))
+        rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
+        self.assertIn("no sandbox for file checks", kv(out)["grade"][0])
+
+    def test_no_agent_baseline(self):
+        self.fill_cases()
+        env = self.fake_claude("echo '{}'")
+        rc, out, err = run(EVAL, "run", self.agent, "none", self.cases, self.out, "--model", "sonnet", env=env)
+        self.assertEqual(rc, 0, err)
+        self.assertTrue(kv(out)["baseline"][0].startswith("none"))
+        compiled, base = kv(out)["command"]
+        self.assertIn('"--agent" "ci-triage"', compiled)
+        self.assertNotIn('"--agent"', base)
+        self.assertIn('"--allowedTools" "Read,Grep,Glob,Bash,Skill"', base)
+        self.assertIn('"--disallowedTools" "WebSearch,WebFetch"', base)
+        self.assertIn('"--model" "sonnet"', base)
+        self.assertTrue(base.endswith(json.dumps("<role>worker</role>\nTriage tests/test_retry.py.")))
+        agents = os.listdir(os.path.join(self.out, "sandbox", "triage-1.base", ".claude", "agents"))
+        self.assertEqual(agents, ["ci-triage.md"])
+        rc, out, err = run(EVAL, "prompts", self.agent, "none", self.cases, self.out)
+        self.assertEqual(rc, 0, err)
+        text = read(os.path.join(self.out, "triage-1.base.prompt.md"))
+        self.assertNotIn("<<<AGENT", text)
+        self.assertTrue(text.startswith("<role>worker</role>"))
+        self.assertIn("cwd=", kv(out)["dispatch"][0])
 
     def test_usage(self):
         self.assertEqual(run(EVAL)[0], 2)

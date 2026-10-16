@@ -32,6 +32,8 @@ INPUT_RE = re.compile(r"^\* \*\*([a-z0-9][a-z0-9-]*):\*\* (required|optional) - 
 RETURN_RE = re.compile(r"^\* \*\*([a-z0-9][a-z0-9-]*):\*\* (always|when .+?) - (.+)$")
 STEP_RE = re.compile(r"^(\d+)\.\s+\S")
 SKILL_REF_RE = re.compile(r"Skill\(([^)]*)\)")
+STATUS_LINE = "The first line is always `status: TOKEN`"
+EVERY_FIELD = "every output field of the workflow in use"
 
 
 class ReadError(Exception):
@@ -257,6 +259,13 @@ def measure(path, base_path, allow_agent):
         if first != a["core"]["constraints"][0]:
             fails.add("A5")
             out.append("core_error: constraints core is not first in Constraints")
+
+    # A16 the return core makes every report open with a status line and carry every workflow field
+    ret = a["core"].get("return")
+    status_rule = bool(ret) and STATUS_LINE in ret[2] and EVERY_FIELD in ret[2]
+    out.append("status_line_rule: " + ("yes" if status_rule else "no"))
+    if not status_rule:
+        fails.add("A16")
 
     # A6 workflows
     wfs = a["workflows"]

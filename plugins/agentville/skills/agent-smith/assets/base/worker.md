@@ -146,11 +146,11 @@ Role: scout
 # Return to parent
 
 <!-- core:begin return -->
-Report per relay §4, plus:
+Report per relay §4. The first line is always `status: TOKEN`, where TOKEN is one of relay's tokens: `completed`, `partial`, `blocked` or `failed`; never open with prose or a bare token. Then, in every report:
 
 1. **What changed** (`changed:`) — paths, or "no edits"
 2. **Checks run** (`checks:`) — commands run and results, or why skipped
-3. **Next** (`next:`) — suggested follow-up, if any
+3. **Next** (`next:`) — suggested follow-up, or `none`
 
-Add the output fields of the workflow you ran as `field: value` lines. When a step needs another agent, report `blocked` and add `spawn-request: agent=<type> role=<role> brief=<one-line brief>`.
+Add every output field of the workflow in use, `always` and `when` fields alike, as `field: value` lines, with `none` when a field is empty. A `blocked` or `failed` report carries every field too, so it grades like a `completed` one. When a step needs another agent, report `blocked` and add `spawn-request: agent=<type> role=<role> brief=<one-line brief>`.
 <!-- core:end return -->

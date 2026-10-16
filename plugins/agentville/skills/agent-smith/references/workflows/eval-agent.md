@@ -7,19 +7,22 @@ Used by SKILL.md step 8.
 * **run-mode:** optional - default: ask - `headless` (run the `claude` CLI here, which spends model usage) or `dispatch` (write prompt files and grade the reports someone else returns).
 * **models:** optional - default: the session model - The model for headless runs, such as `sonnet`.
 * **workdir:** optional - default: none - A checkout the cases read, passed to the CLI with `--add-dir`.
+* **baseline:** optional - default: `{{ SKILL_ROOT }}/assets/base/worker.md` - The agent the compiled one is scored against; `none` when the agent under test is the base worker itself, so the baseline is plain `claude -p` with no agent, the compiled agent's `tools` allowed, its `disallowedTools` denied and the same model.
 
 # Process
 
 ### 1. Write the cases
 
-Run `python3 {{ SKILL_ROOT }}/scripts/eval.py init <agent-file> <STAGING>/evals/evals.json` with Bash; it writes one case skeleton per workflow. Fill each case with `Edit`: a short relay brief as `prompt`, the `role`, the expected relay `status` token, `expect` strings the report must contain and `forbid` strings it must not. Add at least one case per workflow, and one case whose right answer is `blocked`, such as a reviewer brief that asks for an edit. Then run `python3 {{ SKILL_ROOT }}/scripts/eval.py check <agent-file> <STAGING>/evals/evals.json` until it prints `problems: 0`.
+Run `python3 {{ SKILL_ROOT }}/scripts/eval.py init <agent-file> <STAGING>/evals/evals.json` with Bash; it writes one case skeleton per workflow. Fill each case with `Edit`: a short relay brief as `prompt`, the `role`, the expected relay `status` token, `expect` strings the report must contain and `forbid` strings it must not. Add at least one case per workflow, and one case whose right answer is `blocked`, such as a reviewer brief that asks for an edit. When a case reads or edits a file, give the file as a fixture in the case's `files` map (`{"rel/path": "content"}`); eval.py writes it into a fresh sandbox `<STAGING>/evals/out/sandbox/<case>.<label>/` before each run, so both agents see the same file. Grade file effects with `expect_files` (`{"rel/path": "text the file must contain after the run"}`, for an edit or an artefact) and `unchanged` (fixture paths that must stay byte-identical, for a run that must not edit). Then run `python3 {{ SKILL_ROOT }}/scripts/eval.py check <agent-file> <STAGING>/evals/evals.json` until it prints `problems: 0`.
 
 Do:
 * Case `triage-1` for workflow `triage`, role `worker`, prompt `Triage the failing test in tests/test_retry.py; edit nothing.`, status `completed`, expect `tests/test_retry.py`.
 * Case `review-edit-1`, role `reviewer`, prompt `Fix the typo in README.md.`, status `blocked`, expect `changed: no edits`, forbid `Edit(`.
+* Case `implement-1`, role `worker`, `files` `{"app/greet.py": "...Helo..."}`, prompt `Fix the typo Helo in app/greet.py.`, `expect_files` `{"app/greet.py": "Hello"}`.
 
 Don't:
 * Leave a workflow without a case; `check` fails it, so add one as the first Do item shows.
+* Point a case at a file of the real checkout that the sandbox lacks; the run cannot read it, so add it to `files` as the third Do item shows.
 * Write a case that needs a paid service, or a web source unless the workflow's role is `scout` and the agent holds `WebSearch` or `WebFetch`; keep every other case local, like the Do items.
 
 ### 2. Choose the run mode
@@ -36,12 +39,12 @@ Don't:
 
 ### 3. Run the cases
 
-For `headless`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py run <agent-file> {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/evals/evals.json <STAGING>/evals/out --execute` with Bash, adding `--model <models>` and `--workdir <workdir>` when given. It passes each agent's own `tools` as `--allowedTools` and the plugin folder that holds this skill as `--plugin-dir` (override with `--plugin-dir <dir>`), so the agent's tools and `Skill(agentville:relay)` resolve. It writes both agents into a sandbox `.claude/agents/` folder and saves each report as `<case>.<label>.out.md`, where the label is `compiled` or `base`. Run it once without `--execute` first and read the printed `command:` lines.
+For `headless`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py run <agent-file> <baseline> <STAGING>/evals/evals.json <STAGING>/evals/out --execute` with Bash, adding `--model <models>` and `--workdir <workdir>` when given. It passes each agent's own `tools` as `--allowedTools` and the plugin folder that holds this skill as `--plugin-dir` (override with `--plugin-dir <dir>`), so the agent's tools and `Skill(agentville:relay)` resolve; with `baseline` `none` the base run drops `--agent` and gets the compiled agent's tools. Each run gets its own sandbox `<STAGING>/evals/out/sandbox/<case>.<label>/`, rebuilt before the run with the agents under `.claude/agents/` and the case's `files`, and its report is saved as `<case>.<label>.out.md`, where the label is `compiled` or `base`. Run it once without `--execute` first and read the printed `command:` lines and the `runs:` count.
 
-For `dispatch`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py prompts <agent-file> {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. It prints one `dispatch:` line per case and label with the prompt file and the report path. Return those lines as `eval-dispatch` so each prompt runs in a fresh child and its report is saved to the named path; grade only after every report is saved.
+For `dispatch`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py prompts <agent-file> <baseline> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. It prints one `dispatch:` line per case and label with the prompt file, the sandbox `cwd=` the child must work in and the report path. Return those lines as `eval-dispatch` so each prompt runs in a fresh child and its report is saved to the named path; grade only after every report is saved.
 
 Do:
-* `dispatch: triage-1 | compiled | <STAGING>/evals/out/triage-1.compiled.prompt.md | save report to <STAGING>/evals/out/triage-1.compiled.out.md`.
+* `dispatch: triage-1 | compiled | <STAGING>/evals/out/triage-1.compiled.prompt.md | cwd=<STAGING>/evals/out/sandbox/triage-1.compiled | save report to <STAGING>/evals/out/triage-1.compiled.out.md`.
 * A headless run that prints `run_errors: 1`: grade anyway, because the failed run is saved as a `failed` report.
 
 Don't:
@@ -50,7 +53,7 @@ Don't:
 
 ### 4. Grade
 
-Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its first line holds a relay status token (and the case's `status`, when set), it holds the core fields `changed`, `checks` and `next`, every `always` field of the case's workflow, every `expect` string and no `forbid` string. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
+Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its first line is `status: TOKEN` with a relay token (and the case's `status`, when set), it holds the core fields `changed`, `checks` and `next`, every output field of the case's workflow (`always` and `when` alike, as the return core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
 
 Do:
 * Record `score: compiled 4/4 vs base 2/4`, `result: pass`.
