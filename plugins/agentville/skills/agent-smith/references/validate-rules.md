@@ -19,6 +19,6 @@ Read by SKILL.md step 7 after measure.py. Report each problem as `rule <id>: <pr
 - Rule A8, no leftovers (script). No `[[` fill-in, no `{{ CORE ... }}` line and no HTML comment remains, except the core markers.
 - Rule A9, namespace (script). Every skill reference uses the in-house namespace, such as `Skill(agentville:relay)`; any reference to the old namespace fails, and measure.py lists the lines on `foreign_namespace_lines:`. A `Skill(...)` with no namespace is a warning.
 - Rule A11, size (script). A file of more than 500 lines fails.
-- Rule A13, role scope (judged). No workflow step breaks its role's scope: a reviewer step edits nothing and runs nothing, a validator step edits no product code, and a scout step that needs the web returns `blocked` when the agent holds no web tool.
+- Rule A13, role scope (judged). No workflow step breaks its role's scope: a reviewer step edits nothing and runs no tests, builds or scripts (read-only `git diff`, `git log`, `git show` and `rg` are allowed), a validator step edits no product code, and a scout step that needs the web returns `blocked` when the agent holds no web tool.
 - Rule A14, hand-backs (judged). A step that needs another agent stops and hands back a `spawn-request:` naming the agent type, the role and the brief; no step spawns.
 - Rule A15, relay tokens (judged). Every status the agent reports, in the Exception handler and the workflows, is one of relay's tokens: `completed`, `partial`, `blocked` or `failed`.

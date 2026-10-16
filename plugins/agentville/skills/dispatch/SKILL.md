@@ -50,7 +50,7 @@ Don't:
 
 ### 2. Choose the role
 
-Use `role-hint` when given; otherwise pick the role by what the task is. A worker implements, explores local code, drafts or does file I/O. A validator runs independent checks against the running system and writes artefacts, but never product code. A reviewer reads a diff and artefacts and runs nothing. A scout researches an external question on the web and touches no file. The role names the agent type: `agentville:worker` serves the worker, validator and reviewer roles, and `agentville:scout` serves the scout role. The agent reads its role from the `<role>` tag on the brief's first line (step 4). Spawn no other agent type except the fallback in step 5.
+Use `role-hint` when given; otherwise pick the role by what the task is. A worker implements, explores local code, drafts or does file I/O. A validator runs independent checks against the running system and writes artefacts, but never product code. A reviewer reads a diff and artefacts, may run read-only `git diff`, `git log`, `git show` and `rg`, and runs no tests, builds or scripts. A scout researches an external question on the web and touches no file. The role names the agent type: `agentville:worker` serves the worker, validator and reviewer roles, and `agentville:scout` serves the scout role. The agent reads its role from the `<role>` tag on the brief's first line (step 4). Spawn no other agent type except the fallback in step 5.
 
 Because `agentville:worker` can edit and write, the brief states a reviewer's read-only scope in full, and `spawn:` records `reviewer read-only unenforced` for every reviewer spawn.
 

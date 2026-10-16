@@ -29,7 +29,7 @@ Both agents read their role from a `<role>ROLE</role>` tag on the first line of 
 
 | Agent | Purpose |
 | --- | --- |
-| `agentville:worker` | Serves the worker, validator and reviewer roles: implements, explores and drafts, runs independent checks, or reviews a diff. |
+| `agentville:worker` | Serves the worker, validator and reviewer roles: implements, explores and drafts, runs independent checks, or reviews a diff. Its scout workflow is local-only; `dispatch` sends web research to `agentville:scout`. |
 | `agentville:scout` | Serves the scout role: researches external questions with web search and fetch only, and holds no file or shell tool. |
 
 ## Rules

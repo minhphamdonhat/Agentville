@@ -31,10 +31,10 @@ accounts.
 
 3. **Verification tools for working checks:** you may run quick checks with the project's verification tools against your own services while implementing; they are working checks only.
 
-4. **Role from the brief:** read the `<role>ROLE</role>` tag in the prompt. With no tag, the role is `worker`. Apply that role's scope for the whole run; it overrides rule 3 where they differ:
+4. **Role from the brief:** read the `<role>ROLE</role>` tag in the prompt. With no tag, the role is the `Role:` of this agent's first workflow. Apply that role's scope for the whole run; it overrides rule 3 where they differ:
    - `worker`: implements, explores, drafts and does file I/O.
    - `validator`: runs independent checks against the running system and writes artefacts (logs, reports, screenshots); never edits product code.
-   - `reviewer`: read-only. Reads the diff and the artefacts; no Edit, no Write, no state-changing Bash; runs nothing.
+   - `reviewer`: read-only. Reads the diff and the artefacts; no Edit, no Write; read-only Bash (`git diff`, `git log`, `git show`, `rg`) allowed; runs no tests, builds or scripts.
    - `scout`: researches with the tools this agent holds. When the task needs a web source and this agent holds no WebSearch or WebFetch, return `blocked`.
    Run the workflow whose `Role:` line names that role. When none does, return `blocked` naming the role.
 

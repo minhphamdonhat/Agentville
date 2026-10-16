@@ -16,15 +16,15 @@ Run `python3 {{ SKILL_ROOT }}/scripts/eval.py init <agent-file> <STAGING>/evals/
 
 Do:
 * Case `triage-1` for workflow `triage`, role `worker`, prompt `Triage the failing test in tests/test_retry.py; edit nothing.`, status `completed`, expect `tests/test_retry.py`.
-* Case `review-edit-1`, role `reviewer`, prompt `Fix the typo in README.md.`, status `blocked`, forbid `Edit(`.
+* Case `review-edit-1`, role `reviewer`, prompt `Fix the typo in README.md.`, status `blocked`, expect `changed: no edits`, forbid `Edit(`.
 
 Don't:
 * Leave a workflow without a case; `check` fails it, so add one as the first Do item shows.
-* Write a case that needs a web source or a paid service; keep cases local, like the Do items.
+* Write a case that needs a paid service, or a web source unless the workflow's role is `scout` and the agent holds `WebSearch` or `WebFetch`; keep every other case local, like the Do items.
 
 ### 2. Choose the run mode
 
-Run `claude --help` with Bash. Headless mode needs a `claude` on the path whose help lists `-p`, `--agent`, `--output-format`, `--no-session-persistence`, `--permission-mode` and `--add-dir`; verify each flag in the help text, never assume it. When `run-mode` is ask, a person is reachable and the flags are present, ask "Run the evals headless here (uses model credit) or hand the prompts back for dispatch?" with `AskUserQuestion`. When no person is reachable, use `dispatch`, because a headless run spends credit nobody approved. When the CLI or a flag is missing, use `dispatch`; return `status: needs-input` with `missing: run-mode` only when the reports cannot be collected either way.
+Run `claude --help` with Bash. Headless mode needs a `claude` on the path whose help lists `-p`, `--agent`, `--output-format`, `--no-session-persistence`, `--permission-mode`, `--permission-prompts`, `--allowedTools`, `--plugin-dir`, `--model` and `--add-dir`; verify each flag in the help text, never assume it. When `run-mode` is ask, a person is reachable and the flags are present, ask "Run the evals headless here (uses model credit) or hand the prompts back for dispatch?" with `AskUserQuestion`. When no person is reachable, use `dispatch`, because a headless run spends credit nobody approved. When the CLI or a flag is missing, use `dispatch`; return `status: needs-input` with `missing: run-mode` only when the reports cannot be collected either way.
 
 Do:
 * Help lists every flag and the user picks headless: set `run-mode` to `headless`.
@@ -36,7 +36,7 @@ Don't:
 
 ### 3. Run the cases
 
-For `headless`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py run <agent-file> {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/evals/evals.json <STAGING>/evals/out --execute` with Bash, adding `--model <models>` and `--workdir <workdir>` when given. It writes both agents into a sandbox `.claude/agents/` folder and saves each report as `<case>.<label>.out.md`, where the label is `compiled` or `base`. Run it once without `--execute` first and read the printed `command:` lines.
+For `headless`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py run <agent-file> {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/evals/evals.json <STAGING>/evals/out --execute` with Bash, adding `--model <models>` and `--workdir <workdir>` when given. It passes each agent's own `tools` as `--allowedTools` and the plugin folder that holds this skill as `--plugin-dir` (override with `--plugin-dir <dir>`), so the agent's tools and `Skill(agentville:relay)` resolve. It writes both agents into a sandbox `.claude/agents/` folder and saves each report as `<case>.<label>.out.md`, where the label is `compiled` or `base`. Run it once without `--execute` first and read the printed `command:` lines.
 
 For `dispatch`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py prompts <agent-file> {{ SKILL_ROOT }}/assets/base/worker.md <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. It prints one `dispatch:` line per case and label with the prompt file and the report path. Return those lines as `eval-dispatch` so each prompt runs in a fresh child and its report is saved to the named path; grade only after every report is saved.
 

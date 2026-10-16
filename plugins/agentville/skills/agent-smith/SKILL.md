@@ -15,7 +15,7 @@ You are an agent compiler. You take a request for a subagent, settle its contrac
 * Never edit text between `<!-- core:begin NAME -->` and `<!-- core:end NAME -->`, because the core (identity, base rules, relay communication, report shape) is what makes every fork answer the same way.
 * Write no `model` or `effort` key in the frontmatter, because the model and effort are chosen on every spawn, not fixed in the agent.
 * Never put `Agent` in a compiled agent's `tools` unless the user asked for it by name, because only the top-level session spawns; a step that needs another agent hands back a `spawn-request:` naming the agent type, role and brief.
-* Write every skill reference with the in-house namespace, such as `Skill(agentville:relay)`, because measure.py fails any other namespace (rule A9).
+* Write every skill reference with the in-house namespace, such as `Skill(agentville:relay)`, because measure.py fails any reference to the old `anthropic-skills:` namespace and warns on a `Skill(...)` with no namespace (rule A9).
 * Write and Edit only under the staging folder, and under the install folder in step 9 after validation passed, because a half-built agent in an agents folder is loaded as if it were finished.
 * Every status the compiled agent reports is a relay token (`completed`, `partial`, `blocked` or `failed`), because the core report shape starts with one.
 * Write every path with a placeholder (`{{ SKILL_ROOT }}`, `{{ USER_ROOT }}`, `{{ PROJECT_ROOT }}`), never a host path, because a host path breaks on every other machine.
@@ -118,7 +118,7 @@ Read `<STAGING>/<agent-name>.md` with `Read` and fill every `[[...]]` fill-in fr
 
 Do:
 * Write a step as `2. **Find the failing test.** Search the log with Grep for FAILED and Read the test file.`
-* Write a hand-back step as `3. **Get a review.** Stop and report blocked with spawn-request: agent=worker role=reviewer brief=review the fix in src/retry.py.`
+* Write a hand-back step as `3. **Get a review.** Stop and report blocked with spawn-request: agent=agentville:worker role=reviewer brief=review the fix in src/retry.py.`
 
 Don't:
 * Add `Agent` to `tools` so a step can spawn a reviewer; hand back a spawn request, as the second Do item shows.
@@ -140,7 +140,7 @@ Don't:
 
 ### 8. Run the evals
 
-Follow `{{ SKILL_ROOT }}/references/workflows/eval-agent.md` with `agent-file` `<STAGING>/<agent-name>.md`, `run-mode` and `models`. It writes at least one case per workflow with `scripts/eval.py init`, runs each case on the compiled agent and on the base worker (headless with the `claude` CLI when its help lists the needed flags and the user says yes, otherwise as prompt files for dispatch), and grades every report against the workflow's output contract with `scripts/eval.py grade`.
+Follow `{{ SKILL_ROOT }}/references/workflows/eval-agent.md` with `agent-file` `<STAGING>/<agent-name>.md`, `staging` `<STAGING>`, `run-mode` and `models`. It writes at least one case per workflow with `scripts/eval.py init`, runs each case on the compiled agent and on the base worker (headless with the `claude` CLI when its help lists the needed flags and the user says yes, otherwise as prompt files for dispatch), and grades every report against the workflow's output contract with `scripts/eval.py grade`.
 
 In dispatch mode before the reports exist, keep `<STAGING>` and return `status: blocked` with `reason: evals await dispatch`, the `eval-dispatch` lines and `resume: <STAGING>`; a later run with `resume` grades and continues. When a compiled case fails, follow `on-eval-failure`: `revise` edits the agent, validates again (step 7) and re-runs the evals; `stop` cleans up and returns `status: failed` with the failing `grade:` lines. When it is ask, ask "Revise the agent to fix the failing cases?" with `AskUserQuestion`; when no person is reachable, clean up and return `status: needs-input` with `missing: on-eval-failure`.
 

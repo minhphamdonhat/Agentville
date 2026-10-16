@@ -388,6 +388,41 @@ class TestEval(Base):
         self.assertFalse(os.path.exists(os.path.join(self.tmp, "bin", "claude.ran")))
         self.assertTrue(os.path.isfile(os.path.join(self.out, "sandbox", ".claude", "agents", "worker.md")))
 
+    def test_run_command_line(self):
+        self.fill_cases()
+        env = self.fake_claude("echo '{}'")
+        work = os.path.join(self.tmp, "work")
+        os.makedirs(work)
+        rc, out, err = run(EVAL, "run", self.agent, BASE, self.cases, self.out, "--model", "sonnet",
+                           "--workdir", work, env=env)
+        self.assertEqual(rc, 0, err)
+        plugin = os.path.dirname(os.path.dirname(ROOT))
+        if os.path.isfile(os.path.join(plugin, ".claude-plugin", "plugin.json")):
+            self.assertEqual(kv(out)["plugin_dir"], [plugin])
+        self.assertEqual(kv(out)["model"], ["sonnet"])
+        compiled, base = kv(out)["command"]
+        args, rest, dec = [], base.split(" | ", 3)[-1], json.JSONDecoder()
+        while rest.strip():
+            v, i = dec.raw_decode(rest.strip())
+            args.append(v)
+            rest = rest.strip()[i:]
+        base_tools = ",".join(t.strip() for t in
+                              [l for l in read(BASE).splitlines() if l.startswith("tools:")][0][6:].split(","))
+        self.assertEqual(args[args.index("--allowedTools") + 1], base_tools)
+        self.assertEqual(args[args.index("--add-dir") + 1], work)
+        self.assertEqual(args[args.index("--model") + 1], "sonnet")
+        self.assertEqual(args[args.index("--permission-mode") + 1], "dontAsk")
+        # Variadic flags are followed by a single-value flag, so the prompt stays the last argument.
+        self.assertEqual(args[args.index("--add-dir") + 2], "--output-format")
+        self.assertTrue(args[-1].startswith("<role>worker</role>"))
+        self.assertIn('"--allowedTools"', compiled)
+        rc, out, err = run(EVAL, "run", self.agent, BASE, self.cases, self.out, "--plugin-dir", work, env=env)
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(kv(out)["plugin_dir"], [work])
+        self.assertIn('"--plugin-dir" ' + json.dumps(work), kv(out)["command"][0])
+        self.assertEqual(kv(out)["model"], ["session default"])
+        self.assertNotIn('"--model"', kv(out)["command"][0])
+
     def test_run_execute_then_grade(self):
         self.fill_cases()
         report = json.dumps({"result": GOOD_REPORT})

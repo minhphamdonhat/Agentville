@@ -6,8 +6,10 @@ eval.py init <agent.md> <evals.json>                  write one case skeleton pe
 eval.py check <agent.md> <evals.json>                 check every workflow has a filled case
 eval.py prompts <agent.md> <base.md> <evals.json> <out>
         write one prompt file per case and agent, for dispatch by whoever runs the skill
-eval.py run <agent.md> <base.md> <evals.json> <out> [--execute] [--model M] [--workdir D] [--timeout S]
-        headless runs with the claude CLI; without --execute it only prints the commands
+eval.py run <agent.md> <base.md> <evals.json> <out> [--execute] [--model M] [--workdir D] [--plugin-dir P]
+        [--timeout S]
+        headless runs with the claude CLI; without --execute it only prints the commands. Each run gets the
+        agent's own tools as --allowedTools and --plugin-dir P (default: the plugin folder holding this skill).
 eval.py grade <agent.md> <evals.json> <out>           grade <out>/<case>.<label>.out.md files
 Labels: `compiled` is the agent under test, `base` is the base worker.
 Exit: 0 success (grade: every compiled case passed; the base score is the baseline), 1 check or grade failure, 2 usage or read error.
@@ -177,12 +179,42 @@ def write_agent_copy(src_lines, start, new_name, path):
         f.write("\n".join(lines) + "\n")
 
 
+def plugin_root(start=HERE):
+    """The nearest folder above start that holds .claude-plugin/plugin.json, or None."""
+    d = os.path.abspath(start)
+    while True:
+        if os.path.isfile(os.path.join(d, ".claude-plugin", "plugin.json")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+
+def build_command(cli, agent_name, tools, prompt, workdir=None, model=None, plugin_dir=None):
+    """Headless command for one case. Variadic flags (--allowedTools, --add-dir) come before a
+    single-value flag so they never swallow the prompt, which is the last argument."""
+    cmd = [cli, "-p", "--agent", agent_name]
+    if tools:
+        cmd += ["--allowedTools", ",".join(tools)]
+    if workdir:
+        cmd += ["--add-dir", workdir]
+    cmd += ["--output-format", "json", "--no-session-persistence",
+            "--permission-mode", "dontAsk", "--permission-prompts", "none"]
+    if plugin_dir:
+        cmd += ["--plugin-dir", plugin_dir]
+    if model:
+        cmd += ["--model", model]
+    cmd.append(prompt)
+    return cmd
+
+
 def run(args):
     usage = ("usage: eval.py run <agent.md> <base.md> <evals.json> <out> "
-             "[--execute] [--model M] [--workdir D] [--timeout S]")
+             "[--execute] [--model M] [--workdir D] [--plugin-dir P] [--timeout S]")
     execute = "--execute" in args
     args = [a for a in args if a != "--execute"]
-    opts = {"--model": None, "--workdir": None, "--timeout": "900"}
+    opts = {"--model": None, "--workdir": None, "--plugin-dir": None, "--timeout": "900"}
     for k in list(opts):
         if k in args:
             i = args.index(k)
@@ -205,17 +237,16 @@ def run(args):
     write_agent_copy(agent["lines"], agent["start"], name, os.path.join(adir, f"{name}.md"))
     write_agent_copy(base["lines"], base["start"], bname, os.path.join(adir, f"{bname}.md"))
     workdir = os.path.abspath(opts["--workdir"]) if opts["--workdir"] else None
+    pdir = os.path.abspath(opts["--plugin-dir"]) if opts["--plugin-dir"] else plugin_root()
+    print("plugin_dir: " + (pdir or "none (no .claude-plugin/plugin.json above this skill)"))
+    print("model: " + (opts["--model"] or "session default"))
+    tools = {name: measure.split_list(agent["fm"].get("tools", "")),
+             bname: measure.split_list(base["fm"].get("tools", ""))}
     print("mode: " + ("execute" if execute else "dry-run"))
     failed = 0
     for c in cases:
         for label, aname in (("compiled", name), ("base", bname)):
-            cmd = [cli, "-p", "--agent", aname, "--output-format", "json", "--no-session-persistence",
-                   "--permission-mode", "dontAsk", "--permission-prompts", "none"]
-            if workdir:
-                cmd += ["--add-dir", workdir]
-            if opts["--model"]:
-                cmd += ["--model", opts["--model"]]
-            cmd.append(case_prompt(c))
+            cmd = build_command(cli, aname, tools[aname], case_prompt(c), workdir, opts["--model"], pdir)
             of = os.path.join(out, f"{c['id']}.{label}.out.md")
             print(f"command: {c['id']} | {label} | cwd={sandbox} | " + " ".join(json.dumps(x) for x in cmd[1:]))
             if not execute:
