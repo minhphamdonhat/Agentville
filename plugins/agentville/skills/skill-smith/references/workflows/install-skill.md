@@ -4,6 +4,7 @@ Used by SKILL.md step 9.
 
 * **staging:** required - default: none - The validated staging folder `<STAGING>`.
 * **path:** required - default: none - The target folder `<PATH>` from SKILL.md step 4.
+* **scope:** required - default: none - `project` or `user`, from SKILL.md step 4.
 * **last-validation:** required - default: none - `pass`, or the failures from the last measure.py run and validate-rules pass.
 
 # Process
@@ -22,15 +23,15 @@ Don't:
 
 ### 2. Mirror the staging folder
 
-Run `python3 {{ SKILL_ROOT }}/scripts/stage.py sync <STAGING> <PATH>` with Bash. Read its `written:`, `removed:` and `files:` lines.
+Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> <PATH> --scope <scope>` with Bash. Read its `written:`, `removed:` and `files:` lines. When it exits 2, write nothing, and return the failure block with `status: blocked` and the script's message as `reason:`; it refuses any `<PATH>` outside the chosen scope's skills folder and any plugin.
 
 Do:
-* Run `python3 {{ SKILL_ROOT }}/scripts/stage.py sync <STAGING> {{ USER_ROOT }}/.claude/skills/pr-review`.
+* Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> {{ USER_ROOT }}/.claude/skills/pr-review --scope user`.
 * Keep the `files:` line for the report, such as `files: none` for a skill with only SKILL.md.
 
 Don't:
-* Copy files by hand with `cp`; the script also removes stale files and reports every change.
-* Run the sync twice; one run mirrors every file.
+* Copy files by hand with `cp`, or run `stage.py sync` onto the target; the install also removes stale files, reports every change and refuses a plugin.
+* Run the install twice; one run mirrors every file.
 
 ### 3. Check what was removed
 
@@ -38,7 +39,7 @@ Compare each `removed:` line with the request. When a removed file is one the us
 
 Do:
 * Report `warnings: removed {{ USER_ROOT }}/.claude/skills/pr-review/evals/evals.json` when the request did not mention evals.
-* Report `removed: none` when the sync printed no `removed:` line.
+* Report `removed: none` when the install printed no `removed:` line.
 
 Don't:
 * Hide a removal; list every `removed:` line in the output.
@@ -60,7 +61,7 @@ Do:
 * `supporting-files: {{ PROJECT_ROOT }}/.claude/skills/catalogue/references/prices.md`
 
 Don't:
-* Report success before the sync ran; the Do items show paths the sync printed.
+* Report success before the install ran; the Do items show paths the install printed.
 * Edit a different skill ("also update the naming skill to match"); say a separate request is needed.
 
 ```text

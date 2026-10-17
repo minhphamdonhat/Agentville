@@ -20,7 +20,7 @@ NAME = r"(?:[a-z0-9][a-z0-9-]*|" + SLOT + r")"
 INPUT_RE = re.compile(r"^\* \*\*(" + NAME + r"):\*\* (required|optional) - default: (.+?) - (.+)$")
 RETURN_RE = re.compile(r"^\* \*\*(" + NAME + r"):\*\* (always|when .+?) - (.+)$")
 STEP_RE = re.compile(r"^(\d+)\.\s+(.+)$")
-STATUS_LINE_RE = re.compile(r"^status:\s*ok \| blocked \| needs-input \| failed\s*$")
+STATUS_LINE_RE = re.compile(r"^status:\s*(?:partial \| )?blocked \| needs-input \| failed\s*$")
 LEGACY_RE = re.compile(
     r"^\s*(?:[*-]\s+)?\**\s*(Start\s+here:|@(?:Tool|Skill|Process|Return|ThrowError|MCP|Import)\b)")
 XML_SCOPE_RE = re.compile(r"^\s*<[a-z][\w-]*\s+scope=")

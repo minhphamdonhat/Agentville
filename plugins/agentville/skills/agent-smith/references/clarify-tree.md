@@ -16,11 +16,11 @@ A slot is one decision of the contract. A slot is settled when the user has answ
 | workflow-steps | workflow-inputs | Per workflow, numbered steps; each names its tool or `Skill(namespace:name)`, or hands back a spawn request |
 | workflow-outputs | workflow-steps | Per workflow, the returned fields as `name: always or when <condition> - what it holds` |
 | rules | workflows | Extending rules, each with a one-clause reason; they follow the core constraints and never contradict them |
-| exceptions | workflow-steps | Each condition the agent can hit and the relay status token it reports: completed, partial, blocked or failed |
+| exceptions | workflow-steps | Each condition the agent can hit and the relay status token it reports: completed, partial, needs-input, blocked or failed |
 | tools | workflow-steps | Every tool a step names, and nothing else; asked as its own explicit question, always last |
 | disallowed-tools | tools | The base worker's denied tools minus any the user granted |
 
-Settle the install target outside this tree: SKILL.md step 4 owns it, so never ask it here.
+Settle the install `scope` (project or user, never a plugin) outside this tree: SKILL.md step 4 owns it, so never ask it here.
 
 ## Frontier order
 

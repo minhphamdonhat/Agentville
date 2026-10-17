@@ -90,7 +90,7 @@ Don't:
 * **note:** when a page failed - Which page failed.
 
 ```text
-status: ok
+status: completed
 ranked-list: [LIST]
 ```
 
@@ -101,7 +101,7 @@ Don't:
 * A greeting; start with the first field.
 
 ```text
-status: ok | blocked | needs-input | failed
+status: partial | blocked | needs-input | failed
 reason: [ONE_SENTENCE]
 missing: [NAMES_OR_NONE]
 ```
@@ -231,7 +231,7 @@ class MeasureTests(unittest.TestCase):
         self.assertIn(5, fails(out))
 
     def test_05_output_without_fence(self):
-        text = GOOD.split("```text\nstatus: ok\n")[0] + "Do:\n* a\n\nDon't:\n* b\n"
+        text = GOOD.split("```text\nstatus: completed\n")[0] + "Do:\n* a\n\nDon't:\n* b\n"
         out = self.m(text)[1]
         self.assertIn(7, fails(out))
         self.assertIn(16, fails(out))
@@ -422,18 +422,24 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(d["type"], ["process"])
         self.assertEqual(d["steps"], ["11"])
         self.assertEqual(len(d["input"]), 10)
-        self.assertEqual(d["inputs_required"], ["request"])
+        self.assertEqual(d["inputs_required"], ["request, scope"])
         self.assertEqual(d["output_templates"], ["2"])
         self.assertEqual(d["unresolved_links"], ["none"])
         self.assertEqual(d["failure_template"], ["yes"])
 
     def test_30_failure_template_required_d1(self):
-        no_block = GOOD.split("```text\nstatus: ok | blocked")[0]
+        no_block = GOOD.split("```text\nstatus: partial | blocked | needs-input")[0]
         self.assertIn(16, fails(self.m(no_block)[1]))
         partial = GOOD.replace("missing: [NAMES_OR_NONE]\n", "")
         self.assertIn(16, fails(self.m(partial)[1]))
-        wrong = GOOD.replace("status: ok | blocked | needs-input | failed", "status: completed | blocked")
+        wrong = GOOD.replace("status: partial | blocked | needs-input | failed", "status: completed | blocked")
         self.assertIn(16, fails(self.m(wrong)[1]))
+        for line in ("status: needs-input | blocked | failed", "status: blocked | needs-input | failed | extra",
+                     "status: partial | partial | blocked | needs-input | failed", "status: blocked | failed"):
+            odd = GOOD.replace("status: partial | blocked | needs-input | failed", line)
+            self.assertIn(16, fails(self.m(odd)[1]), line)
+        plain = GOOD.replace("status: partial | blocked | needs-input | failed", "status: blocked | needs-input | failed")
+        self.assertNotIn(16, fails(self.m(plain)[1]))
 
     def test_31_asking_needs_needs_input_d2(self):
         bad = GOOD.replace("; otherwise return `status: needs-input` with `missing: film`", "").replace(
@@ -574,6 +580,88 @@ class StageTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.tmp, "d")))
         self.assertEqual(run(STAGE, "sync", self.tmp, self.tmp)[0], 2)
         self.assertEqual(run(STAGE, "sync", self.tmp)[0], 2)
+
+    def install(self, src, dst, scope, project, user):
+        return run(STAGE, "install", src, dst, "--scope", scope, "--project-root", project, "--user-root", user)
+
+    def roots(self):
+        project, user = os.path.join(self.tmp, "proj"), os.path.join(self.tmp, "home")
+        os.makedirs(project)
+        os.makedirs(user)
+        return project, user
+
+    def test_install_accepts_project_and_user_scope(self):
+        project, user = self.roots()
+        stg = os.path.join(self.tmp, "stg")
+        self.mk(stg, {"SKILL.md": b"x", "references/a.md": b"a", ".skill-smith-staging": b"m"})
+        for scope, root in (("project", project), ("user", user)):
+            dst = os.path.join(root, ".claude", "skills", "pr-review")
+            rc, out, err = self.install(stg, dst, scope, project, user)
+            self.assertEqual(rc, 0, err)
+            self.assertIn("files: ", out)
+            self.assertEqual(read_bytes(os.path.join(dst, "SKILL.md")), b"x")
+            self.assertEqual(read_bytes(os.path.join(dst, "references", "a.md")), b"a")
+
+    def test_install_refuses_plugin_target(self):
+        project, user = self.roots()
+        stg = os.path.join(self.tmp, "stg")
+        self.mk(stg, {"SKILL.md": b"x", ".skill-smith-staging": b"m"})
+        plugin = os.path.join(project, "plugins", "acme")
+        self.mk(plugin, {".claude-plugin/plugin.json": b"{}"})
+        for scope in ("project", "user"):
+            for dst in (os.path.join(plugin, "skills", "pr-review"),
+                        os.path.join(plugin, ".claude", "skills", "pr-review"),
+                        os.path.join(project, "plugins", "other", "skills", "pr-review"),
+                        os.path.join(plugin, ".claude-plugin", "pr-review")):
+                rc, _, err = self.install(stg, dst, scope, project, user)
+                self.assertEqual(rc, 2, dst)
+                self.assertIn("refused", err)
+                self.assertFalse(os.path.exists(os.path.join(dst, "SKILL.md")), dst)
+        # a project root that is itself a plugin is refused even at its own .claude/skills
+        rc, _, err = self.install(stg, os.path.join(plugin, ".claude", "skills", "pr-review"), "project", plugin, user)
+        self.assertEqual(rc, 2)
+        self.assertIn("plugin", err)
+        self.assertFalse(os.path.exists(os.path.join(plugin, ".claude", "skills")))
+
+    def test_install_accepts_project_root_under_plugins_folder(self):
+        stg = os.path.join(self.tmp, "stg")
+        self.mk(stg, {"SKILL.md": b"x", ".skill-smith-staging": b"m"})
+        project = os.path.join(self.tmp, "plugins", "myapp")
+        user = os.path.join(self.tmp, "home")
+        os.makedirs(project)
+        os.makedirs(user)
+        dst = os.path.join(project, ".claude", "skills", "pr-review")
+        rc, _, err = self.install(stg, dst, "project", project, user)
+        self.assertEqual(rc, 0, err)
+        self.assertTrue(os.path.isfile(os.path.join(dst, "SKILL.md")))
+
+    def test_install_refuses_other_folders_and_missing_scope(self):
+        project, user = self.roots()
+        stg = os.path.join(self.tmp, "stg")
+        self.mk(stg, {"SKILL.md": b"x", ".skill-smith-staging": b"m"})
+        skills = os.path.join(project, ".claude", "skills")
+        for dst, scope in ((os.path.join(self.tmp, "elsewhere", "pr-review"), "project"),
+                           (skills, "project"),
+                           (os.path.join(skills, "pr-review", "deep"), "project"),
+                           (os.path.join(skills, "Bad Name"), "project"),
+                           (os.path.join(skills, "pr-review"), "user"),
+                           (os.path.join(skills, "pr-review"), "plugin")):
+            self.assertEqual(self.install(stg, dst, scope, project, user)[0], 2, (dst, scope))
+        self.assertEqual(run(STAGE, "install", stg, os.path.join(skills, "pr-review"),
+                             "--project-root", project)[0], 2)
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "elsewhere")))
+        self.assertFalse(os.path.exists(os.path.join(skills, "pr-review")))
+
+    def test_sync_refuses_plugin_on_either_side(self):
+        src = os.path.join(self.tmp, "src")
+        self.mk(src, {"SKILL.md": b"x"})
+        plugin = os.path.join(self.tmp, "plugins", "acme", "skills", "pr-review")
+        self.mk(plugin, {"SKILL.md": b"old"})
+        self.mk(os.path.join(self.tmp, "plugins", "acme"), {".claude-plugin/plugin.json": b"{}"})
+        self.assertEqual(run(STAGE, "sync", src, plugin)[0], 2)
+        self.assertEqual(read_bytes(os.path.join(plugin, "SKILL.md")), b"old")
+        self.assertEqual(run(STAGE, "sync", plugin, os.path.join(self.tmp, "out"))[0], 2)
+        self.assertFalse(os.path.exists(os.path.join(self.tmp, "out")))
 
     def test_clean(self):
         p = self.create("x")

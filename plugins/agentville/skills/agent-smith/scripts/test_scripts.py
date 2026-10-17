@@ -73,7 +73,7 @@ FILLED = {
     "* **[[field-name]]:** always - [[What the field holds.]]": "* **cause:** always - The failing test.",
     "* **[[field-name]]:** when [[condition]] - [[What the field holds.]]":
         "* **fix:** when found - The proposed fix.",
-    "* **[[Condition]]:** [[what to do, and the status token to report: completed, partial, blocked or failed]].":
+    "* **[[Condition]]:** [[what to do, and the status token to report: completed, partial, needs-input, blocked or failed]].":
         "* **No log:** return `blocked`.",
 }
 
@@ -298,17 +298,101 @@ class TestStage(Base):
         self.assertEqual(rc, 0, err)
         self.assertEqual(read(os.path.join(p, "ci-triage.md")), BASE_TEXT)
 
+    def roots(self):
+        project, user = os.path.join(self.tmp, "proj"), os.path.join(self.tmp, "home")
+        os.makedirs(project)
+        os.makedirs(user)
+        return project, user
+
+    def install(self, src, folder, scope, *extra):
+        project, user = self.roots_cache
+        return run(STAGE, "install", src, folder, "--scope", scope,
+                   "--project-root", project, "--user-root", user, *extra)
+
     def test_install_refuses_overwrite(self):
         src = self.write(BASE_TEXT, "ci-triage.md")
-        dst = os.path.join(self.tmp, "agents")
-        rc, out, err = run(STAGE, "install", src, dst)
+        self.roots_cache = self.roots()
+        dst = os.path.join(self.roots_cache[0], ".claude", "agents")
+        rc, out, err = self.install(src, dst, "project")
         self.assertEqual(rc, 0, err)
         self.assertEqual(kv(out)["replaced"], ["no"])
-        self.assertEqual(run(STAGE, "install", src, dst)[0], 2)
-        rc, out, _ = run(STAGE, "install", src, dst, "--replace")
+        self.assertEqual(self.install(src, dst, "project")[0], 2)
+        rc, out, _ = self.install(src, dst, "project", "--replace")
         self.assertEqual(rc, 0)
         self.assertEqual(kv(out)["replaced"], ["yes"])
-        self.assertEqual(run(STAGE, "install", os.path.join(self.tmp, "nope.md"), dst)[0], 2)
+        self.assertEqual(self.install(os.path.join(self.tmp, "nope.md"), dst, "project")[0], 2)
+
+    def test_install_accepts_project_and_user_scope(self):
+        src = self.write(BASE_TEXT, "ci-triage.md")
+        self.roots_cache = project, user = self.roots()
+        for scope, root in (("project", project), ("user", user)):
+            dst = os.path.join(root, ".claude", "agents")
+            rc, out, err = self.install(src, dst, scope)
+            self.assertEqual(rc, 0, err)
+            self.assertEqual(kv(out)["written"], [os.path.join(os.path.realpath(dst), "ci-triage.md")])
+            self.assertTrue(os.path.isfile(os.path.join(dst, "ci-triage.md")))
+
+    def test_install_refuses_plugin_target(self):
+        src = self.write(BASE_TEXT, "ci-triage.md")
+        self.roots_cache = project, user = self.roots()
+        plugin = os.path.join(project, "plugins", "acme")
+        os.makedirs(os.path.join(plugin, ".claude-plugin"))
+        with open(os.path.join(plugin, ".claude-plugin", "plugin.json"), "w") as f:
+            f.write("{}")
+        for scope in ("project", "user"):
+            for dst in (os.path.join(plugin, "agents"), os.path.join(plugin, ".claude", "agents"),
+                        os.path.join(project, "plugins", "other", "agents"),
+                        os.path.join(plugin, ".claude-plugin")):
+                rc, out, err = self.install(src, dst, scope)
+                self.assertEqual(rc, 2, dst)
+                self.assertIn("refused", err)
+                self.assertFalse(os.path.exists(os.path.join(dst, "ci-triage.md")), dst)
+        # a project root that is itself a plugin is refused even at its own .claude/agents
+        rc, _, err = run(STAGE, "install", src, os.path.join(plugin, ".claude", "agents"), "--scope", "project",
+                         "--project-root", plugin, "--user-root", user)
+        self.assertEqual(rc, 2)
+        self.assertIn("plugin", err)
+        self.assertFalse(os.path.exists(os.path.join(plugin, ".claude", "agents", "ci-triage.md")))
+
+    def test_install_accepts_project_root_under_plugins_folder(self):
+        src = self.write(BASE_TEXT, "ci-triage.md")
+        project = os.path.join(self.tmp, "plugins", "myapp")
+        user = os.path.join(self.tmp, "home")
+        os.makedirs(project)
+        os.makedirs(user)
+        dst = os.path.join(project, ".claude", "agents")
+        rc, _, err = run(STAGE, "install", src, dst, "--scope", "project",
+                         "--project-root", project, "--user-root", user)
+        self.assertEqual(rc, 0, err)
+        self.assertTrue(os.path.isfile(os.path.join(dst, "ci-triage.md")))
+
+    def test_install_refuses_other_folders_and_missing_scope(self):
+        src = self.write(BASE_TEXT, "ci-triage.md")
+        self.roots_cache = project, user = self.roots()
+        free = os.path.join(self.tmp, "elsewhere")
+        self.assertEqual(self.install(src, free, "project")[0], 2)
+        self.assertEqual(self.install(src, os.path.join(project, ".claude", "skills"), "project")[0], 2)
+        self.assertEqual(self.install(src, os.path.join(project, ".claude", "agents", "sub"), "project")[0], 2)
+        # the user root is not the project root
+        self.assertEqual(self.install(src, os.path.join(user, ".claude", "agents"), "project")[0], 2)
+        self.assertEqual(self.install(src, os.path.join(project, ".claude", "agents"), "plugin")[0], 2)
+        self.assertEqual(run(STAGE, "install", src, os.path.join(project, ".claude", "agents"),
+                             "--project-root", project)[0], 2)
+        self.assertFalse(os.path.exists(free))
+
+    def test_seed_refuses_plugin_source(self):
+        p = self.create()
+        plugin_agent = os.path.join(self.tmp, "plugins", "acme", "agents", "x.md")
+        os.makedirs(os.path.dirname(plugin_agent))
+        os.makedirs(os.path.join(self.tmp, "plugins", "acme", ".claude-plugin"))
+        with open(os.path.join(self.tmp, "plugins", "acme", ".claude-plugin", "plugin.json"), "w") as f:
+            f.write("{}")
+        with open(plugin_agent, "w") as f:
+            f.write(BASE_TEXT)
+        rc, _, err = run(STAGE, "seed", plugin_agent, p)
+        self.assertEqual(rc, 2)
+        self.assertIn("plugin", err)
+        self.assertFalse(os.path.exists(os.path.join(p, "x.md")))
 
     def test_usage(self):
         self.assertEqual(run(STAGE)[0], 2)
@@ -534,7 +618,7 @@ class TestEval(Base):
     def test_bad_status_token_fails(self):
         rc, compiled = self.grade_one(GOOD_REPORT.replace("<status>completed", "<status>ok"))
         self.assertEqual(rc, 1)
-        self.assertIn("<status> is not one of completed, partial, blocked, failed", compiled)
+        self.assertIn("<status> is not one of completed, partial, needs-input, blocked, failed", compiled)
 
     def test_old_status_format_fails(self):
         old = "status: completed\noutcome: done.\nchanged: no edits\nchecks: none\nnext: none\n"

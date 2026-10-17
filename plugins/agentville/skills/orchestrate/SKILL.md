@@ -150,18 +150,18 @@ Don't:
 
 ### 7. Validate
 
-Write `Stage: Validate`. Start by compiling the Validate todo list, one todo per check, again on every entry including after a loop-back. Dispatch a validator through `Skill(agentville:dispatch)` with `role-hint: validator` to run independent checks against the running system and produce evidence, and pass `verifies-tier` set to the model and effort of the work being checked. On the fast path the validator runs the task's own check; on the plan path, optionally dispatch a worker first to list the checks. Tell the validator to follow the policy the project's steering names for its verification tools. Record the evidence exactly as the validator reported it, because Review needs it and the Report cites it. If the report gives no evidence, ask the validator for it once. A validator retry is a fresh spawn with a fresh `verifies-tier`, never a resumed child. When the validator returns `blocked` or `partial`, record what could not be checked. Then either ask the user whether to accept the gap (ask with the question tool; when no person is reachable, return `status: needs-input` with `missing:` naming the unchecked part), or, when the gap is a fix the work needs, go to step 9. State any gap that remains plainly in the Report. Validate is done when every check is checked off, the evidence exists and the validator reports its result. On the fast path, a pass goes straight to step 11; on the plan path it goes to step 8.
+Write `Stage: Validate`. Start by compiling the Validate todo list, one todo per check, again on every entry including after a loop-back. Dispatch a validator through `Skill(agentville:dispatch)` with `role-hint: validator` to run independent checks against the running system and produce evidence, and pass `verifies-tier` set to the model and effort of the work being checked. On the fast path the validator runs the task's own check; on the plan path, optionally dispatch a worker first to list the checks. Tell the validator to follow the policy the project's steering names for its verification tools. Record the evidence exactly as the validator reported it, because Review needs it and the Report cites it. If the report gives no evidence, ask the validator for it once. A validator retry is a fresh spawn with a fresh `verifies-tier`, never a resumed child. When the validator returns `blocked`, `needs-input` or `partial`, record what could not be checked. Then either ask the user whether to accept the gap (ask with the question tool; when no person is reachable, return `status: needs-input` with `missing:` naming the unchecked part), or, when the gap is a fix the work needs, go to step 9. State any gap that remains plainly in the Report. Validate is done when every check is checked off, the evidence exists and the validator reports its result. On the fast path, a pass goes straight to step 11; on the plan path it goes to step 8.
 
 Do:
 * Compile the check list, dispatch a validator with the checks to run and `verifies-tier`, and record its evidence as reported.
 * Treat a failed check as a Validate failure and go to step 9.
-* On a `blocked` or `partial` result, record the unchecked part, then ask whether to accept the gap or loop back to step 9.
+* On a `blocked`, `needs-input` or `partial` result, record the unchecked part, then ask whether to accept the gap or loop back to step 9.
 
 Don't:
 * Accept a worker's self-reported checks as Validate; spawn a validator, as the first Do item shows.
 * Pass Review without recorded evidence; ask for it first.
 * Leave Validate while a check is unchecked.
-* Report a `blocked` or `partial` validation as a pass; state the gap plainly in the Report.
+* Report a `blocked`, `needs-input` or `partial` validation as a pass; state the gap plainly in the Report.
 * Resume an earlier validator for a retry; spawn a fresh one.
 
 ### 8. Review
@@ -246,7 +246,7 @@ Don't:
 
 The reply returns these fields:
 
-* **status:** always - `ok` when the request was taken through Report (and Act, when it ran), otherwise the failure block's value.
+* **status:** always - `completed` when the request was taken through Report (and Act, when it ran), otherwise the failure block's value.
 * **route:** always - The path taken (`direct`, `clarify`, `fast` or `plan`), with each switch in order, for example `fast, then plan`.
 * **stages-run:** always - The stages entered, in order, including each loop back.
 * **evidence:** when Validate ran - The validator's evidence as it reported it.
@@ -254,12 +254,12 @@ The reply returns these fields:
 * **extra-work:** when any came up - Items presented to the user to decide.
 * **user-message:** always - The Report message, written to the `Skill(agentville:voice)` standard.
 
-The top-level `status:` here (`ok`, `needs-input`, `blocked`, `failed`) is this skill's own return code. It is not a child's status.
+The top-level `status:` here (`completed`, `needs-input`, `blocked`, `failed`) is this skill's own return code. It is not a child's status, which orchestrate reads only through `Skill(agentville:dispatch)`'s `child-status`.
 
 When a person reads the output directly, end with the Report alone, written under voice, with no field block and no agent notation; otherwise return the field block, which starts with `status:` and carries the Report text in `user-message`.
 
 ```text
-status: ok
+status: completed
 route: plan
 stages-run: Discuss, Plan, Execute, Validate, Review, Execute, Validate, Review, Report
 evidence: as the validator reported it
@@ -278,9 +278,9 @@ Do:
 Don't:
 * Add a greeting, preamble or closing offer to the field block; start with `status:` as the first Do item shows.
 * Print the field block to a person reading the output directly; send the Report alone, as the last Do item shows.
-* Return `status: ok` when Report was not reached; use the failure block.
+* Return `status: completed` when Report was not reached; use the failure block.
 
-When the skill cannot finish, reply with this block only. Use `blocked`, `needs-input` or `failed`; the run did not reach Report, so `ok` is never the value here.
+When the skill cannot finish, reply with this block only. Use `blocked`, `needs-input` or `failed`; the run did not reach Report, so `completed` is never the value here.
 ```text
 status: blocked | needs-input | failed
 reason: one sentence naming what stopped the run

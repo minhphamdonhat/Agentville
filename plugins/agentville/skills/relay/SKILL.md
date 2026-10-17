@@ -40,7 +40,7 @@ Every brief carries these six parts. The order is a working default.
 3. **Context and decisions made.** Conventions, interfaces, user preferences and choices already fixed. Never write "as discussed".
 4. **Tools and sources.** What to use, what to avoid, and any path or command it needs.
 5. **Effort budget.** Tool calls, time or depth; for example "3–10 tool calls" for fact-finding.
-6. **Output and stop criteria.** Exact return shape and length, what counts as done, and permission to return `blocked` (§4).
+6. **Output and stop criteria.** Exact return shape and length, what counts as done, and permission to return `blocked` or `needs-input` (§4).
 
 Placement follows attention. Put the objective first. In a long brief (working default: over about 1,000 tokens), put bulky context in the middle and restate the concrete ask as the last line. Prefer a path, URL or artefact identifier to pasted content the reader can load itself.
 
@@ -57,7 +57,7 @@ Placement follows attention. Put the objective first. In a long brief (working d
 
 A report states what happened, not what was intended. Use this order.
 
-1. `<status>`, first: `completed`, `partial`, `blocked` or `failed`. `blocked` and `failed` are legitimate outcomes; never convert them into a softened success.
+1. `<status>`, first: `completed`, `partial`, `needs-input`, `blocked` or `failed`. `needs-input` means a decision or input only the user or the parent can supply; begin `<open>` with a `missing:` line naming it. `blocked`, `needs-input` and `failed` are legitimate outcomes; never convert them into a softened success.
 2. `<outcome>` in one or two sentences.
 3. `<claims>`, each with its evidence pointer and label (§5).
 4. `<artefacts>` by absolute path or identifier, not pasted.

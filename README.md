@@ -20,8 +20,8 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
-| `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates and installs it. |
-| `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it. |
+| `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates it and installs it to project or user scope. |
+| `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it to project or user scope. |
 
 ## Agents
 
@@ -49,3 +49,5 @@ The standing rules for the root agent ship in `rules/root-agent.md`.
 ## External dependencies
 
 `skill-smith` calls `/skill-creator` for evals and description tuning, so install that skill alongside it if you want `skill-smith` to test what it drafts. Its helper scripts need `python3`.
+
+Both smiths install only to project scope (`.claude/` in the project) or user scope (`.claude/` in the home folder). They refuse any plugin folder, Agentville included, and the helper scripts enforce that.

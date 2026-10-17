@@ -5,8 +5,12 @@ stage.py create [name]                         make a marked scratch folder, pri
 stage.py fork <template> <base> <out> <name>   write <out> from the template, pasting the base
                                                agent's core blocks over each {{ CORE x }} line
 stage.py seed <agent-file> <folder>            copy an existing agent file into a staging folder
-stage.py install <file> <dir> [--replace]      copy a compiled agent file into an agents folder
+stage.py install <file> <dir> --scope project|user [--replace] [--project-root P] [--user-root U]
+                                               copy a compiled agent file into an agents folder;
+                                               <dir> must be exactly <root>/.claude/agents of the
+                                               chosen scope, and never inside a plugin
 stage.py clean <folder>                        remove a folder only if create marked it
+The project root defaults to $CLAUDE_PROJECT_DIR, then the working folder; the user root to the home folder.
 Exit: 0 success, 2 usage or safety refusal.
 """
 import os
@@ -20,6 +24,8 @@ CORE_LINE_RE = re.compile(r"^\{\{ CORE ([a-z-]+) \}\}\s*$")
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
 CORE_END = "<!-- core:end {} -->"
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SCOPES = ("project", "user")
+PLUGIN_PARTS = (".claude-plugin",)
 
 
 def die(msg):
@@ -34,6 +40,46 @@ def norm(path):
 def in_install_folder(path):
     p = norm(path)
     return "/.claude/agents/" in p or "/.claude/skills/" in p
+
+
+def inside_plugin(path):
+    """True when path sits under a .claude-plugin folder, or under a folder with .claude-plugin/plugin.json."""
+    for p in {os.path.abspath(path), os.path.realpath(path)}:
+        if any(part in PLUGIN_PARTS for part in norm(p).strip("/").split("/")):
+            return True
+        d = p
+        while True:
+            if os.path.isfile(os.path.join(d, ".claude-plugin", "plugin.json")):
+                return True
+            up = os.path.dirname(d)
+            if up == d:
+                break
+            d = up
+    return False
+
+
+def take_option(args, flag):
+    """Remove `flag value` from args and return the value, or None."""
+    if flag not in args:
+        return None
+    i = args.index(flag)
+    if i + 1 >= len(args) or args[i + 1].startswith("--"):
+        die(f"usage: {flag} needs a value")
+    value = args[i + 1]
+    del args[i:i + 2]
+    return value
+
+
+def check_target(folder, scope, project_root, user_root):
+    """Refuse unless folder is exactly <root>/.claude/agents for the chosen scope and outside every plugin."""
+    if scope not in SCOPES:
+        die("refused: scope must be project or user")
+    root = project_root if scope == "project" else user_root
+    expected = os.path.join(os.path.realpath(root), ".claude", "agents")
+    if inside_plugin(folder) or inside_plugin(expected):
+        die(f"refused: {folder} is inside a plugin; agents install to project or user scope only")
+    if os.path.realpath(folder) != expected:
+        die(f"refused: {folder} is not {expected}; the {scope} scope installs there only")
 
 
 def read_text(path):
@@ -122,6 +168,8 @@ def seed(args):
     src, folder = args
     if not os.path.isfile(src):
         die(f"refused: not a file: {src}")
+    if inside_plugin(src):
+        die(f"refused: {src} is inside a plugin; agent-smith never changes a plugin")
     if not os.path.isfile(os.path.join(folder, MARKER)):
         die(f"refused: {folder} has no {MARKER} marker")
     dst = os.path.join(os.path.abspath(folder), os.path.basename(src))
@@ -131,11 +179,16 @@ def seed(args):
 
 
 def install(args):
+    args = list(args)
     replace = "--replace" in args
     args = [a for a in args if a != "--replace"]
-    if len(args) != 2:
-        die("usage: stage.py install <file> <dir> [--replace]")
+    scope = take_option(args, "--scope")
+    project_root = take_option(args, "--project-root") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    user_root = take_option(args, "--user-root") or os.path.expanduser("~")
+    if len(args) != 2 or scope is None:
+        die("usage: stage.py install <file> <dir> --scope project|user [--replace]")
     src, folder = args
+    check_target(folder, scope, project_root, user_root)
     if not os.path.isfile(src) or not src.endswith(".md"):
         die(f"refused: not an agent .md file: {src}")
     if os.path.exists(folder) and not os.path.isdir(folder):
@@ -168,7 +221,7 @@ def main(argv):
     cmds = {"create": create, "fork": fork, "seed": seed, "install": install, "clean": clean}
     if len(argv) < 2 or argv[1] not in cmds:
         die("usage: stage.py create [name] | fork <template> <base> <out> <name> | "
-            "seed <agent-file> <folder> | install <file> <dir> [--replace] | clean <folder>")
+            "seed <agent-file> <folder> | install <file> <dir> --scope project|user [--replace] | clean <folder>")
     return cmds[argv[1]](argv[2:])
 
 

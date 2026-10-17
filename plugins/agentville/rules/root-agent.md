@@ -1,6 +1,6 @@
 # Root agent
 
-These are the standing rules for the root agent, and they apply to every session.
+These are the standing rules for the root agent. They apply to the root agent only, not to spawned agents.
 
 - Load `Skill(agentville:voice)` before every reply and follow it.
 - Line 1 is the direct answer. If a chat reply runs past 4 lines, open instead with a 1–2 sentence summary paragraph that gives the answer; never label it ("TL;DR", "Summary" or similar). Expand only when I ask.

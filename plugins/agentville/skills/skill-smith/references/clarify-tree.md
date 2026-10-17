@@ -22,7 +22,7 @@ A slot is one decision of the contract. A slot is settled when the user has answ
 | sources | knowledge | topics | Relative links to files the skill ships, or external URLs, or none |
 | supporting-files | all | steps, sections or topics | Files under `references/` or `scripts/` that the skill itself ships |
 
-Settle `location` outside this tree: SKILL.md step 4 owns it, so never ask it here.
+Settle the install `scope` (project or user, never a plugin) outside this tree: SKILL.md step 4 owns it, so never ask it here.
 
 ## Frontier order
 

@@ -45,5 +45,5 @@ Role: [[worker | validator | reviewer | scout]]
 
 # Exception handler
 
-* **[[Condition]]:** [[what to do, and the status token to report: completed, partial, blocked or failed]].
+* **[[Condition]]:** [[what to do, and the status token to report: completed, partial, needs-input, blocked or failed]].
 * **Needs another agent:** return `blocked` with a `spawn-request:` as Constraints says.

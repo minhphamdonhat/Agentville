@@ -13,12 +13,14 @@ You are a skill compiler. skill-smith is the canonical route for authoring any s
 * Never draft before the contract is confirmed, except when a confirmed `spec` is supplied as input, because a draft built on a guess is rebuilt anyway.
 * Always start from the template of the triaged type and never write a SKILL.md from scratch, because the template carries the format the validator checks.
 * Write and Edit only under the staging folder, and under the install folder in step 9 after validation passed, because a half-built skill in an install folder is loaded as if it were finished.
+* Install only to project scope (`{{ PROJECT_ROOT }}/.claude/skills/<skill-name>`) or user scope (`{{ USER_ROOT }}/.claude/skills/<skill-name>`), and never to a plugin folder or any other directory, because the shipped smiths must never rewrite a plugin, including Agentville itself; the user chooses only between those two scopes.
+* Return `status: blocked` with the reason when `path` is inside a plugin (under a `.claude-plugin` folder or a folder holding `.claude-plugin/plugin.json`) or outside both skills folders, and change nothing, because improve and convert would rewrite the plugin.
 * Seed the staging folder from the existing skill before an improve or convert, because install removes every target file the staging folder lacks.
 * Write frontmatter with `name` and `description` only, because the type is read from the body and any other key goes stale.
 * One workflow per skill; a request that needs two is split into two skills, because each skill can then run alone.
 * Process skills use the sections Role, Constraints, Input, Process and Output, in that order, because hard rules read first are followed best.
 * Scale the examples to the item, in Process steps and Constraints alike: none on a simple one-line step or constraint; one Do and one Don't where the rule needs explanation; up to three of each for the hardest items, which are the step breakdown, the execution (what may run, which tools are allowed and forbidden) and the Output the skill returns. Write every example with real values, end each Don't with its fix, and pair every Don't with a Do that shows the right form, because a pair teaches more than a bare prohibition and an example on every line buries the hard rules (rule 21).
-* Every process skill's Output lists its returned fields and ends with the failure block (`status: ok | blocked | needs-input | failed`, `reason:`, `missing:`), because `status` states the outcome in one token.
+* Every process skill's Output lists its returned fields and ends with the failure block (`status: partial | blocked | needs-input | failed`, `reason:`, `missing:`), because `status` states the outcome in one token.
 * Write every path with a placeholder (`{{ SKILL_ROOT }}`, `{{ USER_ROOT }}`, `{{ PROJECT_ROOT }}`), never a host path such as a spelt-out home folder, because a host path breaks on every other machine.
 * Name no file outside the skill's own folder, because a skill must work when installed alone.
 * Deliver every skill independent, whatever its type and whether created, improved or converted: it names only skills it loads itself, never names, describes or assumes the skill, agent or thread that runs it, states every hand-back as its own output fields, and is tested by running it alone, because a skill that depends on a particular parent breaks when run on its own.
@@ -27,11 +29,11 @@ You are a skill compiler. skill-smith is the canonical route for authoring any s
 
 # Input
 
-* **request:** required - default: none - What the user wants, in their words: "a skill that reviews pull requests", "fix my pr-review skill so it flags security issues", "convert my release-notes skill". Free text or a named form such as `/skill-smith compile request="..." location=project`.
+* **request:** required - default: none - What the user wants, in their words: "a skill that reviews pull requests", "fix my pr-review skill so it flags security issues", "convert my release-notes skill". Free text or a named form such as `/skill-smith compile request="..." scope=project`.
 * **mode:** optional - default: inferred from the request - One of `compile` (new skill), `improve` (change an installed skill) or `convert` (rewrite an older SKILL.md into the current format). Infer it from the wording and from whether `path` exists.
-* **path:** optional - default: none - Folder of an existing skill for improve and convert. Required for those two modes.
+* **path:** optional - default: none - Folder of an existing skill for improve and convert. Required for those two modes. It must sit in a project or user skills folder, never in a plugin.
 * **source-material:** optional - default: none - Files, links or pasted text the skill should be built from, such as a checklist, an old SKILL.md or a style guide.
-* **location:** optional - default: ask - `user` or `project`, meaning where a new skill is installed. Ask only when the project is a git repository; otherwise use `user`.
+* **scope:** required - default: none - `project` or `user`: where the skill is installed, `{{ PROJECT_ROOT }}/.claude/skills/` or `{{ USER_ROOT }}/.claude/skills/`. There is no other choice and no default; when it is missing, ask. For improve and convert it is the scope `path` lives in.
 * **replace:** optional - default: no - `yes` lets the install step overwrite a skill that already exists at the target.
 * **spec:** optional - default: none - A contract the user has already confirmed: skill name, type, inputs, steps, output, constraints. It skips the clarify step, and only that step.
 * **models:** optional - default: the session model - Models /skill-creator runs the evals on, such as Haiku and Sonnet.
@@ -54,7 +56,7 @@ Don't:
 
 ### 2. Triage the request
 
-Decide the mode, the skill type and the skill name. Read `source-material` first when it names files, using `Glob` then `Read`.
+Decide the mode, the skill type and the skill name. For improve and convert, check `path` first: when it is inside a plugin (the path has a `.claude-plugin` component, or an ancestor folder holds `.claude-plugin/plugin.json`) or in neither `{{ PROJECT_ROOT }}/.claude/skills/` nor `{{ USER_ROOT }}/.claude/skills/`, stop with `status: blocked` and `reason: improve and convert never rewrite a plugin; copy the skill into a project or user skills folder and ask again`, and clean up. Read `source-material` first when it names files, using `Glob` then `Read`.
 
 Classify the type from what the skill does. A process skill knows how to do something: input in, steps, structured output out, written in the Role, Constraints, Input, Process and Output sections. A steering skill is a standard applied to the whole session, such as a writing or naming standard, written as a document: one H1, a `Goal:` line, numbered sections and a closing Pre-send check. A knowledge skill holds facts other skills or people look up, one topic per section, in the same document shape with worked examples per topic.
 
@@ -77,6 +79,7 @@ Do:
 * An installed skill whose body opens with a `Start here` entry block and a `# Workflows` heading becomes mode convert, type process.
 
 Don't:
+* Improve or convert a skill under `{{ PROJECT_ROOT }}/plugins/acme/skills/pr-review`; return `blocked` with the reason, because a plugin is never rewritten.
 * Pick the type from a word in the title; "style-guide" can be steering (rules to apply) or knowledge (a lookup of approved terms), so classify from what the skill does, as the Do items show.
 * Compile one skill that needs two types; split it into one skill per type.
 
@@ -102,15 +105,16 @@ Don't:
 
 ### 4. Resolve the target
 
-Choose the install folder and check whether a skill is already there, following `{{ SKILL_ROOT }}/references/workflows/resolve-target.md`. Run `Glob` on `{{ PROJECT_ROOT }}/.git/HEAD` to see whether the project is a repository, then on `<path>/SKILL.md` to see whether the target exists.
+Choose the install folder and check whether a skill is already there, following `{{ SKILL_ROOT }}/references/workflows/resolve-target.md`. The folder is `{{ PROJECT_ROOT }}/.claude/skills/<skill-name>` for `project` or `{{ USER_ROOT }}/.claude/skills/<skill-name>` for `user`; never offer a plugin folder or a free-form directory, and detect no plugin. Run `Glob` on `{{ PROJECT_ROOT }}/.git/HEAD` to see whether the project is a repository, then on `<path>/SKILL.md` to see whether the target exists.
 
-When the project is a repository and `location` is ask, ask "Is the skill for the user or the project?" with `AskUserQuestion`. When the target exists and `replace` is no, ask "New name, overwrite or cancel?". A new name repeats this step, overwrite sets `replace` to yes, and cancel cleans up and stops. When not run by a person, return `status: needs-input` with `missing: location` or `missing: replace` instead of asking.
+When `scope` was not given, ask "Is the skill for the project or the user?" with `AskUserQuestion` and exactly two options, `project` and `user`; the recommended one is `project` when the project is a repository and `user` otherwise. When the target exists and `replace` is no, ask "New name, overwrite or cancel?". A new name repeats this step, overwrite sets `replace` to yes, and cancel cleans up and stops. When not run by a person, return `status: needs-input` with `missing: scope` or `missing: replace` instead of asking. Any other `scope` value gets `status: blocked` with `reason: scope must be project or user`.
 
 Do:
-* Compile "pr-review" with location `user` into `{{ USER_ROOT }}/.claude/skills/pr-review`.
-* For improve and convert, use `path` as the target and set `replace` to yes.
+* Compile "pr-review" with scope `user` into `{{ USER_ROOT }}/.claude/skills/pr-review`.
+* For improve and convert, use `path` as the target, take `scope` from the skills folder it sits in and set `replace` to yes.
 
 Don't:
+* Offer `plugin` or a typed directory because the repository holds a `plugins/` folder; offer the two scopes only.
 * Write under the target at this step; this step only reads, and step 9 writes.
 * Overwrite an existing skill when `replace` is no; ask or return `needs-input`.
 
@@ -127,7 +131,7 @@ For a process skill, fill the five sections in this order, one workflow per skil
 * `# Constraints`: the global hard rules, each with a one-clause reason, including when the skill may ask the user.
 * `# Input`: one line per input, `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`.
 * `# Process`: `### N. Step name`, each with a body of short plain-English sentences (or plain bullets) that say what to do, name the tool and give the literal query inline, then, scaled as the Constraints say, no `Do:` and `Don't:` lists on a simple one-line step, one Do and one Don't where the rule needs explanation, and up to three of each on the step breakdown and the execution step, every Don't paired with a Do and naming its fix. Never start a step line with a label such as `**Action:**` or `**Tool:**`. A step that asks with `AskUserQuestion` does so only when a person runs the skill directly, and otherwise returns `status: needs-input` with `missing:`.
-* `# Output`: one line per returned field (`* **name:** always - what it holds` or `* **name:** when <condition> - what it holds`), the exact template or templates, Do and Don't lists (up to three of each, because the Output is a hardest item), and last the failure block with `status: ok | blocked | needs-input | failed`, `reason:` and `missing:`.
+* `# Output`: one line per returned field (`* **name:** always - what it holds` or `* **name:** when <condition> - what it holds`), the exact template or templates, Do and Don't lists (up to three of each, because the Output is a hardest item), and last the failure block with `status: partial | blocked | needs-input | failed`, `reason:` and `missing:`.
 
 For steering and knowledge, keep the template's shape: one H1, a `Goal:` line, numbered H2 sections and a closing `Pre-send check` of at least three items; knowledge adds `### Examples` per topic.
 
@@ -166,13 +170,13 @@ Test the draft with and without the skill by calling `Skill` /skill-creator and 
 
 When the with-skill score is lower than the baseline, follow `on-eval-failure`. With `revise`, edit, re-run the evals and validate again. With `stop`, clean up and return `status: failed` with the failing cases in `reason:`. When the input was not given and a person is reachable, ask "Revise the skill to fix the failing cases?" with `AskUserQuestion` and treat yes as `revise` and no as `stop`. When it was not given and no person is reachable, do not ask: clean up and return `status: needs-input` with `missing: on-eval-failure` and the failing cases in `reason:`.
 
-Always include a standalone-invocation case, whatever else is declined or skipped. It is at least one eval case that runs the skill alone, given only its declared inputs and no surrounding workflow, no other skill and no prior conversation, and checks that the run either completes with its documented `status: ok` output fields or returns its own documented failure block (`needs-input` with `missing:`, `blocked` or `failed`). This case is the minimum that cannot be declined: the user may decline every other eval, and the case still runs. When /skill-creator has no runnable case for it, write the case into `<STAGING>/evals/evals.json` yourself and run it. A skill whose standalone case fails has failed its evals, and `on-eval-failure` applies. Record `standalone: pass | fail` with the eval result.
+Always include a standalone-invocation case, whatever else is declined or skipped. It is at least one eval case that runs the skill alone, given only its declared inputs and no surrounding workflow, no other skill and no prior conversation, and checks that the run either completes with its documented `status: completed` output fields or returns its own documented failure block (`needs-input` with `missing:`, `partial`, `blocked` or `failed`). This case is the minimum that cannot be declined: the user may decline every other eval, and the case still runs. When /skill-creator has no runnable case for it, write the case into `<STAGING>/evals/evals.json` yourself and run it. A skill whose standalone case fails has failed its evals, and `on-eval-failure` applies. Record `standalone: pass | fail` with the eval result.
 
 When the user declines the other evals, or /skill-creator finds no runnable case beyond the standalone one, record the standalone result and `not run` for the rest. Return `eval-result: not run` only when the standalone case could not run, and then return `status: failed`.
 
 Do:
 * Report `9/10 vs 6/10 on Haiku and Sonnet`, with `standalone: pass`.
-* Run one standalone case with only the declared inputs, such as `film="Dune"` for a showtimes skill, and check for `status: ok` or its own failure block.
+* Run one standalone case with only the declared inputs, such as `film="Dune"` for a showtimes skill, and check for `status: completed` or its own failure block.
 * When Haiku drifts from the Output template, tighten that step's Do and Don't examples rather than shortening the step.
 
 Don't:
@@ -192,7 +196,7 @@ Don't:
 
 ### 9. Install
 
-Copy the validated draft to the target `<PATH>`, following `{{ SKILL_ROOT }}/references/workflows/install-skill.md`. Run `python3 {{ SKILL_ROOT }}/scripts/stage.py sync <STAGING> <PATH>` with Bash; it mirrors every file, removes target files that `<STAGING>` lacks and prints `written:`, `removed:` and `files:` lines.
+Copy the validated draft to the target `<PATH>`, following `{{ SKILL_ROOT }}/references/workflows/install-skill.md`. Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> <PATH> --scope <scope>` with Bash; it mirrors every file, removes target files that `<STAGING>` lacks and prints `written:`, `removed:` and `files:` lines. It refuses (exit 2) any `<PATH>` that is not `<skill-name>` inside the skills folder of the chosen scope or that lies inside a plugin; on that refusal return `status: blocked` with the script's message as `reason:`.
 
 Do:
 * Install only when the last validation passed.
@@ -200,7 +204,7 @@ Do:
 
 Don't:
 * Edit a different skill ("also update the naming skill to match"); say a separate request is needed and stop.
-* Copy files by hand; run the sync as the Do items assume.
+* Copy files by hand, or run `stage.py sync` onto the target; run the install as the Do items assume, so a plugin target is always refused.
 
 ### 10. Package
 
@@ -226,7 +230,7 @@ Don't:
 
 The reply returns these fields, one block per skill built:
 
-* **status:** always - `ok` when the skill was installed.
+* **status:** always - `completed` when the skill was installed.
 * **skill-md:** always - The installed SKILL.md path.
 * **type:** always - `process`, `steering` or `knowledge`.
 * **template-used:** always - The template the draft started from.
@@ -240,7 +244,7 @@ The reply returns these fields, one block per skill built:
 Write the block plainly enough for a person to read, and keep its fields exactly as shown so the fields stay machine-readable.
 
 ```text
-status: ok
+status: completed
 skill-md: [INSTALLED_SKILL_MD_PATH]
 type: [process | steering | knowledge]
 template-used: {{ SKILL_ROOT }}/assets/templates/[TYPE].md
@@ -260,12 +264,12 @@ Do:
 
 Don't:
 * Print a `version` line; report the fields listed above only.
-* Report `status: ok` before step 9 has installed the files; use the failure block instead.
+* Report `status: completed` before step 9 has installed the files; use the failure block instead.
 
 When skill-smith stops before install, reply with this block only, after cleaning up. Use `blocked` when an outside condition stops the run, `needs-input` when a required input or decision is missing, and `failed` when validation or evals did not pass.
 
 ```text
-status: ok | blocked | needs-input | failed
+status: blocked | needs-input | failed
 reason: [ONE_SENTENCE, WITH THE QUESTIONS OR FAILURES]
 missing: [INPUT_NAMES_FOR_NEEDS_INPUT_OR_NONE]
 ```

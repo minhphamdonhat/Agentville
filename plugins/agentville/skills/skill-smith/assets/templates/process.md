@@ -3,7 +3,7 @@ name: "[[skill-name]]"
 description: "[[What the skill does, then at least two concrete trigger contexts; at most 1,024 characters; inside the double quotes use single quotes only.]]"
 ---
 
-<!-- Drafting instructions; delete every comment once followed. Keep five H1 sections in this order and no others: Role, Constraints, Input, Process, Output (no Dependencies, Workflows, Exceptions or Rules). One workflow per skill. Write each step as plain sentences that name the tool inline with the literal query or command; never start a line with a label such as **Action:** or **Tool:**. Scale the examples to the item, in steps and Constraints alike: none on a simple one-line step or constraint; one Do and one Don't where the rule needs explanation; up to three of each on the step breakdown, the execution step and the Output; concrete, every Don't naming its fix and paired with a Do that shows the right form. Every Constraint gives its reason in one clause. A step may ask the user when a person is reachable; otherwise it returns status: needs-input with missing: naming each fact, so every step that names AskUserQuestion also names needs-input. Status values: ok when done; blocked when an outside condition stops the run; needs-input when a required input or decision is missing; failed when the work was tried and did not pass its checks. Long material goes to references/<topic>.md or references/workflows/<name>.md with a relative link. Every path starts with {{ SKILL_ROOT }}, {{ USER_ROOT }} or {{ PROJECT_ROOT }}. Name no file outside this skill's folder. Keep the file at 500 lines or fewer. -->
+<!-- Drafting instructions; delete every comment once followed. Keep five H1 sections in this order and no others: Role, Constraints, Input, Process, Output (no Dependencies, Workflows, Exceptions or Rules). One workflow per skill. Write each step as plain sentences that name the tool inline with the literal query or command; never start a line with a label such as **Action:** or **Tool:**. Scale the examples to the item, in steps and Constraints alike: none on a simple one-line step or constraint; one Do and one Don't where the rule needs explanation; up to three of each on the step breakdown, the execution step and the Output; concrete, every Don't naming its fix and paired with a Do that shows the right form. Every Constraint gives its reason in one clause. A step may ask the user when a person is reachable; otherwise it returns status: needs-input with missing: naming each fact, so every step that names AskUserQuestion also names needs-input. Status values: completed when done; partial when only some of the output exists; blocked when an outside condition stops the run; needs-input when a required input or decision is missing; failed when the work was tried and did not pass its checks. Long material goes to references/<topic>.md or references/workflows/<name>.md with a relative link. Every path starts with {{ SKILL_ROOT }}, {{ USER_ROOT }} or {{ PROJECT_ROOT }}. Name no file outside this skill's folder. Keep the file at 500 lines or fewer. -->
 
 # Role
 
@@ -54,7 +54,7 @@ The reply returns these fields:
 [[One sentence: when to use which template.]]
 
 ```text
-status: ok
+status: completed
 [[field-name]]: [[value]]
 [[field-name]]: [[value]]
 ```
@@ -70,7 +70,7 @@ Don't:
 When the skill cannot finish, reply with this block only:
 
 ```text
-status: ok | blocked | needs-input | failed
+status: partial | blocked | needs-input | failed
 reason: [[one sentence naming what stopped the run]]
 missing: [[input names, for needs-input; otherwise none]]
 ```

@@ -4,22 +4,22 @@ Used by SKILL.md step 4.
 
 * **skill-name:** required - default: none - The kebab-case name from SKILL.md step 2, such as `pr-review`.
 * **mode:** required - default: none - `compile`, `improve` or `convert`.
-* **location:** optional - default: ask - `user` or `project`.
+* **scope:** required - default: none - `project` or `user`; for improve and convert, the scope `path` lives in.
 * **path:** optional - default: none - The existing skill folder, for improve and convert.
 * **replace:** optional - default: no - `yes` lets install overwrite an existing skill.
 
 # Process
 
-### 1. Choose the location
+### 1. Choose the scope
 
-For improve and convert, use `path` as the target, set `replace` to yes and go to step 3. For compile, run `Glob` on `{{ PROJECT_ROOT }}/.git/HEAD`; a match means the project is a repository. When `location` is ask and the project is a repository, ask "Is the skill for the user or the project?" with `AskUserQuestion` when a person is reachable; otherwise return `status: needs-input` with `missing: location`. When `location` is ask and the project is not a repository, use `user`.
+There are two scopes and no other choice. For improve and convert, use `path` as the target, set `replace` to yes and go to step 3; when `path` is inside a plugin (the path has a `.claude-plugin` component, or an ancestor folder holds `.claude-plugin/plugin.json`) or in neither skills folder, return `status: blocked` with that reason. For compile, when `scope` is missing, ask "Is the skill for the project or the user?" with `AskUserQuestion` and exactly two options, `project` and `user`, when a person is reachable; otherwise return `status: needs-input` with `missing: scope`. Run `Glob` on `{{ PROJECT_ROOT }}/.git/HEAD` only to pick the recommended option: `project` when it matches, `user` otherwise. Any other value, such as a plugin or a typed folder, returns `status: blocked` with `reason: scope must be project or user`.
 
 Do:
-* No `.git/HEAD` and location ask: use `user` without asking.
-* No person reachable, a repository and location ask: return `status: needs-input` and `missing: location`.
+* No `scope`, a repository and a person reachable: ask with `project (Recommended)` and `user`.
+* No person reachable and no `scope`: return `status: needs-input` and `missing: scope`.
 
 Don't:
-* Ask when the project is not a repository; use `user`, as the first Do item shows.
+* Offer a plugin folder or a typed directory; offer the two scopes only, as the first Do item shows.
 * Ask when no person is reachable; return `needs-input`, as the second Do item shows.
 
 ### 2. Build the path
@@ -27,8 +27,8 @@ Don't:
 Set the target to `{{ USER_ROOT }}/.claude/skills/<skill-name>` for `user` or `{{ PROJECT_ROOT }}/.claude/skills/<skill-name>` for `project`.
 
 Do:
-* `pr-review` with location `user` gives `{{ USER_ROOT }}/.claude/skills/pr-review`.
-* `naming-rules` with location `project` gives `{{ PROJECT_ROOT }}/.claude/skills/naming-rules`.
+* `pr-review` with scope `user` gives `{{ USER_ROOT }}/.claude/skills/pr-review`.
+* `naming-rules` with scope `project` gives `{{ PROJECT_ROOT }}/.claude/skills/naming-rules`.
 
 Don't:
 * Write a host path such as a home folder spelt out; use the placeholder form the Do items show.
@@ -52,13 +52,13 @@ Reply with this block, or with the failure block when the target is not settled.
 
 ```text
 path: {{ USER_ROOT }}/.claude/skills/<skill-name>
-location: user | project
+scope: user | project
 exists: yes | no
 replace: yes | no
 ```
 
 Do:
-* `path: {{ PROJECT_ROOT }}/.claude/skills/naming-rules` with `location: project`.
+* `path: {{ PROJECT_ROOT }}/.claude/skills/naming-rules` with `scope: project`.
 * `exists: yes` and `replace: yes` for an improve.
 
 Don't:
@@ -68,5 +68,5 @@ Don't:
 ```text
 status: blocked | needs-input
 reason: <one sentence>
-missing: <location or replace, for needs-input; otherwise none>
+missing: <scope or replace, for needs-input; otherwise none>
 ```

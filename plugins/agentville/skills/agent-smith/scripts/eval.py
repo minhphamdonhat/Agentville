@@ -34,7 +34,7 @@ measure = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(measure)
 
 LABELS = ("compiled", "base")
-TOKENS = ("completed", "partial", "blocked", "failed")
+TOKENS = ("completed", "partial", "needs-input", "blocked", "failed")
 REPORT_TAGS = ("status", "outcome", "claims", "artefacts", "open", "deviations")
 TAG_RE = re.compile(r"<(/?)(" + "|".join(REPORT_TAGS) + r")\b([^<>]*)>", re.I)
 NO_BASE = "none"
@@ -130,7 +130,7 @@ def init(args):
         cases.append({
             "id": f"{wf['name'].lower()}-1", "workflow": wf["name"], "role": wf["role"] or "worker",
             "prompt": f"[[A relay brief that exercises the {wf['name']} workflow]]",
-            "status": "[[completed | partial | blocked | failed]]",
+            "status": "[[completed | partial | needs-input | blocked | failed]]",
             "expect": ["[[text the report must contain]]"], "forbid": [],
         })
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)

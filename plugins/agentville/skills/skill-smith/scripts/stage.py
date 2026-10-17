@@ -2,8 +2,12 @@
 """Staging helper for skill-smith.
 
 stage.py create [name]        make a marked scratch folder, print path: <abs path>
-stage.py sync <from> <to>     mirror <from> into <to> byte for byte
+stage.py sync <from> <to>     mirror <from> into <to> byte for byte; refuses a plugin on either side
+stage.py install <staging> <skill-folder> --scope project|user [--project-root P] [--user-root U]
+                              mirror a staging folder onto <skill-folder>, which must be exactly
+                              <root>/.claude/skills/<skill-name> of the chosen scope, never in a plugin
 stage.py clean <folder>       remove a folder only if create marked it
+The project root defaults to $CLAUDE_PROJECT_DIR, then the working folder; the user root to the home folder.
 Exit: 0 success, 2 usage or safety refusal.
 """
 import os
@@ -13,6 +17,9 @@ import shutil
 import sys
 
 MARKER = ".skill-smith-staging"
+NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+SCOPES = ("project", "user")
+PLUGIN_PARTS = (".claude-plugin",)
 
 
 def die(msg):
@@ -22,6 +29,47 @@ def die(msg):
 
 def in_skills_folder(path):
     return "/.claude/skills/" in (path.replace(os.sep, "/").rstrip("/") + "/")
+
+
+def inside_plugin(path):
+    """True when path sits under a .claude-plugin folder, or under a folder with .claude-plugin/plugin.json."""
+    for p in {os.path.abspath(path), os.path.realpath(path)}:
+        if any(part in PLUGIN_PARTS for part in p.replace(os.sep, "/").strip("/").split("/")):
+            return True
+        d = p
+        while True:
+            if os.path.isfile(os.path.join(d, ".claude-plugin", "plugin.json")):
+                return True
+            up = os.path.dirname(d)
+            if up == d:
+                break
+            d = up
+    return False
+
+
+def take_option(args, flag):
+    """Remove `flag value` from args and return the value, or None."""
+    if flag not in args:
+        return None
+    i = args.index(flag)
+    if i + 1 >= len(args) or args[i + 1].startswith("--"):
+        die(f"usage: {flag} needs a value")
+    value = args[i + 1]
+    del args[i:i + 2]
+    return value
+
+
+def check_target(folder, scope, project_root, user_root):
+    """Refuse unless folder is <root>/.claude/skills/<name> for the chosen scope and outside every plugin."""
+    if scope not in SCOPES:
+        die("refused: scope must be project or user")
+    root = project_root if scope == "project" else user_root
+    skills = os.path.join(os.path.realpath(root), ".claude", "skills")
+    if inside_plugin(folder) or inside_plugin(skills):
+        die(f"refused: {folder} is inside a plugin; skills install to project or user scope only")
+    real = os.path.realpath(folder)
+    if os.path.dirname(real) != skills or not NAME_RE.match(os.path.basename(real)):
+        die(f"refused: {folder} is not {skills}/<skill-name>; the {scope} scope installs there only")
 
 
 def create(args):
@@ -66,6 +114,12 @@ def sync(args):
     if len(args) != 2:
         die("usage: stage.py sync <from> <to>")
     src, dst = os.path.abspath(args[0]), os.path.abspath(args[1])
+    if inside_plugin(src) or inside_plugin(dst):
+        die("refused: a plugin is on one side; skill-smith never changes a plugin")
+    return mirror(src, dst)
+
+
+def mirror(src, dst):
     if not os.path.isdir(src):
         die(f"refused: source folder does not exist: {src}")
     if os.path.exists(dst) and not os.path.isdir(dst):
@@ -95,6 +149,18 @@ def sync(args):
     return 0
 
 
+def install(args):
+    args = list(args)
+    scope = take_option(args, "--scope")
+    project_root = take_option(args, "--project-root") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    user_root = take_option(args, "--user-root") or os.path.expanduser("~")
+    if len(args) != 2 or scope is None:
+        die("usage: stage.py install <staging> <skill-folder> --scope project|user")
+    src, dst = os.path.abspath(args[0]), os.path.abspath(args[1])
+    check_target(dst, scope, project_root, user_root)
+    return mirror(src, dst)
+
+
 def clean(args):
     if len(args) != 1:
         die("usage: stage.py clean <folder>")
@@ -109,9 +175,10 @@ def clean(args):
 
 
 def main(argv):
-    cmds = {"create": create, "sync": sync, "clean": clean}
+    cmds = {"create": create, "sync": sync, "install": install, "clean": clean}
     if len(argv) < 2 or argv[1] not in cmds:
-        die("usage: stage.py create [name] | sync <from> <to> | clean <folder>")
+        die("usage: stage.py create [name] | sync <from> <to> | "
+            "install <staging> <skill-folder> --scope project|user | clean <folder>")
     return cmds[argv[1]](argv[2:])
 
 
