@@ -203,6 +203,29 @@ class MeasureTests(unittest.TestCase):
         self.assertIn(5, fails(out))
         self.assertIn("step: 2 | Rank | do=1 dont=0", out)
 
+    def test_03b_bare_one_line_step_passes(self):
+        text = GOOD.replace("Do:\n* Rank 21:40 above 22:30.\n\nDon't:\n* Rank by price alone.\n\n", "")
+        self.assertNotEqual(text, GOOD)
+        rc, out, _ = self.m(text)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(kv(out)["failures"], ["none"])
+        self.assertIn("step: 2 | Rank | do=0 dont=0", out)
+
+    def test_03c_step_with_only_do_fails(self):
+        text = GOOD.replace("Don't:\n* Rank by price alone.\n\n", "")
+        self.assertNotEqual(text, GOOD)
+        rc, out, _ = self.m(text)
+        self.assertEqual(rc, 1)
+        self.assertIn(5, fails(out))
+
+    def test_03d_multi_line_step_without_examples_fails(self):
+        text = GOOD.replace("as step 1 collected.\n\nDo:\n* Rank 21:40 above 22:30.\n\nDon't:\n* Rank by price alone.\n\n",
+                            "as step 1 collected.\n\nThen drop duplicates.\n\n")
+        self.assertNotEqual(text, GOOD)
+        rc, out, _ = self.m(text)
+        self.assertEqual(rc, 1)
+        self.assertIn(5, fails(out))
+
     def test_04_dont_heading_without_items(self):
         rc, out, _ = self.m(GOOD.replace("Don't:\n* Rank by price alone.\n", "Don't:\n\nMore prose.\n"))
         self.assertIn(5, fails(out))

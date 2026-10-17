@@ -35,6 +35,7 @@ Exception, explicit and minimal: when the frontmatter name is `skill-smith`, mea
 - Rule 17, asking (script for the pairing, judged for the rest). A skill asks the user when a person is reachable; otherwise it returns `status: needs-input` with `missing:` naming each fact. measure.py fails any step that names `AskUserQuestion` without also naming `needs-input`. A decision a person would be asked for, such as whether to revise after failing evals, is an optional input, so it can be supplied as input or reported by `needs-input`. Judge that no step asks in any other way, such as by ending its reply with a question.
 - Rule 18, returned fields (script). `# Output` opens, before its first fence, with one bullet per returned field: `* **<field>:** always - <what it holds>` or `* **<field>:** when <condition> - <what it holds>`. measure.py prints one `returns:` line per field.
 - Rule 19, reasons and pairs (judged). Every Constraint gives its reason in one clause, such as "because an unattended run cannot answer". Every Don't item has a Do item in the same list pair that shows the right form.
+- Rule 21, scaled examples (judged). Applies to steps and Constraints alike. A simple one-line step or constraint carries no example. One whose rule needs explanation carries one Do and one Don't. Only the step breakdown, the execution (what may run, which tools are allowed and forbidden) and the Output carry more, up to three Do and three Don't each. Every example uses real values and every Don't names its fix.
 
 
 ## Workflow parts

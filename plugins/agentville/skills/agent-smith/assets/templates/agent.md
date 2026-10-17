@@ -6,7 +6,7 @@ tools: [[Comma-separated tools the user approved; never Agent unless the user as
 disallowedTools: [[Comma-separated tools to deny, or delete this line]]
 ---
 
-<!-- Drafting instructions; delete every comment that is not a core marker once followed. A {{ CORE name }} line is replaced by stage.py fork with the base worker's core block, markers included; never edit text between core:begin and core:end. Keep the four H1 sections in this order: Role, Constraints, Workflows, Exception handler. No model or effort key in the frontmatter. Each workflow is an H2 `## <Name>` (one capitalised word, no "Workflow:" prefix) with a `Role:` line and the H3s Input, Process and Output, in that order. A step may load a Skill(namespace:name) or hand a spawn request back; it never spawns. -->
+<!-- Drafting instructions; delete every comment that is not a core marker once followed. A {{ CORE name }} line is replaced by stage.py fork with the base worker's core block, markers included; never edit text between core:begin and core:end. Keep the four H1 sections in this order: Role, Constraints, Workflows, Exception handler. No model or effort key in the frontmatter. Each workflow is an H2 `## <Name>` (one capitalised word, no "Workflow:" prefix) with a `Role:` line and the H3s Input, Process and Output, in that order. A step may load a Skill(namespace:name) or hand a spawn request back; it never spawns. Scale the examples: none on a one-line step or constraint, one Do and one Don't where the rule needs explanation, up to three of each for the task breakdown, the execution and the report back to the parent; concrete, each Don't naming its fix, as indented sub-bullets under the step or rule. -->
 
 # Role
 

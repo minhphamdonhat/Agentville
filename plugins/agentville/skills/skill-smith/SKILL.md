@@ -17,7 +17,7 @@ You are a skill compiler. skill-smith is the canonical route for authoring any s
 * Write frontmatter with `name` and `description` only, because the type is read from the body and any other key goes stale.
 * One workflow per skill; a request that needs two is split into two skills, because each skill can then run alone.
 * Process skills use the sections Role, Constraints, Input, Process and Output, in that order, because hard rules read first are followed best.
-* Every process step and every Output carries a `Do:` and a `Don't:` list with at least two examples between them, and every Don't has a Do that shows the right form, because a pair teaches more than a bare prohibition.
+* Scale the examples to the item, in Process steps and Constraints alike: none on a simple one-line step or constraint; one Do and one Don't where the rule needs explanation; up to three of each for the hardest items, which are the step breakdown, the execution (what may run, which tools are allowed and forbidden) and the Output the skill returns. Write every example with real values, end each Don't with its fix, and pair every Don't with a Do that shows the right form, because a pair teaches more than a bare prohibition and an example on every line buries the hard rules (rule 21).
 * Every process skill's Output lists its returned fields and ends with the failure block (`status: ok | blocked | needs-input | failed`, `reason:`, `missing:`), because `status` states the outcome in one token.
 * Write every path with a placeholder (`{{ SKILL_ROOT }}`, `{{ USER_ROOT }}`, `{{ PROJECT_ROOT }}`), never a host path such as a spelt-out home folder, because a host path breaks on every other machine.
 * Name no file outside the skill's own folder, because a skill must work when installed alone.
@@ -126,8 +126,8 @@ For a process skill, fill the five sections in this order, one workflow per skil
 * `# Role`: who the agent is and what it returns.
 * `# Constraints`: the global hard rules, each with a one-clause reason, including when the skill may ask the user.
 * `# Input`: one line per input, `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`.
-* `# Process`: `### N. Step name`, each with a body of short plain-English sentences (or plain bullets) that say what to do, name the tool and give the literal query inline, then a `Do:` list and a `Don't:` list with concrete examples, every Don't paired with a Do. Never start a step line with a label such as `**Action:**` or `**Tool:**`. A step that asks with `AskUserQuestion` does so only when a person runs the skill directly, and otherwise returns `status: needs-input` with `missing:`.
-* `# Output`: one line per returned field (`* **name:** always - what it holds` or `* **name:** when <condition> - what it holds`), the exact template or templates, Do and Don't lists, and last the failure block with `status: ok | blocked | needs-input | failed`, `reason:` and `missing:`.
+* `# Process`: `### N. Step name`, each with a body of short plain-English sentences (or plain bullets) that say what to do, name the tool and give the literal query inline, then, scaled as the Constraints say, no `Do:` and `Don't:` lists on a simple one-line step, one Do and one Don't where the rule needs explanation, and up to three of each on the step breakdown and the execution step, every Don't paired with a Do and naming its fix. Never start a step line with a label such as `**Action:**` or `**Tool:**`. A step that asks with `AskUserQuestion` does so only when a person runs the skill directly, and otherwise returns `status: needs-input` with `missing:`.
+* `# Output`: one line per returned field (`* **name:** always - what it holds` or `* **name:** when <condition> - what it holds`), the exact template or templates, Do and Don't lists (up to three of each, because the Output is a hardest item), and last the failure block with `status: ok | blocked | needs-input | failed`, `reason:` and `missing:`.
 
 For steering and knowledge, keep the template's shape: one H1, a `Goal:` line, numbered H2 sections and a closing `Pre-send check` of at least three items; knowledge adds `### Examples` per topic.
 
@@ -138,11 +138,13 @@ When the skill would pass 500 lines, move long material to `<STAGING>/references
 Do:
 * Convert an old-format skill by keeping its behaviour: each old workflow step becomes a numbered step, each old input an Input line, each old output an Output template, each old rule and exception a Constraint or a Do/Don't pair in the step that can hit it. Save the original as `<STAGING>/references/original-SKILL.md` first.
 * Write steps as explanatory sentences with real values in the examples, as in a skill a Haiku-tier model must follow.
+* Scale the examples: leave the step "Read the file at `path` with `Read`." bare, give the rule "Name the tool inline" one Do ("Search with `Grep` for `FAILED`.") and one Don't ("Search the log; write the tool and the literal query instead."), and give the execution step up to three of each.
 
 Don't:
 * Compress steps into call syntax with at-signs and arrows; write plain sentences that name the tool inline, as the second Do item says.
 * Add a Dependencies, Workflows, Exceptions or Rules section to a process skill; move that content into Constraints or a step's Do and Don't lists.
 * Put two workflows in one skill; split it into two skills.
+* Add a Do and a Don't to a simple one-line step, or give the Output no examples; keep the simple step bare and give the Output up to three of each, as the scaling Do item shows.
 
 ### 6. Validate
 

@@ -230,7 +230,7 @@ class TestMeasure(Base):
     def test_20_constraints_core_needs_status_line(self):
         rc, out = self.measure(BASE_TEXT)
         self.assertEqual(kv(out)["status_line_rule"], ["yes"])
-        weak = BASE_TEXT.replace("every report opens with `status: TOKEN`", "every report opens with a token")
+        weak = BASE_TEXT.replace("`<status>` comes first and holds one of", "the status comes with one of")
         base = self.write(weak, "weak-base.md")
         rc, out = self.measure(weak, "--base", base)
         self.assertEqual(rc, 1)
