@@ -25,12 +25,14 @@ Each skill is invoked as `/agentville:<name>`.
 
 ## Agents
 
-Both agents read their role from a `<role>ROLE</role>` tag on the first line of the brief.
+Each agent reads its role from a `<role>ROLE</role>` tag on the first line of the brief.
 
 | Agent | Purpose |
 | --- | --- |
 | `agentville:worker` | Serves the worker, validator and reviewer roles: implements, explores and drafts, runs independent checks, or reviews a diff. Its scout workflow is local-only; `dispatch` sends web research to `agentville:scout`. |
 | `agentville:scout` | Serves the scout role: researches external questions with web search and fetch only, and holds no file or shell tool. |
+| `agentville:validator` | Serves the validator role: runs targeted independent checks against a running system with the tools the project's steering names, writes the results as artefacts under an evidence folder, and never edits product code. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
+| `agentville:reviewer` | Serves the reviewer role: reads a diff and the validator's evidence against the plan and returns a pass or needs-changes verdict with file and line findings, read-only. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
 
 ## Rules
 
