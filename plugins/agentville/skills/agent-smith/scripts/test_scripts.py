@@ -49,6 +49,7 @@ def read(path):
         return f.read()
 
 
+NW = "TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill"
 BASE_TEXT = read(BASE)
 
 FILLED = {
@@ -152,7 +153,7 @@ class TestMeasure(Base):
         self.assertIn("A3", fails(out))
 
     def test_07_missing_tools_fails(self):
-        _, out = self.measure(BASE_TEXT.replace("tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, Monitor, Skill\n", ""))
+        _, out = self.measure(BASE_TEXT.replace("tools: "+NW+"\n", ""))
         self.assertIn("A1", fails(out))
 
     def test_08_core_changed_fails(self):
