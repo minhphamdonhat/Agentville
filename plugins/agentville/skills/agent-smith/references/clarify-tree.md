@@ -34,7 +34,7 @@ The frontier is every open slot whose prerequisites are settled. Ask it in this 
 
 ## The tools question
 
-Ask it explicitly, even when the steps make the answer obvious: "Which tools may `<agent-name>` use?". Option 1 (Recommended) is the list the steps need, quoted in full, such as `Read, Grep, Glob, Skill`. Offer the base worker's list `Read, Write, Edit, Bash, Grep, Glob, TodoWrite, Monitor, Skill` as an alternative. Never offer `Agent`: only the top-level session spawns agents, and a step that needs another agent hands a spawn request back instead. Add `Agent` only when the user names it unprompted, and then set `allow-agent` to yes.
+Ask it explicitly, even when the steps make the answer obvious: "Which tools may `<agent-name>` use?". Option 1 (Recommended) is the list the steps need, quoted in full, such as `Read, Grep, Glob, Skill`. Offer the base worker's list `TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill` as an alternative. Never offer `Agent`: only the top-level session spawns agents, and a step that needs another agent hands a spawn request back instead. Add `Agent` only when the user names it unprompted, and then set `allow-agent` to yes.
 
 ## Scope by mode
 

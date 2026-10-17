@@ -5,7 +5,7 @@ description: >-
   API behaviour) with WebSearch and WebFetch and reports a concise synthesis with the URLs it relied on.
   Serves the scout role named by <role>scout</role> in the brief. Spawn it for a scout task that needs web
   sources, which the base worker disallows; it holds no file or shell tools.
-tools: WebSearch, WebFetch, Skill
+tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, WebSearch, WebFetch, Skill
 disallowedTools: EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
 ---
 
