@@ -230,7 +230,7 @@ class TestMeasure(Base):
     def test_20_constraints_core_needs_status_line(self):
         rc, out = self.measure(BASE_TEXT)
         self.assertEqual(kv(out)["status_line_rule"], ["yes"])
-        weak = BASE_TEXT.replace("every report opens with `status: TOKEN`", "every report opens with a token")
+        weak = BASE_TEXT.replace("`<status>` comes first and holds one of", "the status comes with one of")
         base = self.write(weak, "weak-base.md")
         rc, out = self.measure(weak, "--base", base)
         self.assertEqual(rc, 1)
@@ -314,13 +314,22 @@ class TestStage(Base):
         self.assertEqual(run(STAGE, "bogus")[0], 2)
 
 
-GOOD_REPORT = """status: completed
-outcome: done.
-changed: no edits
-checks: none, read-only
-next: none
-cause: tests/test_retry.py
-fix: none
+GOOD_REPORT = """<status>completed</status>
+<outcome>
+Root cause found in tests/test_retry.py.
+</outcome>
+<claims>
+- The failing test is tests/test_retry.py. verified: pytest tests/test_retry.py -q fails.
+</claims>
+<artefacts>
+none
+</artefacts>
+<open>
+none
+</open>
+<deviations>
+none
+</deviations>
 """
 
 
@@ -474,13 +483,13 @@ class TestEval(Base):
         self.fill_cases()
         os.makedirs(self.out)
         with open(os.path.join(self.out, "triage-1.compiled.out.md"), "w") as f:
-            f.write("Done!\nchanged: no edits\n")
+            f.write("Done!\n<outcome>fine</outcome>\n")
         with open(os.path.join(self.out, "triage-1.base.out.md"), "w") as f:
             f.write(GOOD_REPORT)
         rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
         self.assertEqual(rc, 1)
         line = [l for l in kv(out)["grade"] if l.startswith("triage-1 | compiled")][0]
-        for reason in ("first line is not status: TOKEN", "missing core field checks", "missing workflow field cause",
+        for reason in ("first line is not <status>TOKEN</status>", "missing tag <status>", "missing tag <claims>",
                        "missing expected text"):
             self.assertIn(reason, line)
         self.assertEqual(kv(out)["score"], ["compiled 0/1 vs base 1/1"])
@@ -499,25 +508,55 @@ class TestEval(Base):
         with open(self.cases, "w") as f:
             json.dump(data, f)
 
-    def test_status_line_required(self):
-        self.fill_cases()
-        os.makedirs(self.out)
-        for label, first in (("compiled", "completed"), ("base", "**status:** completed")):
+    def grade_one(self, text):
+        if not os.path.exists(self.cases):
+            self.fill_cases()
+        os.makedirs(self.out, exist_ok=True)
+        for label in ("compiled", "base"):
             with open(os.path.join(self.out, f"triage-1.{label}.out.md"), "w") as f:
-                f.write(first + GOOD_REPORT[GOOD_REPORT.index("\n"):])
+                f.write(GOOD_REPORT if label == "base" else text)
         rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
-        self.assertEqual(rc, 1)
         compiled, base = kv(out)["grade"]
-        self.assertIn("first line is not status: TOKEN", compiled)
         self.assertIn("| base | pass", base)
+        return rc, compiled
 
-    def test_when_fields_required(self):
-        self.fill_cases()
-        os.makedirs(self.out)
-        with open(os.path.join(self.out, "triage-1.compiled.out.md"), "w") as f:
-            f.write(GOOD_REPORT.replace("fix: none\n", ""))
-        rc, out, _ = run(EVAL, "grade", self.agent, self.cases, self.out)
-        self.assertIn("missing workflow field fix", kv(out)["grade"][0])
+    def test_tagged_report_passes(self):
+        rc, compiled = self.grade_one(GOOD_REPORT)
+        self.assertEqual(rc, 0)
+        self.assertIn("| compiled | pass", compiled)
+
+    def test_missing_tag_fails(self):
+        rc, compiled = self.grade_one(GOOD_REPORT.replace("<open>\nnone\n</open>\n", ""))
+        self.assertEqual(rc, 1)
+        self.assertIn("missing tag <open>", compiled)
+
+    def test_bad_status_token_fails(self):
+        rc, compiled = self.grade_one(GOOD_REPORT.replace("<status>completed", "<status>ok"))
+        self.assertEqual(rc, 1)
+        self.assertIn("<status> is not one of completed, partial, blocked, failed", compiled)
+
+    def test_old_status_format_fails(self):
+        old = "status: completed\noutcome: done.\nchanged: no edits\nchecks: none\nnext: none\n"
+        rc, compiled = self.grade_one(old)
+        self.assertEqual(rc, 1)
+        self.assertIn("first line is not <status>TOKEN</status>", compiled)
+        self.assertIn("missing tag <status>", compiled)
+
+    def test_status_must_come_first_and_order_holds(self):
+        swapped = GOOD_REPORT.replace("<status>completed</status>\n", "") + "<status>completed</status>\n"
+        rc, compiled = self.grade_one(swapped)
+        self.assertEqual(rc, 1)
+        self.assertIn("first line is not <status>TOKEN</status>", compiled)
+        self.assertIn("tags out of order", compiled)
+
+    def test_nested_tags_and_attributes_fail(self):
+        nested = GOOD_REPORT.replace("<artefacts>\nnone\n</artefacts>", "<artefacts><open>x</open></artefacts>")
+        rc, compiled = self.grade_one(nested)
+        self.assertEqual(rc, 1)
+        self.assertIn("<open> nested in <artefacts>", compiled)
+        rc, compiled = self.grade_one(GOOD_REPORT.replace("<outcome>", '<outcome kind="x">'))
+        self.assertEqual(rc, 1)
+        self.assertIn("attributes on <outcome>", compiled)
 
     def test_check_rejects_bad_files(self):
         for kw in ({"files": {"../x": "a"}}, {"files": {".claude/agents/x.md": "a"}}, {"files": {"/abs": "a"}},

@@ -21,6 +21,7 @@ You are an agent compiler. You take a request for a subagent, settle its contrac
 * Write every path with a placeholder (`{{ SKILL_ROOT }}`, `{{ USER_ROOT }}`, `{{ PROJECT_ROOT }}`), never a host path, because a host path breaks on every other machine.
 * Name no file outside this skill's own folder, and state every hand-back as an output field, because the skill must work when installed and run alone.
 * Never start a run that spends model usage, such as a headless eval, without the user's yes, because nobody approved that cost.
+* Scale the examples in a compiled agent to the item: none on a one-line step or constraint, one Do and one Don't where the rule needs explanation, and up to three of each for the task breakdown, the execution (what may run, which tools are allowed and forbidden) and the report back to the parent, because an example on every line buries the hard rules (rule A17).
 
 # Input
 
@@ -116,17 +117,27 @@ Read `<STAGING>/<agent-name>.md` with `Read` and fill every `[[...]]` fill-in fr
 * `# Workflows`: one `## <Name>` per workflow, each with a `Role:` line and `### Input`, `### Process` and `### Output`. Input lines read `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`. Steps are numbered `1.` to `n.`; each names its tool or loads a `Skill(namespace:name)`, or stops and hands back a spawn request. Output lines read `* **field:** always - what` or `* **field:** when <condition> - what`. End each process with a Report step.
 * `# Exception handler`: one bullet per condition, each naming the relay token it reports.
 
+Then scale the examples to each Process step and each extending rule in Constraints:
+* A simple one-line step or constraint gets no example.
+* A step or constraint whose rule needs explanation gets one Do and one Don't.
+* The hardest items get up to three Do and three Don't each: the task breakdown (how the brief is split into steps), the execution (what may run, which tools are allowed and forbidden) and the report back to the parent.
+* Write each example with real values, and end each Don't with its fix.
+* Write the examples as indented sub-bullets under the step or rule, `   * Do: ...` and `   * Don't: ...`, never as a flush-left `Do:` line inside `### Process`, because measure.py stops counting steps at a flush-left `Do:`.
+* Never edit a core block to add examples. Any example that ends up in a block shared by every fork must suit every agent that shares it, so put yours in the extending rules and the workflows.
+
 Do:
 * Write a step as `2. **Find the failing test.** Search the log with Grep for FAILED and Read the test file.`
 * Write a hand-back step as `3. **Get a review.** Stop and report blocked with spawn-request: agent=agentville:worker role=reviewer brief=review the fix in src/retry.py.`
+* Leave the one-line step `1. **Read the log.** Read log-path with Read.` bare, and under `4. **Run the tests.** Run the named test file with Bash.` add two sub-bullets: "Do: run pytest tests/test_retry.py -x" and "Don't: run pytest over the whole repo; name the one test file".
 
 Don't:
 * Add `Agent` to `tools` so a step can spawn a reviewer; hand back a spawn request, as the second Do item shows.
 * Write a status such as `done` or `ok` in a workflow or the Exception handler; use `completed`, `partial`, `blocked` or `failed`.
+* Put examples under a one-line step such as the log read, or leave the Report step with none; keep the read bare and give the report up to three Do and three Don't, as the third Do item and the scaling rule above show.
 
 ### 7. Validate
 
-Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/<agent-name>.md` with Bash, adding `--allow-agent` only when `allow-agent` is yes. It prints the frontmatter keys, tools, sections, one `core:` line per core block, one `workflow:` line per workflow and a `failures:` line. Then read `{{ SKILL_ROOT }}/references/validate-rules.md` with `Read` and apply the judged rules (A12 to A15).
+Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/<agent-name>.md` with Bash, adding `--allow-agent` only when `allow-agent` is yes. It prints the frontmatter keys, tools, sections, one `core:` line per core block, one `workflow:` line per workflow and a `failures:` line. Then read `{{ SKILL_ROOT }}/references/validate-rules.md` with `Read` and apply the judged rules (A12 to A15 and A17, the scaled examples).
 
 On a failure, fix it with `Edit` and validate again. A warning does not block. After three failed rounds, clean up and return `status: failed` with the failures in `reason:`.
 

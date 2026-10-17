@@ -209,6 +209,12 @@ def do_dont(doc, lo, hi):
     return do, dont, ok
 
 
+def bare_step(doc, lo, hi):
+    """A step whose body is one line with no Do:/Don't: heading carries no examples and passes rule 5."""
+    body = [l for i, l, f, k in doc.rows if lo < i < hi and l.strip()]
+    return len(body) <= 1 and not any(l.strip() in ("Do:", "Don't:") for l in body)
+
+
 def legacy_forms(doc):
     found = []
     for i, line, kind in doc.plain(doc.start, len(doc.lines)):
@@ -283,7 +289,7 @@ def check_steps(doc, lo, hi, fails, warns, out, emit):
             fails.add(8)
             continue
         do, dont, ok = do_dont(doc, i, end)
-        if not ok:
+        if not ok and not bare_step(doc, i, end):
             fails.add(5)
         body = [l for _, l, _ in doc.plain(i, end)]
         text = "\n".join(body)
