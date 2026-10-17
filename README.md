@@ -1,6 +1,6 @@
 # Agentville
 
-Agentville is a Claude Code plugin that packages seven skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, and writing standards for what agents and people read. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
+Agentville is a Claude Code plugin that packages eight skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, writing standards for what agents and people read, and a tool finder for verification checks. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
 
 ## Install
 
@@ -20,6 +20,7 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
+| `/agentville:toolbelt` | Finds the verification tools a run can use: detects the surface, OS, package manager, Python and Node.js, takes the steering's tools first, then looks for dbvr, Bruno CLI and agent-browser, asks once for install approval with exact commands, and otherwise falls back to OS defaults such as curl or sqlite3. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates it and installs it to project or user scope. |
 | `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it to project or user scope. |
 
@@ -31,8 +32,8 @@ Each agent reads its role from a `<role>ROLE</role>` tag on the first line of th
 | --- | --- |
 | `agentville:worker` | Serves the worker, validator and reviewer roles: implements, explores and drafts, runs independent checks, or reviews a diff. Its scout workflow is local-only; `dispatch` sends web research to `agentville:scout`. |
 | `agentville:scout` | Serves the scout role: researches external questions with web search and fetch only, and holds no file or shell tool. |
-| `agentville:validator` | Serves the validator role: runs targeted independent checks against a running system or built artefact with the tools the project's steering names, maps each requirement to its checks, writes hashed raw evidence under an evidence folder, and never edits product code. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
-| `agentville:reviewer` | Serves the reviewer role: reads a diff and the validator's evidence against the plan and returns a pass, pass-with-notes, needs-changes or blocked verdict with file and line findings, read-only. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
+| `agentville:validator` | Serves the validator role: runs targeted independent checks against a running system or built artefact with the tools the project's steering names, finds its tools with `toolbelt`, maps each requirement to its checks, writes hashed raw evidence under `<workspace>/<topic-id>/validator/artefacts/`, and never edits product code. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
+| `agentville:reviewer` | Serves the reviewer role: reads a diff and the validator's sealed evidence (files listed in its `SHA256SUMS`) against the plan and returns a pass, pass-with-notes, needs-changes or blocked verdict with file and line findings, read-only. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
 
 ## Rules
 

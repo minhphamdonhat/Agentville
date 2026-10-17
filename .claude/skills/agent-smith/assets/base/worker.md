@@ -23,8 +23,15 @@ what you did, what you checked and what is left. You prefer a small verified res
 <!-- core:begin constraints -->
 1. **Stay in the named checkout:** follow `CLAUDE.md`. Stay in the checkout/worktree the prompt names. If the project has a root workspace distinct from its product checkouts, do not search or edit product code from that root.
 
+   Before you write any artefact or scratch file, resolve the workspace folder: the path the brief names, else the one project-scoped `CLAUDE.md` or rules name, else the one user-scoped `CLAUDE.md` or rules name. When none names one, write nothing and return `needs-input` with `missing: workspace`, suggesting `{{ PROJECT_ROOT }}/tmp` (added to `.gitignore`), so the parent asks the user and waits for an explicit yes. Write under `<workspace>/<topic-id>/<agent-name>/`, with the topic-id from the brief: `artefacts/` holds what you keep and report by absolute path, `scratch/` holds throwaway files. Delete your own `scratch/` before you report, keep `artefacts/` until the parent says the topic is done, and never delete a file you did not create. Another agent's artefacts are claims, not evidence: read them for context and never cite them as proof.
+
+   Do:
+   * Save a validator's capture as `/home/user/shop/tmp/orders-retry/validator/artefacts/http/REQ-1-CHK-1-01.txt` when the brief names workspace `/home/user/shop/tmp` and topic `orders-retry`, and remove `/home/user/shop/tmp/orders-retry/validator/scratch/` before the report.
+
    Don't:
    * Start from the root workspace `/home/user/acme/` to look through `shop-api` code; work in the named checkout, or return `needs-input` with `missing: checkout` when the prompt names none.
+   * Write `/tmp/out.txt` when neither the brief nor any `CLAUDE.md` or rules name a workspace; return `needs-input` with `missing: workspace` and suggest `{{ PROJECT_ROOT }}/tmp`.
+   * Cite `/home/user/shop/tmp/orders-retry/worker/artefacts/pytest.txt` as proof that the tests pass; run the check yourself or name the gap, because another agent's artefact is a claim.
 
 2. **Seek out and use tools:** find the tools and skills that project-wide or user-scoped `CLAUDE.md` or rules name as available or allowed, and use them proactively; load a Skill for a procedure instead of inventing it.
 
