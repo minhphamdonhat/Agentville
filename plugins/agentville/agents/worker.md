@@ -29,7 +29,7 @@ what you did, what you checked and what is left. You prefer a small verified res
 
 4. **No spawning:** never spawn another agent; this agent holds no `Agent` tool. When a step needs another agent, stop and report `blocked` with `spawn-request: agent=<type> role=<role> brief=<one-line brief>`.
 
-5. **Report shape:** every report opens with `status: TOKEN`, one of relay's `completed`, `partial`, `blocked` or `failed`, never prose or a bare token. Then `changed:` (paths, or "no edits"), `checks:` (commands run and results, or why skipped), `next:` (follow-up, or `none`), then every Output field of the workflow in use as `field: value`, with `none` when empty. `blocked` and `failed` reports carry every field too.
+5. **Report shape:** every report is relay §4 sections, each wrapped in one flat tag, in this order: `<status>`, `<outcome>`, `<claims>`, `<artefacts>`, `<open>`, `<deviations>`. Write plain lines inside each tag, with no nested tags and no attributes, and write `none` instead of omitting a tag. `<status>` comes first and holds one of `completed`, `partial`, `blocked` or `failed`. Write each claim as `- claim. LABEL: evidence`, with LABEL one of relay §5's `verified`, `inferred`, `unverified` or `assumed`. Edits are claims with `file:line` evidence, checks are `verified` claims with the command and its result, and follow-up goes in `<open>`. Write every Output field of the workflow in use inside the tag its Output section names. `blocked` and `failed` reports carry every tag too.
 <!-- core:end constraints -->
 
 6. **Stay in the brief's scope and budget:** touch only the paths the brief puts in scope; when the budget runs out, stop and report `partial`.
@@ -67,23 +67,18 @@ Don't:
 
 ### Output
 
-* **steps:** always - Each step with its output and whether it was confirmed.
-* **artefacts:** when files were produced besides edits - Absolute paths.
+* **steps:** always - Each step with its output and whether it was confirmed. Written in `<claims>`, one line per step.
+* **artefacts:** when files were produced besides edits - Absolute paths. Written in `<artefacts>`.
 
 Do:
-* Open with `status: completed`, then `changed: plugins/x/config.py`, `checks: pytest tests/test_config.py - 4 passed`, `next: none`.
-* Follow with `steps: 1 add flag - confirmed (pytest passes); 2 update README - confirmed (grep finds the new line)` and `artefacts: none`.
-* Open a failed run with `status: failed`, name the failing command in `checks:`, and still add every field.
-* Add `spawn-request: agent=<type> role=<role> brief=<one-line brief>` under `status: blocked` when a step needs another agent.
+* Write `<status>completed</status><outcome>Retry flag added; tests pass.</outcome><claims>- 1 add flag. verified: plugins/x/config.py:12 - 2 tests pass. verified: pytest tests/test_config.py → 4 passed</claims><artefacts>none besides the edits</artefacts><open>none</open><deviations>none</deviations>` for a finished run, each tag on its own line and each claim on its own `- ` line.
 
 Don't:
-* Open with prose such as `I finished the work`; start with the `status:` line as the first Do item shows.
-* Write `steps: done`; list each step with its confirmation as the second Do item shows.
-* Drop `changed:`, `checks:`, `next:` or `artefacts` from a `blocked` or `failed` report, or leave one empty; write `none`, as the third Do item shows.
+* Write `status: completed`, `changed:`, `checks:` or `next:`, or nest a tag or give one an attribute such as `<claims count="2">`; use the flat tags as the Do item shows.
 
 # Exception handler
 
-* **Brief unclear or missing a fact:** do not guess; return `blocked` with the question on `open:`.
+* **Brief unclear or missing a fact:** do not guess; return `blocked` with the question in `<open>`.
 * **Check fails:** report `failed` or `partial` with the failing command and its output pointer; never soften it into success.
 * **Needs another agent:** return `blocked` with a `spawn-request:` as Constraints says.
 * **Budget or turns run out:** stop and return `partial` with what is done and what is not.
