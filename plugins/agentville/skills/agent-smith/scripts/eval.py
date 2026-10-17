@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Eval helper for agent-smith: run a compiled agent and the base worker on the same cases and grade
-each report against the workflow's output contract.
+each report against the six flat report tags.
 
 eval.py init <agent.md> <evals.json>                  write one case skeleton per workflow
 eval.py check <agent.md> <evals.json>                 check every workflow has a filled case
@@ -35,8 +35,8 @@ _spec.loader.exec_module(measure)
 
 LABELS = ("compiled", "base")
 TOKENS = ("completed", "partial", "blocked", "failed")
-CORE_FIELDS = ("changed", "checks", "next")
-STATUS_RE = re.compile(r"^[\s>*`#-]*status[*`]*\s*[:=]\s*[*`]*\s*(completed|partial|blocked|failed)\b", re.I)
+REPORT_TAGS = ("status", "outcome", "claims", "artefacts", "open", "deviations")
+TAG_RE = re.compile(r"<(/?)(" + "|".join(REPORT_TAGS) + r")\b([^<>]*)>", re.I)
 NO_BASE = "none"
 
 
@@ -345,10 +345,10 @@ def run(args):
                     pass
                 if p.returncode != 0:
                     failed += 1
-                    text = f"status: failed\nrun error: exit {p.returncode}\n{p.stderr[-2000:]}\n{text}"
+                    text = run_error(f"exit {p.returncode}\n{p.stderr[-2000:]}\n{text}")
             except subprocess.TimeoutExpired:
                 failed += 1
-                text = "status: failed\nrun error: timeout\n"
+                text = run_error("timeout")
             with open(of, "w", encoding="utf-8") as f:
                 f.write(text)
             print(f"output: {c['id']} | {label} | {of}")
@@ -357,26 +357,56 @@ def run(args):
     return 0
 
 
-def has_field(text, field):
-    pat = re.escape(field).replace(r"\-", r"[- _]")
-    return re.search(r"(?im)^[\s>*`#-]*(?:\d+\.\s*)?[*`]*" + pat + r"[*`]*\s*(?:\([^)]*\)\s*)?[:=]", text) is not None
+def run_error(detail):
+    return ("<status>failed</status>\n<outcome>run error</outcome>\n<claims>\nnone\n</claims>\n"
+            f"<artefacts>\nnone\n</artefacts>\n<open>\n{detail.strip()}\n</open>\n<deviations>\nnone\n</deviations>\n")
+
+
+def grade_report(text):
+    """Return (status token or None, reasons) for the six flat tags in order, plain lines inside."""
+    reasons = []
+    first = next((l for l in text.splitlines() if l.strip()), "")
+    if not re.match(r"\s*<status>", first, re.I):
+        reasons.append("first line is not <status>TOKEN</status>")
+    opened, closed, bodies, order, cur, last = {}, {}, {}, [], None, 0
+    for m in TAG_RE.finditer(text):
+        end, name, attrs = m.group(1) == "/", m.group(2).lower(), m.group(3).strip()
+        if attrs:
+            reasons.append(f"attributes on <{name}>")
+        if not end:
+            if cur:
+                reasons.append(f"<{name}> nested in <{cur}>")
+            opened[name] = opened.get(name, 0) + 1
+            order.append(name)
+            cur, last = name, m.end()
+        else:
+            if cur != name:
+                reasons.append(f"stray </{name}>")
+            else:
+                bodies[name] = text[last:m.start()]
+            closed[name] = closed.get(name, 0) + 1
+            cur = None
+    for t in REPORT_TAGS:
+        if not opened.get(t):
+            reasons.append(f"missing tag <{t}>")
+        elif opened[t] > 1:
+            reasons.append(f"repeated tag <{t}>")
+        elif closed.get(t, 0) != 1:
+            reasons.append(f"unclosed tag <{t}>")
+    seen = [t for t in dict.fromkeys(order) if t in REPORT_TAGS]
+    if seen != [t for t in REPORT_TAGS if t in seen]:
+        reasons.append("tags out of order")
+    token = bodies.get("status", "").strip().lower()
+    if token not in TOKENS:
+        reasons.append(f"<status> is not one of {', '.join(TOKENS)}")
+        token = None
+    return token, reasons
 
 
 def grade_text(text, case, wf):
-    reasons = []
-    first = next((l for l in text.splitlines() if l.strip()), "")
-    m = STATUS_RE.match(first)
-    token = m.group(1).lower() if m else None
-    if not token:
-        reasons.append("first line is not status: TOKEN")
+    token, reasons = grade_report(text)
     if case.get("status") and token != case["status"]:
         reasons.append(f"status {token} != expected {case['status']}")
-    for f in CORE_FIELDS:
-        if not has_field(text, f):
-            reasons.append(f"missing core field {f}")
-    for f, _ in (wf["outputs"] if wf else []):
-        if not has_field(text, f):
-            reasons.append(f"missing workflow field {f}")
     low = text.lower()
     for s in case.get("expect", []):
         if s.lower() not in low:
