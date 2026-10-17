@@ -12,13 +12,14 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 | Path | Holds |
 | --- | --- |
-| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base) and `scout.md` (web research only). |
+| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md` (web research only), `validator.md` (independent checks with sealed evidence) and `reviewer.md` (read-only diff review). |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
 | `plugins/agentville/rules/root-agent.md` | Standing policy for the root agent. |
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
 | `.claude-plugin/marketplace.json` | Marketplace entry that points at the plugin folder. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `README.md` | Public description: install steps, skill and agent tables. |
+| `tmp/` | Agents' workspace, git-ignored: `tmp/<topic-id>/<agent>/{artefacts,scratch}`. |
 
 The shipped skills are:
 
@@ -31,7 +32,7 @@ The shipped skills are:
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
-The shipped agents are `worker` (worker, validator and reviewer roles) and `scout` (scout role, web search and fetch only).
+The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence and finds its tools with `toolbelt`) and `reviewer` (reviewer role, read-only).
 
 ## Agent format
 
@@ -77,7 +78,7 @@ The shipped pair lets users choose a scope and nothing else. Users never pick a 
 
 ## Working in this repository
 
-Plans, todos and evidence live in the chat and in the session task list. Write nothing to the repository for them unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
+Plans and todos live in the chat and in the session task list. Write nothing to the repository for them unless the user asks. Agents' artefacts are the exception: the workspace is `{{ PROJECT_ROOT }}/tmp/`, laid out as `tmp/<topic-id>/<agent>/{artefacts,scratch}` and git-ignored, and this overrides the chat-only rule for evidence an agent saves. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
 
 Commit subjects are imperative, with an optional `area:` prefix, as in `agent-smith: drop the communication core block`. Commit, push and merge only when the user asks.
 
