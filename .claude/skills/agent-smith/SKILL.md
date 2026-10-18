@@ -140,7 +140,7 @@ Don't:
 
 ### 7. Validate
 
-Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/<agent-name>.md` with Bash, adding `--allow-agent` only when `allow-agent` is yes. It prints the frontmatter keys, tools, sections, one `core:` line per core block, one `workflow:` line per workflow and a `failures:` line. Then read `{{ SKILL_ROOT }}/references/validate-rules.md` with `Read` and apply the judged rules (A12 to A15 and A17, the scaled examples).
+Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/<agent-name>.md` with Bash, adding `--allow-agent` only when `allow-agent` is yes. It prints the frontmatter keys, tools, sections, one `core:` line per core block, one `workflow:` line per workflow and a `failures:` line. Then read `{{ SKILL_ROOT }}/references/validate-rules.md` with `Read` and apply the judged rules (A12 to A15 and A17, the scaled examples). Rule A18, injectable slots, is script-checked: measure.py prints `slot_direct_calls:` and `slot_without_context_injection:` and fails A18. Fix each by resolving the slot with `Skill(agentville:context-injection)` and deleting any direct `Skill(agentville:<slot>)` call.
 
 On a failure, fix it with `Edit` and validate again. A warning does not block. After three failed rounds, clean up and return `status: failed` with the failures in `reason:`.
 

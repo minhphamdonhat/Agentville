@@ -510,6 +510,28 @@ class MeasureTests(unittest.TestCase):
         out = run(MEASURE, REAL)[1]
         self.assertNotIn(20, fails(out), out)
 
+    def test_22_slot_direct_call_fails(self):
+        out = self.m(GOOD.replace("Search with", "Resolve with Skill(agentville:workspace), then search with"))[1]
+        self.assertIn(22, fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:workspace)" in l for l in out.splitlines()))
+
+    def test_22_plugin_default_mention_allowed(self):
+        out = self.m(GOOD.replace("Search with", "Note that the plugin default is Skill(agentville:workspace), then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_slot_without_context_injection_fails(self):
+        out = self.m(GOOD.replace("Search with", "Use the `toolbelt` slot, then search with"))[1]
+        self.assertIn(22, fails(out))
+        self.assertIn("slot_without_context_injection: toolbelt", out)
+
+    def test_22_slot_via_context_injection_passes(self):
+        out = self.m(GOOD.replace("Search with", "Use the `toolbelt` slot through Skill(agentville:context-injection), then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_slot_default_skill_exempt(self):
+        text = GOOD.replace('name: "demo"', 'name: "workspace"').replace("Search with", "Resolve with Skill(agentville:workspace), then search with")
+        self.assertNotIn(22, fails(self.m(text)[1]))
+
 
 class StageTests(unittest.TestCase):
     def setUp(self):

@@ -50,6 +50,22 @@ INDEP_NAMED_RE = re.compile(
 # references/validate-rules.md under Rule 20. Applies only when the frontmatter name is skill-smith.
 INDEP_ALLOWLIST = {"references/validate-rules.md", "scripts/measure.py", "scripts/test_scripts.py"}
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
+# Rule 22, injectable slots.
+SLOTS = ("workspace", "toolbelt", "draft", "plan", "report")  # injectable slots; add a future slot here only
+CI_CALL = "Skill(agentville:context-injection)"
+SLOT_CALL_RE = re.compile(r"Skill\(agentville:(" + "|".join(SLOTS) + r")\)")
+SLOT_USE_RE = re.compile(r"`(" + "|".join(SLOTS) + r")` (?:slot|skill)\b")
+PLUGIN_DEFAULT = "the plugin default"
+
+
+def slot_hits(lines, exempt=False):
+    """Slot rule: a file that uses an injectable slot names CI_CALL and never calls Skill(agentville:<slot>) itself."""
+    if exempt:
+        return [], []
+    direct = [f"{i + 1}:{m.group(0)}" for i, l in enumerate(lines) for m in SLOT_CALL_RE.finditer(l)
+              if PLUGIN_DEFAULT not in l]
+    used = sorted({m.group(1) for l in lines for m in SLOT_USE_RE.finditer(l)})
+    return direct, ([] if CI_CALL in "\n".join(lines) else used)
 
 
 def independence_hits(folder, name, doc, lines, desc, kind):
@@ -549,6 +565,11 @@ def main(argv):
         fails.add(20)
     for h in indep:
         out.append("independence_hit: " + h)
+    direct, no_ci = ([], []) if template else slot_hits(lines, name in SLOTS or name == "context-injection")
+    out.append("slot_direct_calls: " + (", ".join(direct) or "none"))
+    out.append("slot_without_context_injection: " + (", ".join(no_ci) or "none"))
+    if direct or no_ci:
+        fails.add(22)
     out.append("unresolved_links: " + (", ".join(dict.fromkeys(unresolved)) or "none"))
     out.append("skill_mentions: " + (", ".join(dict.fromkeys(mentions)) or "none"))
     out.append("legacy: " + (", ".join(legacy) or "none"))

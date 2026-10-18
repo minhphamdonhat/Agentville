@@ -35,6 +35,22 @@ SKILL_REF_RE = re.compile(r"Skill\(([^)]*)\)")
 STATUS_LINE = "`<status>` comes first and holds one of"
 EVERY_FIELD = "each wrapped in one flat tag"
 
+SLOTS = ("workspace", "toolbelt", "draft", "plan", "report")  # injectable slots; add a future slot here only
+CI_CALL = "Skill(agentville:context-injection)"
+SLOT_CALL_RE = re.compile(r"Skill\(agentville:(" + "|".join(SLOTS) + r")\)")
+SLOT_USE_RE = re.compile(r"`(" + "|".join(SLOTS) + r")` (?:slot|skill)\b")
+PLUGIN_DEFAULT = "the plugin default"
+
+
+def slot_hits(lines, exempt=False):
+    """Slot rule: a file that uses an injectable slot names CI_CALL and never calls Skill(agentville:<slot>) itself."""
+    if exempt:
+        return [], []
+    direct = [f"{i + 1}:{m.group(0)}" for i, l in enumerate(lines) for m in SLOT_CALL_RE.finditer(l)
+              if PLUGIN_DEFAULT not in l]
+    used = sorted({m.group(1) for l in lines for m in SLOT_USE_RE.finditer(l)})
+    return direct, ([] if CI_CALL in "\n".join(lines) else used)
+
 
 class ReadError(Exception):
     pass
@@ -318,6 +334,11 @@ def measure(path, base_path, allow_agent):
     out.append("bare_skill_refs: " + (", ".join(dict.fromkeys(bare)) or "none"))
     if bare:
         warns.add("A9")
+    direct, no_ci = slot_hits(lines)
+    out.append("slot_direct_calls: " + (", ".join(direct) or "none"))
+    out.append("slot_without_context_injection: " + (", ".join(no_ci) or "none"))
+    if direct or no_ci:
+        fails.add("A18")
     if len(lines) > MAX_LINES:
         fails.add("A11")
 

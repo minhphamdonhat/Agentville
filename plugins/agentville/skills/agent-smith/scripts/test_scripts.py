@@ -244,6 +244,25 @@ class TestMeasure(Base):
         with open(PLUGIN_WORKER, "rb") as a, open(BASE, "rb") as b:
             self.assertEqual(a.read(), b.read(), "assets/base/worker.md differs from the plugin's agents/worker.md")
 
+    def test_slot_direct_call_fails_a18(self):
+        _, out = self.measure(BASE_TEXT + "\n* Resolve with `Skill(agentville:toolbelt)` now.\n")
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_slot_plugin_default_mention_allowed(self):
+        _, out = self.measure(BASE_TEXT + "\n* The slot default is `Skill(agentville:toolbelt)`, the plugin default.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_without_context_injection_fails_a18(self):
+        text = BASE_TEXT.replace("Skill(agentville:context-injection)", "Skill(agentville:relay)")
+        _, out = self.measure(text + "\n* Use the `toolbelt` slot.\n")
+        self.assertIn("A18", fails(out))
+        self.assertIn("slot_without_context_injection: toolbelt", out)
+
+    def test_slot_via_context_injection_passes(self):
+        _, out = self.measure(BASE_TEXT + "\n* Use the `toolbelt` slot, resolved with `Skill(agentville:context-injection)`.\n")
+        self.assertNotIn("A18", fails(out))
+
 
 class TestStage(Base):
     def create(self, *args):
