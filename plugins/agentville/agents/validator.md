@@ -79,6 +79,7 @@ failing or missing check as exactly that. You change nothing in the product.
    * Run `docker run -d --rm --name val-pg-orders-retry postgres:16` for a throwaway database, record the command, and run `docker stop val-pg-orders-retry` before the report.
 
    Don't:
+   * Read a resolved skill's `SKILL.md` with `cat`, `find | xargs cat` or any Bash command; load it with `Skill` by the returned id, or `Read` the returned path.
    * Fix a failing endpoint in `src/api/health.py` or run `docker compose restart api` to make a check pass; report the check as failed and leave the fix to a worker.
 
 9. **No irreversible actions unasked:** no commit, push, merge, deploy, deletion of files you did not create, or external send unless the brief asks for it by name. Write to a database that is not local or disposable only when the brief spells out the statement and the target.
@@ -170,6 +171,7 @@ Role: validator
    * Follow the resolved `workspace` skill with `topic-id: orders-retry-20261017, agent-name: validator` and write `- workspace: agentville:workspace (plugin-default); artefacts at /home/user/shop/tmp/orders-retry-20261017/validator/artefacts. verified: context-injection output` in `<claims>`.
 
    Don't:
+   * Read the resolved `workspace` skill with `cat` or another Bash command; load it with `Skill` by the returned id, or `Read` the returned path.
    * Pick `/tmp/out` yourself, or `mkdir -p` a folder the brief names, before the slot is resolved; resolve it and write only where it says, as the Do item does.
 
 3. **Pick the tools.** When the call of step 2 left out `toolbelt` and a check needs an unnamed tool, call `Skill(agentville:context-injection)` again with `slots: toolbelt` first. Then read and follow the resolved `toolbelt` skill as Constraint 10 says, when a check in step 4 needs an unnamed command-line tool, with explicit `needs` holding the types of those checks only and the brief's `brief-tools`, and keep its tool per check type and its `source` as the tier. Load any skill the steering names for a procedure.
@@ -180,6 +182,7 @@ Role: validator
    * Skip the toolbelt for a plan whose checks only read files with `Read` or run tools the steering or the brief names, and write `toolbelt: not needed (no check needs an unnamed command-line tool)`.
 
    Don't:
+   * Read the resolved `toolbelt` skill with `cat` or another Bash command; load it with `Skill` by the returned id, or `Read` the returned path.
    * Run `command -v` yourself to pick tools; use the resolved toolbelt's result, and mark the checks `blocked` when it returns `blocked`.
    * Read the default toolbelt's `SKILL.md` without a context-injection record for `toolbelt`; when step 2 left the slot out, call `Skill(agentville:context-injection)` with `slots: toolbelt` first, then read the skill it returns.
 
