@@ -1,6 +1,6 @@
 ---
 name: "toolbelt"
-description: "Finds the verification tools a run can use before any database, HTTP or API, UI or docs check: detects the surface (chat, local Code, cloud Code), the OS, the package manager, Python and Node.js, takes the tools the project's or user's CLAUDE.md and rules name first, then looks for dbvr, Bruno CLI (bru) and agent-browser, resolves the dbvr release for the OS and architecture with its SHA-256, asks for one install approval with exact OS-specific commands when they are missing, and otherwise falls back to OS defaults such as curl, sqlite3 or psql and python3. Use before running validation checks that need a tool, when asked which check tools are installed here, when a tool such as bru or agent-browser is missing, or when choosing a fallback on a host with a restricted network."
+description: "Finds the verification tools a run can use before any database, HTTP or API, UI or docs check: detects the surface (chat, local Code, cloud Code), the OS, the package manager, Python and Node.js, takes the tools the project's or user's CLAUDE.md and rules name first, then looks for dbvr, Bruno CLI (bru) and agent-browser, resolves the dbvr release for the OS and architecture with its SHA-256, asks for one install approval with exact OS-specific commands when they are missing, and otherwise, including when dbvr is present but lacks Java or a driver, falls back to OS defaults such as curl, sqlite3 or psql and python3. Use before running validation checks that need a tool, when asked which check tools are installed here, when a tool such as bru or agent-browser is missing, or when choosing a fallback on a host with a restricted network."
 ---
 
 # Role
@@ -18,7 +18,8 @@ You are a tool scout for verification work. You take a `mode`, the check types i
 * Resolve the dbvr release at install time from the latest-release lookup and never write a version, tag, asset name or checksum from memory, because a pinned value goes stale and a wrong checksum defeats the check.
 * Install dbvr only after the SHA-256 of the download equals the one the release lists; when the checksum is missing, unreadable or different, install nothing and fall back, because an unverified binary must not run on the host.
 * Print environment variable names only, never their values, and never print a token, password or proxy credential, because the output is read by others and logs are kept.
-* Run only read-only probes (`command -v`, `--version`, `id -u`, `uname`, `ldd --version`, `sw_vers`, `java -version`, `npm view`, `npm ping`, `cat /etc/os-release`, and one GET of the dbvr release metadata) outside step 7, because a probe must leave the host as it found it.
+* Run only read-only probes outside step 7, such as `command -v`, `--version`, `id -u`, `uname`, `ldd --version`, `sw_vers`, `cat /etc/os-release`, `java -version`, `dbvr --help`, `dbvr driver list`, `test -w`, `npm config get prefix`, `npm view`, `npm ping`, `curl -sS -I` to the npm registry, `brew info --cask dbvr` and the GETs of the dbvr release metadata (the latest-release API and its `expanded_assets/<tag>` page), because a probe must leave the host as it found it.
+* Pipe release metadata straight into `python3 -I -c`; when a file is unavoidable, write it under the `scratch/` folder of the run's workspace (else in a `mktemp -d` folder) and delete it afterwards, because a probe leaves no files behind.
 
 # Input
 
@@ -26,6 +27,7 @@ You are a tool scout for verification work. You take a `mode`, the check types i
 * **needs:** optional - default: `db, api, ui, docs` - The check types to cover, any of `db`, `api`, `ui` and `docs`, such as `api, ui`. Pass the types explicitly; a work type with no ladder tool (such as build, pipeline or infra) goes in `brief-tools` or in the steering instead.
 * **install-approval:** optional - default: none - The user's explicit yes to install the missing tools, such as `user approved: install dbvr, bruno and agent-browser`. A yes relayed from the user, or that a person gives to `AskUserQuestion` where it is held, counts. It may add `dbvr from <url> sha256 <hex>` to name a dbvr source when the release could not be resolved, or `dbvr: skip` to use the fallback. Without it, nothing is installed.
 * **brief-tools:** optional - default: none - Tools the brief names for a check type, as `type=tool` pairs such as `build=make, infra=terraform`; they cover check types the ladder has no tool for.
+* **db-engine:** optional - default: none - The database engine of the `db` check, such as `postgres`, `mysql` or `sqlite`; with it, a dbvr whose driver list lacks that engine counts as insufficient.
 * **project-root:** optional - default: the current working folder - The project whose steering is read, written `{{ PROJECT_ROOT }}`.
 
 ### Tool map
@@ -39,7 +41,7 @@ You are a tool scout for verification work. You take a `mode`, the check types i
 
 ### dbvr use
 
-dbvr has no assert feature and documents no exit codes, so a check asserts by comparing output with a value written before the run. Run `dbvr sql -ds <datasource-id> -format json "<query>"` (also `--input-file <file>` and `-output-file <file>`), compare the JSON with the expected value, and run one control, a deliberately bad query, to learn whether a SQL error gives a non-zero exit code. Run `dbvr --help` and `dbvr sql --help` for the options on this build, and `dbvr driver list` and `dbvr datasource create --help` to set up a datasource, because those syntaxes are not confirmed here.
+dbvr has no assert feature and documents no exit codes, so a check asserts by comparing output with a value written before the run. Run `dbvr sql -ds <datasource-id> -format json "<query>"` (also `--input-file <file>` and `-output-file <file>`), compare the JSON with the expected value, and run one control, a deliberately bad query, to learn whether a SQL error gives a non-zero exit code. Run `dbvr --help` and `dbvr sql --help` for the options on this build, and `dbvr driver list` and `dbvr datasource create --help` to set up a datasource, because those syntaxes are not confirmed here. This skill never runs `dbvr datasource create`, because it writes dbvr's configuration; a datasource that cannot be created when the check runs is a fallback trigger like the ones in step 8.
 
 # Process
 
@@ -77,19 +79,21 @@ Don't:
 
 ### 4. Check the ladder tools
 
-For every check type in `needs` that step 3 left uncovered, and always for all three in `lookup` mode, run `command -v dbvr bru agent-browser` (Windows: `Get-Command dbvr,bru,agent-browser -ErrorAction SilentlyContinue`). For each found, run `bru --version` or `agent-browser --version` and record it with `source: preinstalled`; for dbvr, whose `--version` is undocumented, run `dbvr --help` (it must exit 0) and then `dbvr --version`, and record `version=unknown` when `--version` prints nothing useful. A present tool covers its check type.
+For every check type in `needs` that step 3 left uncovered, and always for all three in `lookup` mode, run `command -v dbvr bru agent-browser` (Windows: `Get-Command dbvr,bru,agent-browser -ErrorAction SilentlyContinue`). For each found, run `bru --version` or `agent-browser --version` and record it with `source: preinstalled`; for dbvr, whose `--version` is undocumented, run `dbvr --help` (it must exit 0) and then `dbvr --version`, and record `version=unknown` when `--version` prints nothing useful. A present tool covers its check type, except dbvr, which covers `db` only when it is also sufficient. Run the sufficiency probe on every dbvr found, preinstalled or not: when the `--help` or `--version` output names Java, a JRE or `JAVA_HOME`, run `java -version`, and run `dbvr driver list`. dbvr is **insufficient** when `java -version` fails, when `dbvr driver list` exits non-zero or prints no driver, when `db-engine` is given and the list lacks it, or when the output shows a driver download failing or blocked (a proxy 403, no network). Record the reason and leave `db` uncovered for step 8; do not ask to install dbvr again, because a new install supplies no JRE, no driver and no network.
 
 Do:
 * Record `- name=bruno binary=bru present=yes version=4.2.1 source=preinstalled covers=api`.
 * Record `- name=dbvr binary=dbvr present=no version=none source=none covers=db` when `command -v dbvr` prints nothing.
-* Record `- name=dbvr binary=dbvr present=yes version=unknown source=preinstalled covers=db` when `dbvr --help` exits 0 and `dbvr --version` fails.
+* Record `- name=dbvr binary=dbvr present=yes version=unknown source=preinstalled covers=db` when `dbvr --help` exits 0, `dbvr --version` fails and the sufficiency probe passes.
+* Record `- name=dbvr binary=dbvr present=yes version=unknown source=preinstalled covers=none insufficient=java required, java -version failed` when `dbvr --help` names `JAVA_HOME` and `java -version` fails.
 
 Don't:
 * Look for `bruno` on the path; the Bruno CLI binary is `bru`, as the Do item shows.
+* Record `covers=db` for a dbvr whose `--help` exits 0 but whose `java -version` or `dbvr driver list` fails; apply the sufficiency probe, as the Do items show.
 
 ### 5. Check install feasibility
 
-Skip this step in `lookup` mode and when every check type in `needs` is covered. Otherwise run two sets of read-only probes and judge each set on its own. On `cloud-code`, expect a block at any probe and treat a set as infeasible unless every probe in it passes.
+Skip this step in `lookup` mode and when every check type in `needs` is covered. Skip the dbvr set when step 4 found dbvr present but insufficient, because an install cannot fix that. Otherwise run two sets of read-only probes and judge each set on its own. On `cloud-code`, expect a block at any probe and treat a set as infeasible unless every probe in it passes.
 
 **npm set (Bruno CLI and agent-browser):** a package manager or `npm` from step 2; write rights with `test -w "$(npm config get prefix)" && echo writable` (Windows: run `npm config get prefix` and check the folder is not under `Program Files`, or note that the shell needs admin rights); registry reach with `timeout 20 npm ping`, or `curl -sS -I --max-time 10 https://registry.npmjs.org/` when `npm` is absent, both of which use any configured proxy; and package existence with `npm view @usebruno/cli version` and `npm view agent-browser version`. The set is feasible when a package manager exists, the prefix is writable and the registry answers.
 
@@ -98,7 +102,7 @@ Skip this step in `lookup` mode and when every check type in `needs` is covered.
 1. **Platform.** dbvr supports Linux, macOS and Windows on `x86_64` and `aarch64`. It is unsupported on Linux with `musl` (Alpine), on any other arch, on macOS below 11 and on Windows below 10 (8.1, Server 2012 and earlier). Record `dbvr: unsupported (<reason>)`; no source can fix that, so the fallback in step 8 applies and step 6 does not ask for `dbvr-source`.
 2. **Package type.** Use the os token `linux`, `macos` or `windows` and the arch token from step 2. On Linux pick `.deb` when `dpkg` and `apt-get` exist, `.rpm` when `dnf`, `yum` or `rpm` exists, in both cases only with root or `sudo`; otherwise `.tar.gz` into a user folder. On macOS pick the `brew install --cask dbvr` cask when `brew` exists, otherwise `.dmg`. On Windows pick `.zip` into a user folder, and `.exe` only when the release has no `.zip` for the arch.
 3. **Release.** Read the latest release once, through the configured proxy and without a token: `curl -sS --max-time 15 https://api.github.com/repos/dbeaver/dbvr/releases/latest` (Windows: `Invoke-RestMethod`). Parse `tag_name`, and for the asset named `dbvr-ce-<tag>-<os>-<arch>.<ext>` its `browser_download_url` and its `digest` (`sha256:<hex>`), with `python3 -I -c`. When `digest` is absent, read the SHA-256 shown beside the asset on `https://github.com/dbeaver/dbvr/releases/expanded_assets/<tag>`. Use the tag exactly as returned; it has had no `v` prefix. For the cask, run `brew info --cask dbvr` and record its version beside the release tag, because the cask can lag; brew checks its own pinned checksum, which counts as the checksum. When the lookup is blocked or times out, the asset is absent or no checksum can be read, record `dbvr: unresolved (<reason>)`.
-4. **Placement.** `.deb` and `.rpm` need root (`id -u` prints `0`) or a `sudo` that `command -v sudo` finds; run no `sudo` command before the approval, not even `sudo -n true`. The user-folder types need a writable `{{ USER_ROOT }}/.local` (Windows: `$env:LOCALAPPDATA`).
+4. **Placement.** `.deb` and `.rpm` need root (`id -u` prints `0`) or a `sudo` that `command -v sudo` finds; run no `sudo` command before the approval, not even `sudo -n true`. Prefix the install command with `sudo` only when `id -u` does not print `0`. The user-folder types need a writable `{{ USER_ROOT }}/.local` (Windows: `$env:LOCALAPPDATA`).
 
 Do:
 * Record `install-feasible: yes (npm 10.9.4, prefix writable, npm ping PONG 134ms)` and `dbvr-plan: linux debian 12 x86_64 glibc → dbvr-ce-<tag>-linux-x86_64.deb, sha256 read from the release digest`.
@@ -113,18 +117,18 @@ Don't:
 
 ### 6. Ask for install approval
 
-Skip this step in `lookup` mode, when every check type in `needs` is covered, when step 5 found every set infeasible, or when nothing installable is missing. A tool is installable when step 5 gave it a command. When any installable one of dbvr, Bruno CLI and agent-browser is missing and `install-approval` carries no yes, install nothing and stop: when a person is reachable, ask "Install the missing verification tools with these commands?" with `AskUserQuestion`; otherwise return the needs-input block of the Output with `missing: install-approval`. List every missing installable one of the three, not only the one `needs` asks for, with its exact commands for the OS. Bruno CLI is `npm install -g @usebruno/cli` (binary `bru`), and agent-browser is `npm install -g agent-browser` only when `npm view agent-browser version` confirmed it. dbvr is the download, checksum and install commands for the package type of step 5, filled from the release lookup:
+Skip this step in `lookup` mode, when every check type in `needs` is covered, when step 5 found every set infeasible, or when nothing installable is missing. A dbvr that is present but insufficient is not missing and is not listed. A tool is installable when step 5 gave it a command. When any installable one of dbvr, Bruno CLI and agent-browser is missing and `install-approval` carries no yes, install nothing and stop: when a person is reachable, ask "Install the missing verification tools with these commands?" with `AskUserQuestion`; otherwise return the needs-input block of the Output with `missing: install-approval`. List every missing installable one of the three, not only the one `needs` asks for, with its exact commands for the OS. Bruno CLI is `npm install -g @usebruno/cli` (binary `bru`), and agent-browser is `npm install -g agent-browser` only when `npm view agent-browser version` confirmed it. dbvr is the download, checksum and install commands for the package type of step 5, filled from the release lookup and joined with `&&`, never `;`, so a failed checksum stops the install:
 
-* `.deb`: `curl -sSL -o <asset> <url>`, `echo "<sha256>  <asset>" | sha256sum -c -`, `sudo apt-get install -y ./<asset>`.
-* `.rpm`: the same download and check, then `sudo dnf install -y ./<asset>` (or `sudo rpm -i <asset>` with only `rpm`).
-* `.tar.gz`: the same download and check, then `mkdir -p {{ USER_ROOT }}/.local/opt/dbvr {{ USER_ROOT }}/.local/bin`, `tar -xzf <asset> -C {{ USER_ROOT }}/.local/opt/dbvr` and a symlink of the `dbvr` executable that `find {{ USER_ROOT }}/.local/opt/dbvr -name dbvr -type f` prints into `{{ USER_ROOT }}/.local/bin`, with `{{ USER_ROOT }}/.local/bin` named as the folder to add to `PATH`.
-* macOS: `brew install --cask dbvr`; without `brew`, the `.dmg` with `shasum -a 256 -c`, `hdiutil attach`, a copy of `dbvr.app` into `{{ USER_ROOT }}/Applications` and `hdiutil detach`, and mark the path of its CLI as unconfirmed until `find` locates it.
-* Windows (PowerShell): `Invoke-WebRequest -Uri <url> -OutFile <asset>`, `(Get-FileHash <asset> -Algorithm SHA256).Hash` compared with `<sha256>`, `Expand-Archive <asset> -DestinationPath $env:LOCALAPPDATA\dbvr`, and the folder holding `dbvr.exe` added to the user `PATH`.
+* `.deb`: `curl -sSL -o <asset> <url> && echo "<sha256>  <asset>" | sha256sum -c - && sudo apt-get install -y ./<asset>`, with `sudo` only when `id -u` does not print `0`.
+* `.rpm`: the same download and check, then `&& sudo dnf install -y ./<asset>` (or `&& sudo rpm -i <asset>` with only `rpm`), with the same `sudo` rule.
+* `.tar.gz`: the same download and check, then `&& mkdir -p {{ USER_ROOT }}/.local/opt/dbvr {{ USER_ROOT }}/.local/bin && tar -xzf <asset> -C {{ USER_ROOT }}/.local/opt/dbvr` and a symlink of the `dbvr` executable that `find {{ USER_ROOT }}/.local/opt/dbvr -name dbvr -type f` prints into `{{ USER_ROOT }}/.local/bin`, with `{{ USER_ROOT }}/.local/bin` named as the folder to add to `PATH`.
+* macOS: `brew install --cask dbvr`; without `brew`, the `.dmg` with `shasum -a 256 -c` chained by `&&`, `hdiutil attach`, a copy of `dbvr.app` into `{{ USER_ROOT }}/Applications` and `hdiutil detach`, and mark the path of its CLI as unconfirmed until `find` locates it.
+* Windows (PowerShell): `Invoke-WebRequest -Uri <url> -OutFile <asset>`, `(Get-FileHash <asset> -Algorithm SHA256).Hash` compared with `<sha256>` and a `throw` on a mismatch, `Expand-Archive <asset> -DestinationPath $env:LOCALAPPDATA\dbvr`, and the folder holding `dbvr.exe` added to the user `PATH`.
 
 When dbvr is `unresolved`, list it as `dbvr unresolved (<reason>)` and add `dbvr-source` to `missing:`, written plainly, whether or not `needs` holds `db`, because the reader of this block passes `missing:` on word for word. The user answers `dbvr-source` with a URL and its SHA-256, or with `dbvr: skip`, and the run falls back for `db` when the answer is `skip`. When dbvr is `unsupported`, list it as `dbvr unsupported (<reason>)` with no `dbvr-source`. When Node.js is absent, put its install first: `sudo apt-get install -y nodejs npm`, `sudo dnf install -y nodejs npm`, `brew install node` or `winget install OpenJS.NodeJS.LTS`. With a yes in `install-approval`, go to step 7.
 
 Do:
-* Return `status: needs-input`, `missing: install-approval` and `install-needed: npm install -g @usebruno/cli; npm install -g agent-browser; curl -sSL -o dbvr-ce-<tag>-linux-x86_64.deb <url>; echo "<sha256>  dbvr-ce-<tag>-linux-x86_64.deb" | sha256sum -c -; sudo apt-get install -y ./dbvr-ce-<tag>-linux-x86_64.deb` for `needs: api` on Debian x86_64 with none of the three, with `<tag>`, `<url>` and `<sha256>` filled from the lookup.
+* Return `status: needs-input`, `missing: install-approval` and `install-needed: npm install -g @usebruno/cli; npm install -g agent-browser; curl -sSL -o dbvr-ce-<tag>-linux-x86_64.deb <url> && echo "<sha256>  dbvr-ce-<tag>-linux-x86_64.deb" | sha256sum -c - && sudo apt-get install -y ./dbvr-ce-<tag>-linux-x86_64.deb` for `needs: api` on Debian x86_64 with none of the three, with `<tag>`, `<url>` and `<sha256>` filled from the lookup.
 * Add `dbvr unresolved (release lookup → 403 from proxy)` to `install-needed` and a plain `dbvr-source` to `missing:` when GitHub is blocked but npm answers, even for `needs: api, ui`.
 * Put `sudo apt-get install -y nodejs npm` first in `install-needed` when `node --version` failed on Ubuntu.
 
@@ -132,35 +136,40 @@ Don't:
 * Ask to install only `bru` because `needs` is `api`; list all three missing installable tools, because they are installed together.
 * Ask for approval to install dbvr on musl or an unsupported arch; record it `unsupported` and fall back, as the Process says.
 * Install because the request says "install whatever you need"; that is not the user's yes, so return `missing: install-approval`.
+* Join the download, the checksum and the install with `;`; use `&&`, as the first Do item does, because with `;` the install runs after a failed checksum.
+* List a dbvr install for a dbvr that is present but insufficient; fall back in step 8, because the install cannot supply a JRE or a driver.
 
 ### 7. Install and verify
 
-Run the approved commands from step 6 with `Bash` (PowerShell on Windows), Node.js first when it was missing, then the npm packages in one call such as `npm install -g @usebruno/cli agent-browser`, and install nothing that was not listed in that request. Run the dbvr commands in the order step 6 lists them, in a new empty folder made with `mktemp -d`. After the download, compare its SHA-256 with the one from the release; on a mismatch, delete the download, install nothing and fall back. Then run `bru --version` and `agent-browser --version` for each tool installed, and record each with `source: installed` when its version prints. For dbvr, run `command -v dbvr` (or the full path when `PATH` is not updated yet) and `dbvr --help` and require exit 0, then try `dbvr --version` and record its output, or `version=unknown` when it fails. Record `java: required (<line>)` when the install output, `--help` or `--version` names Java, a JRE or `JAVA_HOME`, and check it with `java -version`; otherwise record `java: not surfaced`. Install no JRE, because the approval did not list one. Record any command that exits non-zero, with its exit code and the last error line, and go to step 8 for the checks it left uncovered.
+Run the approved commands from step 6 with `Bash` (PowerShell on Windows), Node.js first when it was missing, then the npm packages in one call such as `npm install -g @usebruno/cli agent-browser`, and install nothing that was not listed in that request. Run the dbvr commands in the order step 6 lists them, in a new empty folder made with `mktemp -d`. After the download, compare its SHA-256 with the one from the release; on a mismatch, delete the download, install nothing and fall back. Then run `bru --version` and `agent-browser --version` for each tool installed, and record each with `source: installed` when its version prints. For dbvr, run `command -v dbvr` (or the full path when `PATH` is not updated yet) and `dbvr --help` and require exit 0, then try `dbvr --version` and record its output, or `version=unknown` when it fails. Record `java: required (<line>)` when the install output, `--help` or `--version` names Java, a JRE or `JAVA_HOME`, and check it with `java -version`; otherwise record `java: not surfaced`. Then run the step 4 sufficiency probe; when it finds dbvr insufficient, record `source=installed covers=none insufficient=<reason>` and go to step 8 for `db`. Install no JRE, because the approval did not list one. Record any command that exits non-zero, with its exit code and the last error line, and go to step 8 for the checks it left uncovered.
 
 Do:
 * Run `npm install -g @usebruno/cli agent-browser`, then `bru --version` → `4.2.1`, and record `- name=bruno binary=bru present=yes version=4.2.1 source=installed covers=api`.
 * Record `- name=agent-browser present=no source=none install=failed (exit 1, EACCES /usr/lib/node_modules)` and fall back in step 8.
-* Record `- name=dbvr binary=dbvr present=yes version=unknown source=installed covers=db` and `dbvr: dbvr --help exit 0; --version failed; java: not surfaced` after the `.deb` install and its `--help` exit 0.
+* Record `- name=dbvr binary=dbvr present=yes version=unknown source=installed covers=db` and `dbvr: dbvr --help exit 0; --version failed; java: not surfaced` after the `.deb` install, its `--help` exit 0 and a passing sufficiency probe.
+* Record `- name=dbvr binary=dbvr present=yes source=installed covers=none insufficient=java required, java -version failed` and fall back in step 8 when the install worked but `java -version` fails.
 * Record `dbvr: sha256 mismatch (nothing installed); fallback` and fall back in step 8 when the download differs from the release checksum.
 * Install dbvr from a user-named source only with a `dbvr from <url> sha256 <hex>` approval.
 
 Don't:
 * Run `sudo npm install -g --unsafe-perm` or change the npm prefix after an EACCES; record the failure and fall back, because widening rights was not approved.
 * Install a fourth tool, such as `newman`, because it looked useful; install only what the approval lists, as the first Do item does.
-* Record `source: installed` because the install command exited 0; record it only after the version or `--help` check passed, as the first and third Do items do.
+* Record `source: installed` because the install command exited 0; record it only after the version or `--help` check passed, and for dbvr the sufficiency probe too, as the first and third Do items do.
 * Skip the checksum because the download came from github.com; compare it every time, as the fourth Do item does.
 
 ### 8. Fall back to the OS defaults
 
-For every check type in `needs` still uncovered, including `db` when dbvr is unsupported, unresolved, skipped, failed its checksum, failed its install or failed its verify, look for its OS-default fallback from the Tool map with `command -v curl sqlite3 psql mysql chromium google-chrome firefox python3` (Windows: `Get-Command Invoke-WebRequest,sqlite3,psql,python -ErrorAction SilentlyContinue`). Record each used one with `source: fallback`, name the reason dbvr was not used, and say what it cannot cover: `curl` runs no Bruno collection or assertions, a database client covers only the engine it speaks (`sqlite3` and python3 `sqlite3` read SQLite files, `psql` speaks Postgres, `mysql` speaks MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, and the python3 stdlib has no browser. When a check type has no tool and no fallback, add it to `blockers` with what is missing; the other check types continue. When a `db` check needs an engine that no client present speaks, name that engine in the `blockers` line, because the validator marks that check type `blocked` and runs the rest. On `chat`, the only fallback is reading the docs and files, so `docs` checks by reading stay in reach and the others are blockers.
+For every check type in `needs` still uncovered, including `db` when dbvr is unsupported, unresolved, skipped, failed its checksum, failed its install or failed its verify, or is present or installed but cannot serve the check (Java is required and `java -version` fails, `dbvr driver list` lacks the driver or the engine, a driver download is blocked, or a datasource cannot be created), look for its OS-default fallback from the Tool map with `command -v curl sqlite3 psql mysql chromium google-chrome firefox python3` (Windows: `Get-Command Invoke-WebRequest,sqlite3,psql,python -ErrorAction SilentlyContinue`). Record each used one with `source: fallback`, name the reason dbvr was not used, and say what it cannot cover: `curl` runs no Bruno collection or assertions, a database client covers only the engine it speaks (`sqlite3` and python3 `sqlite3` read SQLite files, `psql` speaks Postgres, `mysql` speaks MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, and the python3 stdlib has no browser. When a check type has no tool and no fallback, add it to `blockers` with what is missing; the other check types continue. When a `db` check needs an engine that no client present speaks, name that engine in the `blockers` line, because the validator marks that check type `blocked` and runs the rest. On `chat`, the only fallback is reading the docs and files, so `docs` checks by reading stay in reach and the others are blockers.
 
 Do:
 * Record `fallback-used: api → curl 8.5.0 (no Bruno collections or scripted assertions)`.
 * Record `fallback-used: db → sqlite3 3.45.1 (dbvr unsupported: musl libc on alpine; SQLite only, no Postgres or MySQL)`.
+* Record `fallback-used: db → psql 16.2 (dbvr present but insufficient: java required, java -version failed; Postgres only)` when a preinstalled dbvr needs Java that is absent and `psql` is present.
 * Record `blockers: ui → no agent-browser and no headless browser on the path` when `command -v chromium google-chrome firefox` prints nothing.
 
 Don't:
-* Leave `ui` uncovered without a blocker; name it in `blockers`, as the second Do item shows.
+* Leave `ui` uncovered without a blocker; name it in `blockers`, as the fourth Do item shows.
+* Return `blocked` for `db` while a client for its engine is present because dbvr is insufficient; fall back, as the third Do item shows.
 * Count `python3 -m http.server` as a UI fallback; it serves files and drives no browser, so record the blocker instead.
 
 ### 9. Report
@@ -190,7 +199,7 @@ The reply returns these fields:
 * **install-needed:** always - The exact install commands still needed, Node.js first, with `unconfirmed` for a package not found, or `none`.
 * **fallback-used:** always - Each fallback with the check type it serves and what it cannot cover, or `none`.
 * **blockers:** always - Each check type in `needs` with no tool and no fallback, and why, or `none`.
-* **dbvr:** when `db` is in `needs` - The dbvr outcome in one line: platform and arch, asset name, checksum result (`listed` when read from the release and not yet compared, `matched`, `mismatch`, `missing` or `not fetched`), `--help` and `--version` result, `java: required` or `not surfaced`, and the reason for any fallback; `present (preinstalled)` when it was already there.
+* **dbvr:** when `db` is in `needs` - The dbvr outcome in one line: platform and arch, asset name, checksum result (`listed` when read from the release and not yet compared, `matched`, `mismatch`, `missing` or `not fetched`), `--help` and `--version` result, `java: required` or `not surfaced`, and the reason for any fallback; `present (preinstalled)` when it was already there, and `insufficient (<reason>)` with the fallback client when the sufficiency probe failed or a datasource could not be created.
 * **reason:** when status is not `completed` - One sentence naming what stopped the run.
 * **missing:** when status is `needs-input` - The decisions needed, such as `install-approval` or `dbvr-source` (only when the dbvr release could not be resolved).
 
@@ -215,9 +224,10 @@ dbvr: linux x86_64 glibc; asset not resolved; checksum not fetched; fallback sql
 ```
 
 Do:
-* `status: needs-input`, `install-needed: npm install -g @usebruno/cli; npm install -g agent-browser; curl -sSL -o dbvr-ce-<tag>-linux-x86_64.deb <url>; echo "<sha256>  dbvr-ce-<tag>-linux-x86_64.deb" | sha256sum -c -; sudo apt-get install -y ./dbvr-ce-<tag>-linux-x86_64.deb`, `reason: three verification tools are missing and the install needs the user's yes`, `missing: install-approval`.
+* `status: needs-input`, `install-needed: npm install -g @usebruno/cli; npm install -g agent-browser; curl -sSL -o dbvr-ce-<tag>-linux-x86_64.deb <url> && echo "<sha256>  dbvr-ce-<tag>-linux-x86_64.deb" | sha256sum -c - && sudo apt-get install -y ./dbvr-ce-<tag>-linux-x86_64.deb`, `reason: three verification tools are missing and the install needs the user's yes`, `missing: install-approval`.
 * `status: needs-input`, `install-needed: npm install -g @usebruno/cli; npm install -g agent-browser; dbvr unresolved (release lookup → 403 from proxy)`, `missing: install-approval, dbvr-source`.
 * `surface: chat (no shell tool)`, `os: unknown`, `blockers: db, api, ui → no shell; docs checks by reading only`, `status: blocked` when `needs` includes `api`.
+* `dbvr: present (preinstalled); --help exit 0, --version failed; java: required, java -version failed → insufficient; fallback psql`, `install-needed: none`, `status: completed` when `psql` is present.
 * `mode: lookup`, `install-needed: npm install -g @usebruno/cli (unconfirmed: lookup runs no npm view)` listed for information, `status: completed`, with nothing installed.
 
 Don't:
