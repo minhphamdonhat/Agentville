@@ -18,6 +18,7 @@ You are a slot resolver. You take a list of slot names, find for each one the on
 * Load and run no skill, because a resolved skill is read and followed next with its own inputs.
 * Expect one load of this skill per context: the records it returned stay valid while they are still in context, so a later need for the same slots reuses them; resolve again only when the records are no longer in context, such as after compaction, because a repeated load is cost with no new information.
 * Read steering with `Read`, `Glob` and `Grep` only (or `ls`, `cat` and `grep` through `Bash` when those are not held), and write, edit or delete no file while resolving, because resolving a slot must leave the project as it found it.
+* Look only at the six places of the resolution order, each by its own path or pattern (such as `{{ PROJECT_ROOT }}/.claude/rules/*.md` or `{{ PROJECT_ROOT }}/.claude/skills/<slot>/SKILL.md`), and never list a folder with `**/*`, `*.md` at the project root, `ls -R` or `find`, because a listing reaches files that are not steering, such as another agent's documents.
 * Write every path with a placeholder (`{{ PROJECT_ROOT }}`, `{{ USER_ROOT }}`) in examples, and return absolute paths in the output, because a host path in an example breaks on every other machine and a run needs real paths.
 
 # Input

@@ -15,6 +15,7 @@ The Input and Output sections are the slot contract that any replacement skill f
 * Ask the user when a person is reachable; otherwise return `status: needs-input` with `missing:` naming each fact, because an unattended run cannot answer.
 * Record only the content given, word for word where it is quoted, and add no decision, approval, verdict or recommendation of your own, because the draft is a record and every decision belongs to the people discussing it.
 * Write only `<topic-folder>/draft.md`, creating `<topic-folder>` with `mkdir -p` when it is missing, and write, edit or delete no other file; in `locate` mode write nothing and create no folder, because the draft must not change the project.
+* Reach the draft only by its exact path, `<topic-folder>/draft.md`, checked with one `Glob` whose `pattern` is that absolute path, and never list, search or wildcard `<topic-folder>` or its parent, because the path is fixed and a listing reads files that are not this draft.
 * Write the document with `Write` (a new file) or `Edit` (append and update) only, and use `Bash` for `mkdir -p` and `date` only; never write it with shell redirection (`>`, `>>`, `tee` or a heredoc) or `sed -i`, because a tool call keeps the edit exact and leaves every other line as it was.
 * Never remove or reword an earlier round in `append` mode, because a later round must not erase what an earlier one recorded.
 * Accept a `topic-id` only in kebab-case (lower-case letters, digits and hyphens), because a `/` or `..` would put the file outside the topic folder.
@@ -41,15 +42,16 @@ Do:
 Don't:
 * Make up `content: no notes yet` when the request gives none; return `missing: content`, as the Constraints say.
 
-### 2. Read the existing draft
+### 2. Check the draft path
 
-Run `Glob` on `<topic-folder>/draft.md`. In `locate` mode stop here and reply with the locate template: `file` is the absolute path when the file exists, else `none`. When it exists, `Read` it whole and count its `## Round N` headings; the next round is the highest number plus one. When it does not exist, the next round is 1. In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: draft.md already exists; use append or update`.
+Run one `Glob` with `pattern` set to the absolute path `<topic-folder>/draft.md`, with no wildcard. In `locate` mode stop here and reply with the locate template: `file` is that path when the `Glob` returns it, else `none`; run nothing else and read nothing. When it exists, `Read` it whole and count its `## Round N` headings; the next round is the highest number plus one. When it does not exist, the next round is 1. In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: draft.md already exists; use append or update`.
 
 Do:
 * Set the next round to 3 when the file holds `## Round 1` and `## Round 2`.
 
 Don't:
 * Overwrite an existing draft because `mode: create` was passed; return `missing: mode`, as this step says.
+* Run `Glob` with `<topic-folder>/*.md` or `ls <topic-folder>` to see what the topic holds; check the one exact path, as this step says.
 
 ### 3. Write the draft
 
@@ -68,7 +70,7 @@ Don't:
 
 ### 4. Report
 
-`Read` the file again, list the headings you wrote or replaced, and reply with the Output block. In `locate` mode there is nothing to read again.
+List the headings you wrote or replaced and reply with the Output block. `Write` and `Edit` fail loudly when they do not apply, so do not read the file back. In `locate` mode there is nothing to list.
 
 # Output
 

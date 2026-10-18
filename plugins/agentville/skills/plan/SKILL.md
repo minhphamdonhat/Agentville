@@ -16,6 +16,7 @@ The Input and Output sections are the slot contract that any replacement skill f
 * Record the approval status exactly as `approval` gives it (`pending`, `approved`, `changes-requested` or `cancelled`), with the approving words quoted as given, and never set, upgrade or downgrade it yourself, and when `approval` is not given leave a recorded status as it is, because only the person who approves a plan can approve it.
 * Record only the tasks, done criteria and progress given, and add no task, criterion or recommendation of your own, because the plan is a record of what was agreed.
 * Write only `<topic-folder>/plan.md`, creating `<topic-folder>` with `mkdir -p` when it is missing, and write, edit or delete no other file; in `locate` mode write nothing and create no folder, because the plan must not change the project.
+* Reach the plan only by its exact path, `<topic-folder>/plan.md`, checked with one `Glob` whose `pattern` is that absolute path, and never list, search or wildcard `<topic-folder>` or its parent, because the path is fixed and a listing reads files that are not this plan.
 * Write the document with `Write` (a new file) or `Edit` (append and update) only, and use `Bash` for `mkdir -p` and `date` only; never write it with shell redirection (`>`, `>>`, `tee` or a heredoc) or `sed -i`, because a tool call keeps the edit exact and leaves every other line as it was.
 * Accept a `topic-id` only in kebab-case (lower-case letters, digits and hyphens), because a `/` or `..` would put the file outside the topic folder.
 * Write every path in examples with a placeholder (`{{ PROJECT_ROOT }}`), and return absolute paths in the output, because examples must hold on every machine and a run needs real paths.
@@ -43,19 +44,21 @@ Don't:
 * Record `approval: approved` because the request says the plan is final; record `pending` unless `approval` says otherwise, as the Constraints say.
 * Reset `approved` to `pending` in an `update` that gives no `approval`; leave the Approval section as it is.
 
-### 2. Read the existing plan
+### 2. Check the plan path
 
-Run `Glob` on `<topic-folder>/plan.md`. In `locate` mode stop here and reply with the locate template: `file` is the absolute path when the file exists, else `none`. When it exists, `Read` it whole and note its task ids (`T1` to `Tn`). In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: plan.md already exists; use append or update`.
+Run one `Glob` with `pattern` set to the absolute path `<topic-folder>/plan.md`, with no wildcard. In `locate` mode stop here and reply with the locate template: `file` is that path when the `Glob` returns it, else `none`; run nothing else and read nothing. When it exists, `Read` it whole and note its task ids (`T1` to `Tn`). In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: plan.md already exists; use append or update`.
 
 Do:
+* Run `Glob` with `pattern: {{ PROJECT_ROOT }}/tmp/cases-empty/plan.md` in `locate` mode and reply `file: none` when it returns no file.
 * Note `T1` and `T2` as existing tasks before an `append` that adds `T3`.
 
 Don't:
+* Run `Glob` with `<topic-folder>/*.md` or `ls <topic-folder>` to see what the topic holds; check the one exact path, as the first Do item does.
 * Number a new task `T1` when `T1` and `T2` exist; number it `T3`, as the Do item does.
 
 ### 3. Write the plan
 
-For a new plan, write this shape with `Write`, after `mkdir -p "<topic-folder>"` through `Bash` when the folder is missing: `# Plan: <topic-id>`; `## Goal` with one line; `## Tasks` with one `### T<n>. <task>` per task, each holding `- done when: <criteria>` (and `- progress: <todo, in progress or done>` only when `content` gives a progress); and `## Approval` holding `- status: <approval status>`, `- words: "<approving words>"` or `- words: none`, and `- recorded: <UTC time>` from `date -u +%FT%TZ`. In `append` mode, add the new tasks at the end of `## Tasks` with `Edit`. In `update` mode, replace only the named task blocks, the goal line or the Approval body with `Edit`, and leave every other line as it was; a task's `progress` line takes `todo`, `in progress` or `done` as `content` gives it, and is added under the task when it has none. An `update` that gives no `approval` leaves the Approval body untouched.
+For a new plan, write this shape with `Write`, after `mkdir -p "<topic-folder>"` through `Bash` when the folder is missing: `# Plan: <topic-id>`; `## Goal` with one line; `## Tasks` with one `### T<n>. <task>` per task, each holding `- done when: <criteria>` (and `- progress: <todo, in progress or done>` only when `content` gives a progress); and `## Approval` holding exactly three lines and nothing else: `- status: <approval status>`, `- words: "<approving words>"` or `- words: none`, and `- recorded: <UTC time>` from `date -u +%FT%TZ`. In `append` mode, add the new tasks at the end of `## Tasks` with `Edit`. In `update` mode, replace only the named task blocks, the goal line or the Approval body with `Edit`, and leave every other line as it was; a task's `progress` line takes `todo`, `in progress` or `done` as `content` gives it, and is added under the task when it has none. An `update` that gives `approval` replaces the three Approval lines with `Edit`, so a re-approval replaces the words and the recorded time and keeps no history; an `update` that gives no `approval` leaves the Approval body untouched.
 
 Do:
 * Write `### T1. Add limit and offset to the cases endpoint` and `- done when: tests/test_cases.py passes`, with no progress line when `content` gives none.
@@ -65,6 +68,7 @@ Do:
 Don't:
 * Leave out `- done when:` because the task looks obvious; write `- done when: not given` and name the task in `note`, so the gap shows.
 * Add `### T3. Add caching` because it would help; record only the tasks `content` gives.
+* Keep the old words in a `- supersedes:`, `- previous:` or history line on a re-approval; replace the three Approval lines, as this step says, because the plan holds the current approval only.
 * Rewrite the whole file with `Write` in `update` mode; replace only the named block with `Edit`, as the third Do item does.
 * Write the plan with `cat > plan.md`; use `Write` or `Edit`, as the Constraints say.
 

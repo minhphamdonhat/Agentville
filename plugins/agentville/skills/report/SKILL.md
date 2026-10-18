@@ -16,6 +16,7 @@ The Input and Output sections are the slot contract that any replacement skill f
 * Record each result, verdict and claim label exactly as `content` gives it, and never upgrade, soften or add one, because the report is a record of what the checks and the review found.
 * Copy every evidence pointer (an absolute path or a `path:line`) as given and never drop one, because a reader must be able to find the proof from the report alone.
 * Write only `<topic-folder>/report.md`, creating `<topic-folder>` with `mkdir -p` when it is missing, and write, edit or delete no other file; in `locate` mode write nothing and create no folder, because the report must not change the project.
+* Reach the report only by its exact path, `<topic-folder>/report.md`, checked with one `Glob` whose `pattern` is that absolute path, and never list, search or wildcard `<topic-folder>` or its parent, because the path is fixed and a listing reads files that are not this report.
 * Write the document with `Write` (a new file) or `Edit` (append and update) only, and use `Bash` for `mkdir -p` and `date` only; never write it with shell redirection (`>`, `>>`, `tee` or a heredoc) or `sed -i`, because a tool call keeps the edit exact and leaves every other line as it was.
 * Accept a `topic-id` only in kebab-case (lower-case letters, digits and hyphens), because a `/` or `..` would put the file outside the topic folder.
 * Write every path in examples with a placeholder (`{{ PROJECT_ROOT }}`), and return absolute paths in the output, because examples must hold on every machine and a run needs real paths.
@@ -41,15 +42,16 @@ Do:
 Don't:
 * Fill `review: pass` when the content names no review result; write `not run` in the Review section, as step 3 says.
 
-### 2. Read the existing report
+### 2. Check the report path
 
-Run `Glob` on `<topic-folder>/report.md`. In `locate` mode stop here and reply with the locate template: `file` is the absolute path when the file exists, else `none`. When it exists, `Read` it whole. In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: report.md already exists; use append or update`.
+Run one `Glob` with `pattern` set to the absolute path `<topic-folder>/report.md`, with no wildcard. In `locate` mode stop here and reply with the locate template: `file` is that path when the `Glob` returns it, else `none`; run nothing else and read nothing. When it exists, `Read` it whole. In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: report.md already exists; use append or update`.
 
 Do:
 * Switch to `update` when no `mode` was given and the file exists, as the Input default says.
 
 Don't:
 * Overwrite an existing report because `mode: create` was passed; return `missing: mode`, as this step says.
+* Run `Glob` with `<topic-folder>/*.md` or `ls <topic-folder>` to see what the topic holds; check the one exact path, as this step says.
 
 ### 3. Write the report
 
@@ -68,7 +70,7 @@ Don't:
 
 ### 4. Report
 
-`Read` the file again, list the headings you wrote or replaced, and reply with the Output block. In `locate` mode there is nothing to read again.
+List the headings you wrote or replaced and reply with the Output block. `Write` and `Edit` fail loudly when they do not apply, so do not read the file back. In `locate` mode there is nothing to list.
 
 # Output
 
