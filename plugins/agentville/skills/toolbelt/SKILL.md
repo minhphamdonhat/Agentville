@@ -21,7 +21,7 @@ You are a tool finder for verification work. You take the check types in `needs`
 # Input
 
 * **mode:** optional - default: `lookup` - `validate` (find tools for checks about to run; `needs` is required) or `lookup` (a read-only report of what is present).
-* **needs:** optional - default: `db, api, ui` in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`, from `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` and `infra`. Every type can be covered by a named tool or by an OS tool.
+* **needs:** optional - default: all eight types (`db, api, ui, office, docs, build, pipeline, infra`) in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`, from `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` and `infra`. Every type can be covered by a named tool or by an OS tool.
 * **brief-tools:** optional - default: none - Tools the request names for a check type, as `type=tool` pairs such as `api=curl, build=make`.
 * **workspace:** optional - default: none - The run's scratch folder; this skill writes no file, so it is recorded only.
 * **project-root:** optional - default: the current working folder - The project whose steering is read, written `{{ PROJECT_ROOT }}`.
@@ -31,10 +31,11 @@ You are a tool finder for verification work. You take the check types in `needs`
 
 ### 1. Collect the inputs
 
-Read `mode`, `needs`, `brief-tools` and `workspace` from the request; `workspace` is recorded only, because this skill writes no file. In `validate` mode without `needs`, ask "Which check types need tools?" with `AskUserQuestion` when a person is reachable; otherwise return the failure block with `status: needs-input` and `missing: needs`.
+Read `mode`, `needs`, `brief-tools` and `workspace` from the request; `workspace` is recorded only, because this skill writes no file. In `lookup` mode without `needs`, cover all eight types. In `validate` mode without `needs`, ask "Which check types need tools?" with `AskUserQuestion` when a person is reachable; otherwise return the failure block with `status: needs-input` and `missing: needs`.
 
 Do:
 * Read `mode: validate`, `needs: api` from "find the tools for an API check".
+* Read `mode: lookup` with `needs: db, api, ui, office, docs, build, pipeline, infra` from "which check tools are present here?".
 
 Don't:
 * Add `db` and `ui` to `needs: api` because they might help later; cover the types given.
@@ -84,7 +85,7 @@ For each needed type that step 4 left uncovered, run `command -v` for that type'
 | `pipeline` | `python3`, `sqlite3` |
 | `infra` | `python3` |
 
-Add a headless browser binary or any other tool the steering names for the type. For `build` and `infra`, list the project root with `Glob` (or `ls`) for `Makefile`, `build.sh` and `scripts/*.sh`, and name any found in `notes` as the project's own script; it is not a tool entry. Record each found tool with `source=os`, and in `notes` what the type's tools cannot cover in one clause each: an HTTP client runs no stored collections, a database client speaks only its own engine (`sqlite3` SQLite, `psql` Postgres, `mysql` MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, `python3` has no browser, `unzip` and `python3` read office files but do not recalculate or render them (`soffice` converts), the text utilities match and rewrite text and run nothing else, `make` runs only a `Makefile`, and no cloud CLI is reported for `infra` unless it is named. A needed type with no tool at all goes to `blockers` with what is missing.
+For `build` and `infra`, list the project root with `Glob` (or `ls`) for `Makefile`, `build.sh` and `scripts/*.sh`, and name any found in `notes` as the project's own script; it is not a tool entry. Record each found tool with `source=os`, and in `notes` what the type's tools cannot cover in one clause each: an HTTP client runs no stored collections, a database client speaks only its own engine (`sqlite3` SQLite, `psql` Postgres, `mysql` MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, `python3` has no browser, `unzip` and `python3` read office files but do not recalculate or render them (`soffice` converts), the text utilities match and rewrite text and run nothing else, `make` runs only a `Makefile`, and no cloud CLI is reported for `infra` unless it is named. A needed type with no tool at all goes to `blockers` with what is missing.
 
 Do:
 * Record `- name=curl binary=curl present=yes version=8.5.0 source=os covers=api` after `command -v curl` and `curl --version`.
