@@ -29,7 +29,8 @@ The shipped skills are:
 * `voice` is the writing standard for text a person reads.
 * `intelligence-routing-model` picks the cheapest model and effort that still succeeds.
 * `context-injection` resolves a slot (`workspace`, `toolbelt` or any named slot) to the skill that fills it for this run. One call takes a list of slots and returns, per slot, the resolved skill id, the absolute path of its SKILL.md, the binding's source and any fallback. It does not load or run the resolved skills.
-* `workspace` is the default for the `workspace` slot: it returns a run's artefacts and scratch folders and never asks.
+* `workspace` is the default for the `workspace` slot: it returns the topic folder and a run's artefacts and scratch folders and never asks.
+* `draft`, `plan` and `report` are the defaults for the slots of the same names: they record a topic's draft, plan and report as `draft.md`, `plan.md` and `report.md` in the topic folder. They record what they are given and decide nothing.
 * `toolbelt` is the default for the `toolbelt` slot: it discovers which tools are present for the checks a task needs, from the steering's and the request's tools first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. It is discovery only and says nothing about how a tool is used.
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
@@ -60,12 +61,15 @@ Don't:
 
 ## Context injection
 
-Context injection works like dependency injection. Agentville refers to a slot by its contract, and each agent uses its slots in two steps. Step 1: it calls `Skill(agentville:context-injection)` once with every slot the task needs (`slots: workspace, toolbelt`), which returns where each resolved skill lives: its id and the absolute path of its SKILL.md, plus the source and any fallback. Step 2: it reads each resolved skill, by loading it with the `Skill` tool by the returned id or, when it is not loadable by id, with `Read` on the returned path, and follows it to resolve the artefacts directory or the tools. An agent never calls a slot's default skill (`Skill(agentville:toolbelt)`) without step 1. It loads `context-injection` once per context and reuses the records, and each resolved skill it has read, while they are still in its context; it loads or reads them again only after compaction or when the earlier load has faded. An agent never resolves a slot for another agent, and briefs carry no bindings, only the topic-id and any steering locations as context. The plugin ships a default skill for each slot.
+Context injection works like dependency injection. Agentville refers to a slot by its contract, and each agent uses its slots in two steps. Step 1: it calls `Skill(agentville:context-injection)` once with every slot the task needs (`slots: workspace, toolbelt`), which returns where each resolved skill lives: its id and the absolute path of its SKILL.md, plus the source and any fallback. Step 2: it reads each resolved skill, by loading it with the `Skill` tool by the returned id or, when it is not loadable by id, with `Read` on the returned path, and follows it to resolve the artefacts directory, the tools, or where and how a topic document is written. An agent never calls a slot's default skill (`Skill(agentville:toolbelt)`) without step 1. It loads `context-injection` once per context and reuses the records, and each resolved skill it has read, while they are still in its context; it loads or reads them again only after compaction or when the earlier load has faded. An agent never resolves a slot for another agent, and briefs carry no bindings, only the topic-id, any steering locations as context and, for a draft, plan or report, the content to record. The plugin ships a default skill for each slot.
 
 | Slot | Contract | Default |
 | --- | --- | --- |
-| `workspace` | In: topic-id, agent-name. Out: artefacts path, scratch path, cleanup rule, git-ignore status. | `agentville:workspace`: the folder the steering names, else `{{ PROJECT_ROOT }}/tmp/`, never asking. |
+| `workspace` | In: topic-id, agent-name. Out: topic path, artefacts path, scratch path, cleanup rule, git-ignore status. | `agentville:workspace`: the folder the steering names, else `{{ PROJECT_ROOT }}/tmp/`, never asking. |
 | `toolbelt` | In: needs, mode, workspace, optional brief-tools. Out: surface, os, tools with name, presence, version and source, notes, blockers. Discovery only. | `agentville:toolbelt`: named tools, then tools the OS provides; no network probes. |
+| `draft` | In: topic-id, content, mode (`create`, `append` or `update`), optional sections and topic-folder. Out: file, mode, round, sections, kept. | `agentville:draft`: `<topic>/draft.md`, one `## Round N` per Discuss round, appended. |
+| `plan` | In: topic-id, content, approval, mode, optional sections and topic-folder. Out: file, mode, sections, tasks, approval. | `agentville:plan`: `<topic>/plan.md` with Goal, Tasks (done criteria, progress) and Approval. |
+| `report` | In: topic-id, content, mode, optional sections and topic-folder. Out: file, mode, sections, evidence. | `agentville:report`: `<topic>/report.md` with Outcome, Delivered, Evidence, Review, Extra work and Open items. |
 
 Resolution order, first match wins:
 
@@ -81,7 +85,7 @@ A binding is one line, `<slot>: Skill(<namespace>:<name>)`, anywhere in a rules 
 
 How a tool is used is set by the agent's own file or by the steering, never by the toolbelt.
 
-Both pairs of smiths enforce the two-step use. `measure.py` holds the injectable slots in one `SLOTS` constant (`workspace`, `toolbelt`, `draft`, `plan`, `report`). An agent (rule A18) or a skill (rule 22) that uses a slot must name `Skill(agentville:context-injection)` and must not call `Skill(agentville:<slot>)` directly (nor as `Skill(<slot>)`, `/agentville:<slot>` or a bare `agentville:<slot>`), except where the text reads as a description of the default (the words "the plugin default" right before it, or `(plugin-default)` right after it) or it is the skill id of a slot record `<slot>: <namespace>:<name> (<source>)` with a known source. A skill scans its `references/` files too. A skill named after a slot is treated as a slot implementation, so it and `context-injection` are exempt. Add a future slot to `SLOTS` in all four `measure.py` files.
+Both pairs of smiths enforce the two-step use. `measure.py` holds the injectable slots in one `SLOTS` constant (`workspace`, `toolbelt`, `draft`, `plan`, `report`). An agent (rule A18) or a skill (rule 22) that uses a slot must name `Skill(agentville:context-injection)` and must not call `Skill(agentville:<slot>)` directly (nor as `Skill(<slot>)`, `/agentville:<slot>` or a bare `agentville:<slot>`), except where the text reads as a description of the default (the words "the plugin default" right before it, or `(plugin-default)` right after it, and no imperative verb such as call, load, run, invoke or use right before the call) or it is the skill id of a slot record `<slot>: <namespace>:<name> (<source>)` with a known source. A skill scans its `references/` files too. A skill named after a slot is treated as a slot implementation, so it and `context-injection` are exempt. Add a future slot to `SLOTS` in all four `measure.py` files.
 
 This repository binds the `workspace` slot to the default and names the folder the default reads:
 
@@ -110,7 +114,7 @@ The shipped pair lets users choose a scope and nothing else. Users never pick a 
 
 ## Working in this repository
 
-Plans and todos live in the chat and in the session task list. Write nothing to the repository for them unless the user asks. Agents' artefacts are the exception: the workspace is `{{ PROJECT_ROOT }}/tmp/`, laid out as `tmp/<topic-id>/<agent>/{artefacts,scratch}` and git-ignored, and this overrides the chat-only rule for evidence an agent saves. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
+Drafts, plans and reports go to the topic folder under `{{ PROJECT_ROOT }}/tmp/`, as `tmp/<topic-id>/{draft,plan,report}.md`, written by a worker through the `draft`, `plan` and `report` slots; todos stay in the session task list. Agents' artefacts go to the same workspace, laid out as `tmp/<topic-id>/<agent>/{artefacts,scratch}`. The workspace is git-ignored, and nothing else is written to the repository for plans or todos unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
 
 Commit subjects are imperative, with an optional `area:` prefix, as in `agent-smith: drop the communication core block`. Commit, push and merge only when the user asks.
 

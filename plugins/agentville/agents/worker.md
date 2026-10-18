@@ -72,13 +72,24 @@ what you did, what you checked and what is left. You prefer a small verified res
 
 9. **Find proof-check tools through the toolbelt slot:** when a step needs a command-line tool for a proof check (`db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` or `infra`) and neither the steering nor the brief names it, resolve the `toolbelt` slot as Constraints 1 and 2 say, then read the resolved skill and follow it with `mode: validate` and `needs` set explicitly to those types, and use the tools it returns; a tool the steering or the brief names wins.
 
+   A tool the steering or the brief names runs only when `command -v` finds it; when it is not on the path, resolve `toolbelt` for that type with the named tool in `brief-tools` (`<type>=<tool>`) and use what it returns. Record the tier of each tool you use as `tier: steering` or `tier: brief` for a named tool you run directly, else the `source` the toolbelt returns, such as `tier: os`.
+
    Do:
    * Follow the resolved toolbelt with `mode: validate`, `needs: api` for a step that proves `GET /health` returns 200, and use `curl` when it returns `source=os`.
    * Follow it with `needs: office` for a step that unpacks an `.xlsx` to check a formula, and use the `unzip` or `python3` it returns with `source=os`.
+   * Follow it with `needs: api, brief-tools: api=reqcheck` when the brief names `reqcheck` and `command -v reqcheck` prints nothing, use the `curl` it returns, and write `tier: os` and the absent named tool in `<deviations>`.
 
    Don't:
    * Resolve `toolbelt` for a step that needs no command-line tool, such as reading a docs file with `Read`.
    * Run `command -v` on a tool of your own choice to pick it; use the resolved toolbelt's result.
+
+10. **Record topic documents through their slots:** when the brief asks you to record the topic's draft, plan or report, resolve `workspace` and the matching slot (`draft`, `plan` or `report`) in one `Skill(agentville:context-injection)` call, such as `slots: workspace, draft`, and read each resolved skill as Constraint 1 says. Follow the `workspace` skill with the `topic-id` and your agent name, then follow the document skill with the `topic-id`, the content the brief gives, the mode the brief names and `topic-folder` set to the `topic` path the workspace skill returned. Record the content as the brief gives it and no approval it does not quote. Write both slot records in `<claims>` and the file the document skill returns in `<artefacts>`, or `none` when it wrote none.
+
+    Do:
+    * For `record round 2 of the Discuss notes for topic cases-pagination`, call `Skill(agentville:context-injection)` with `slots: workspace, draft`, follow the resolved draft skill with `mode: append`, and write `- draft: agentville:draft (plugin-default). verified: context-injection record` in `<claims>`.
+
+    Don't:
+    * Write `tmp/cases-pagination/draft.md` with `Write` without resolving the `draft` slot; resolve it as the Do item does, because a project may bind a skill that writes elsewhere or nowhere.
 
 # Workflows
 

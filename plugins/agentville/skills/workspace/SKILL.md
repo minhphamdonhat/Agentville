@@ -1,11 +1,11 @@
 ---
 name: "workspace"
-description: "Gives one run its workspace folders: from a topic id and an agent name it returns the absolute artefacts and scratch paths under '<workspace>/<topic-id>/<agent-name>/', the cleanup rule and whether the workspace is git-ignored, and creates both folders. The default reads a 'workspace-folder: <path>' line in project rules, the project CLAUDE.md, user rules or the user CLAUDE.md, and with none found uses '{{ PROJECT_ROOT }}/tmp/' without asking. Use before writing any artefact, evidence or scratch file, when asked where a run's artefacts go, or to locate another run's artefacts folder read-only."
+description: "Gives one run its workspace folders: from a topic id and an agent name it returns the absolute topic folder '<workspace>/<topic-id>/', shared by every agent on the topic for topic-level documents, and the artefacts and scratch paths under '<workspace>/<topic-id>/<agent-name>/', the cleanup rule and whether the workspace is git-ignored, and creates both folders. The default reads a 'workspace-folder: <path>' line in project rules, the project CLAUDE.md, user rules or the user CLAUDE.md, and with none found uses '{{ PROJECT_ROOT }}/tmp/' without asking. Use before writing any artefact, evidence or scratch file, when asked where a run's artefacts go, or to locate another run's artefacts folder read-only."
 ---
 
 # Role
 
-You are a workspace planner. You take a `topic-id` and an `agent-name`, settle the workspace folder for this project, and return the absolute `artefacts` and `scratch` paths for that run, the cleanup rule and the git-ignore status. The Input and Output sections are the slot contract that any replacement skill for the `workspace` slot keeps; a replacement may also return `status: needs-input` with `missing: workspace`. The Process is the default implementation, which never asks for a folder.
+You are a workspace planner. You take a `topic-id` and an `agent-name`, settle the workspace folder for this project, and return the absolute `topic` folder shared by the topic and the `artefacts` and `scratch` paths for that run, the cleanup rule and the git-ignore status. The Input and Output sections are the slot contract that any replacement skill for the `workspace` slot keeps; a replacement may also return `status: needs-input` with `missing: workspace`. The Process is the default implementation, which never asks for a folder.
 
 # Constraints
 
@@ -51,7 +51,7 @@ Don't:
 
 ### 3. Create the run folders
 
-Set `artefacts` to `<workspace>/<topic-id>/<agent-name>/artefacts` and `scratch` to `<workspace>/<topic-id>/<agent-name>/scratch`. With `access: write`, create both with `mkdir -p "<artefacts>" "<scratch>"` through `Bash`; without a shell tool, write no placeholder file and report `created: no (no shell; the folders appear with the first file written)`. With `access: read`, create nothing and report `created: no (read access)`.
+Set `topic` to `<workspace>/<topic-id>`, the folder every agent on the topic shares for topic-level documents such as `draft.md`, `plan.md` and `report.md`; it is created as the parent of the run folders and holds no agent's files. Set `artefacts` to `<workspace>/<topic-id>/<agent-name>/artefacts` and `scratch` to `<workspace>/<topic-id>/<agent-name>/scratch`. With `access: write`, create both with `mkdir -p "<artefacts>" "<scratch>"` through `Bash`; without a shell tool, write no placeholder file and report `created: no (no shell; the folders appear with the first file written)`. With `access: read`, create nothing and report `created: no (read access)`.
 
 Do:
 * Run `mkdir -p {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/scratch` for that topic and agent.
@@ -80,6 +80,7 @@ The reply returns these fields:
 * **status:** always - `completed` when the paths are settled.
 * **workspace:** always - The absolute workspace folder, followed by `(default)` when nothing named one.
 * **workspace-source:** always - `project-rules`, `project-claude-md`, `user-rules`, `user-claude-md` or `default`, with the `path:line` that named it.
+* **topic:** always - The absolute topic folder, `<workspace>/<topic-id>`, shared by every agent on the topic for topic-level documents.
 * **artefacts:** always - The absolute artefacts folder of the run, for files that are kept and reported by path.
 * **scratch:** always - The absolute scratch folder of the run, for throwaway files.
 * **created:** always - `yes`, or `no` with the reason.
@@ -93,6 +94,7 @@ Use the first template on every run that settles the paths.
 status: completed
 workspace: {{ PROJECT_ROOT }}/tmp (default)
 workspace-source: default
+topic: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017
 artefacts: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts
 scratch: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/scratch
 created: yes
@@ -103,7 +105,7 @@ note: artefacts go to {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/art
 
 Do:
 * `workspace-source: project-claude-md {{ PROJECT_ROOT }}/CLAUDE.md:42` and `workspace: {{ PROJECT_ROOT }}/tmp` when the CLAUDE.md names `tmp/`.
-* `created: no (read access)` with both paths filled for `access: read`.
+* `created: no (read access)` with `topic`, `artefacts` and `scratch` filled for `access: read`.
 * `gitignore: ignored` when `git check-ignore` exits 0.
 
 Don't:
