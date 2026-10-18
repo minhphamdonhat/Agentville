@@ -20,7 +20,7 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
-| `/agentville:toolbelt` | Finds the verification tools a run can use: detects the surface, OS, package manager, Python and Node.js, takes the steering's tools first, then looks for dbvr, Bruno CLI and agent-browser, asks once for install approval with exact commands, and otherwise falls back to OS defaults such as curl or sqlite3. |
+| `/agentville:toolbelt` | Finds the verification tools a run can use: detects the surface, OS, package manager, Python and Node.js, takes the steering's tools first, then looks for dbvr, Bruno CLI and agent-browser, resolves the dbvr release for the OS and architecture, asks once for install approval with exact commands, and otherwise falls back to OS defaults such as curl or sqlite3. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates it and installs it to project or user scope. |
 | `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it to project or user scope. |
 
