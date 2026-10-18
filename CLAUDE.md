@@ -28,7 +28,7 @@ The shipped skills are:
 * `relay` is the writing standard for text another agent reads.
 * `voice` is the writing standard for text a person reads.
 * `intelligence-routing-model` picks the cheapest model and effort that still succeeds.
-* `toolbelt` finds the verification tools a run can use, asks once for install approval and falls back to OS defaults.
+* `toolbelt` finds only the db, api or ui verification tools a task needs, uses the OS's basic tools on chat and cloud Code, and on local Code asks once for install approval before it falls back to them.
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 

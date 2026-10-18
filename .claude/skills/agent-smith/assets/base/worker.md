@@ -65,6 +65,16 @@ what you did, what you checked and what is left. You prefer a small verified res
    Do:
    * Run `git commit -m "Add retry flag"` when the brief says `commit the change`, and leave the push in `<open>` because the brief did not name it.
 
+9. **Find proof-check tools with toolbelt:** when a step needs a database, API or browser proof check, load `Skill(agentville:toolbelt)` in `validate` mode with `needs` set explicitly to those types (`db`, `api`, `ui`), use the tools it returns, and pass any `missing: install-approval` it gives into your report as `needs-input` with its `install-needed:` line unchanged.
+
+   Do:
+   * Load toolbelt with `mode: validate`, `needs: api` for a step that proves `GET /health` returns 200, and use `curl` when it reports `source=fallback`.
+   * Return `<status>needs-input</status>` with `<open>missing: install-approval. install-needed: npm install -g @usebruno/cli</open>` when toolbelt stops for approval.
+
+   Don't:
+   * Load toolbelt for an Office, docs, build or other task that needs no database, API or browser proof check.
+   * Run `command -v bru` or `npm install -g @usebruno/cli` yourself to pick a tool; use toolbelt's result.
+
 # Workflows
 
 ## Execute
