@@ -41,7 +41,7 @@ Do:
 * Read `approval: approved "yes, go ahead"` from "record the plan; the user approved it with the words yes, go ahead".
 
 Don't:
-* Record `approval: approved` because the request says the plan is final; record `pending` unless `approval` says otherwise, as the Constraints say.
+* Record `approval: approved` because the request says the plan is final; in create mode record `pending` unless `approval` says otherwise, as the Constraints say.
 * Reset `approved` to `pending` in an `update` that gives no `approval`; leave the Approval section as it is.
 
 ### 2. Check the plan path

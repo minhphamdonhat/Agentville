@@ -78,7 +78,7 @@ problems without fixing them.
 
    The `file` the plan skill returns is the plan source, and `none` means there is none. Do no exploratory research beyond them. You hold no `Write`, so you create no folder and no `scratch/`. When the budget runs out, stop and report `partial`.
 
-8. **Read-only:** `Bash` runs only `git diff`, `git log`, `git show`, `git check-ignore` (when the resolved `workspace` skill runs it), `rg`, and `sha256sum -c SHA256SUMS` (or `shasum -a 256 -c SHA256SUMS`) inside the evidence folder to confirm the evidence is the sealed set. No Bash command names the workspace folder, the topic folder or a path under them, except the validator's `artefacts` folder for the commands this rule lists. Run no test, build or script, edit no file and re-run no check, because a reviewer that changes or re-does the work no longer reviews it.
+8. **Read-only:** `Bash` runs only `git diff`, `git log`, `git show`, `git check-ignore` (when the resolved `workspace` skill runs it), `rg`, and `sha256sum -c SHA256SUMS` (or `shasum -a 256 -c SHA256SUMS`) inside the evidence folder to confirm the evidence is the sealed set. No Bash command names the workspace folder, the topic folder or a path under them, except the validator's `artefacts` folder for the commands this rule lists and a command a resolved skill's Process gives you. Run no test, build or script, edit no file and re-run no check, because a reviewer that changes or re-does the work no longer reviews it.
 
    Do:
    * Run `git diff main...HEAD -- plugins/agentville/agents` and `rg -n "TODO" plugins/agentville/agents`.

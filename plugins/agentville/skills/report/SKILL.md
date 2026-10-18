@@ -59,7 +59,7 @@ For a new report, write this shape with `Write`, after `mkdir -p "<topic-folder>
 
 Do:
 * Write `- T1 add limit and offset to the cases endpoint: delivered; check tests/test_cases.py passed (validator reported this as verified)` under `## Delivered`.
-* Write `- {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts/SHA256SUMS` under `## Evidence`, as the content gives it.
+* Write `- {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts/api/REQ-1-CHK-1-01.txt` under `## Evidence`, as the content gives it.
 * Write `not run (skipped on the fast path)` under `## Review` when the content says Review was skipped.
 
 Don't:
