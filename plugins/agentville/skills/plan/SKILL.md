@@ -70,7 +70,7 @@ Don't:
 
 ### 4. Report
 
-`Read` the file again, list the headings you wrote or replaced and the approval status it now holds, and reply with the Output block. In `locate` mode there is nothing to read again.
+List the headings you wrote or replaced and the approval status the file holds (the one you wrote, else the one you read in step 2), and reply with the Output block. `Write` and `Edit` fail loudly when they do not apply, so do not read the file back. In `locate` mode there is nothing to list.
 
 # Output
 
@@ -106,12 +106,12 @@ note: plan found; nothing written
 ```
 
 Do:
-* `approval: pending none` when no approval was given.
+* `approval: pending none` in `create` mode when no approval was given.
 * `mode: update`, `sections: T2`, `tasks: T1, T2 done`, `approval: approved "yes, go ahead"` after a progress update that gave no `approval`.
 * `mode: locate`, `file: none`, `note: no plan for this topic; nothing written` when `Glob` finds no plan.md.
 
 Don't:
-* Write `approval: approved` when `approval` was not given; write `pending`, as the first Do item does.
+* Write `approval: approved` in `create` mode when `approval` was not given; write `pending`, as the first Do item does. In `append` and `update` mode report the status the file already holds.
 * Add a `next-step:` or `recommendation:` line; return the fields listed above only.
 * Open with a greeting; the reply starts with `status:`, as the template does.
 
