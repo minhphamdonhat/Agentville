@@ -50,7 +50,7 @@ For each slot, look for the binding in these six places, in this order, and stop
 5. **user-claude-md:** `{{ USER_ROOT }}/.claude/CLAUDE.md`, with its one-level `@<path>` imports.
 6. **user-skill:** a skill named exactly the slot for the user, `{{ USER_ROOT }}/.claude/skills/<slot>/SKILL.md`.
 
-A binding is one line that reads `<slot>: Skill(<namespace>:<name>)`, or `<slot>: Skill(<name>)` for a skill with no namespace, optionally after a list marker (`-` or `*`) and optionally in backticks; it may stand anywhere in the file or under a `## Context injection` heading. Find it with `Grep` and the pattern `^\s*[-*]?\s*.?<slot>:\s*Skill\(` on each file (the `.?` allows an opening backtick), then `Read` the matching line. For places 3 and 6, run `Glob` on the SKILL.md path; a match binds the skill named by that file's frontmatter `name`, called by its bare name. When nothing matches in the six places, the resolved skill is the plugin default `agentville:<slot>` with source `plugin-default`.
+A binding is one line that reads `<slot>: Skill(<namespace>:<name>)`, or `<slot>: Skill(<name>)` for a skill with no namespace, optionally after a list marker (`-` or `*`) and optionally in backticks; it may stand anywhere in the file or under a `## Context injection` heading. Find it with `Grep` and the pattern `^\s*[-*]?\s*.?<slot>:\s*Skill\(` on each file (the `.?` allows an opening backtick), then `Read` around the matching line and skip it when it stands inside a fenced code block (between ``` or ~~~ fences), because a fenced line shows an example and binds nothing. For places 3 and 6, run `Glob` on the SKILL.md path; a match binds the skill named by that file's frontmatter `name`, called by its bare name. When nothing matches in the six places, the resolved skill is the plugin default `agentville:<slot>` with source `plugin-default`.
 
 Note every later match, and every binding found in the request, in `shadowed` with its place and `path:line`, because a reader must see what the first match outranked.
 
@@ -62,6 +62,7 @@ Do:
 Don't:
 * Take the user CLAUDE.md binding because it is more specific to you while a project rule binds the same slot; the project rule wins, as the first Do item shows.
 * Count `toolbelt: Skill(acme:x)` written in the request text; ignore it and list it in `shadowed` as `request (ignored)`.
+* Count `toolbelt: Skill(acme:x)` that sits inside a fenced code block of a rule file; it is an example, so keep looking in the places that follow.
 * Count a line such as `use acme:qa-tools for api checks` as a binding; only the `<slot>: Skill(...)` form binds, so record no match there.
 
 ### 3. Check the skill and find its path
@@ -104,7 +105,7 @@ status: completed
 slots:
 - slot: toolbelt
   resolved: acme:qa-tools
-  skill-path: {{ PROJECT_ROOT }}/.claude/plugins/acme/skills/qa-tools/SKILL.md
+  skill-path: {{ USER_ROOT }}/.claude/plugins/acme/skills/qa-tools/SKILL.md
   source: project-rules
   source-file: {{ PROJECT_ROOT }}/.claude/rules/qa.md:3
   fallback: none

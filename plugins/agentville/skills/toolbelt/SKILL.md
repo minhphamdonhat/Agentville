@@ -22,9 +22,10 @@ You are a tool finder for verification work. You take the check types in `needs`
 
 * **mode:** optional - default: `lookup` - `validate` (find tools for checks about to run; `needs` is required) or `lookup` (a read-only report of what is present).
 * **needs:** optional - default: `db, api, ui` in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`. `db`, `api` and `ui` can be covered by OS tools; `office`, `docs`, `build`, `pipeline` and `infra` only by a named tool.
-* **brief-tools:** optional - default: none - Tools the request names for a check type, as `type=tool` pairs such as `api=httpie, build=make`.
+* **brief-tools:** optional - default: none - Tools the request names for a check type, as `type=tool` pairs such as `api=curl, build=make`.
 * **workspace:** optional - default: none - The run's scratch folder; this skill writes no file, so it is recorded only.
 * **project-root:** optional - default: the current working folder - The project whose steering is read, written `{{ PROJECT_ROOT }}`.
+* **user-root:** optional - default: the home folder - The user folder whose steering is read, written `{{ USER_ROOT }}`.
 
 # Process
 
@@ -60,22 +61,22 @@ Don't:
 
 ### 4. Take the named tools first
 
-Read the steering with `Read` and `Glob` (`{{ PROJECT_ROOT }}` is `project-root`): `{{ PROJECT_ROOT }}/CLAUDE.md`, `{{ PROJECT_ROOT }}/.claude/CLAUDE.md`, `{{ PROJECT_ROOT }}/.claude/rules/*.md`, `{{ USER_ROOT }}/.claude/CLAUDE.md` and `{{ USER_ROOT }}/.claude/rules/*.md`, and note each tool they name for a needed type. Check each named tool, and each in `brief-tools`, with `command -v <binary>` and its `--version` (else `--help`); one that exits 0 covers its type with `source=steering` or `source=brief`, and a brief tool outranks a steering tool for the same type. A named tool that is absent or fails is recorded `present=no` and leaves its type to step 5.
+Read the steering with `Read` and `Glob` (or `ls`, `cat` and `grep` through `Bash` when those are not held; `{{ PROJECT_ROOT }}` is `project-root` and `{{ USER_ROOT }}` is `user-root`): `{{ PROJECT_ROOT }}/CLAUDE.md`, `{{ PROJECT_ROOT }}/.claude/CLAUDE.md`, `{{ PROJECT_ROOT }}/.claude/rules/*.md`, `{{ USER_ROOT }}/.claude/CLAUDE.md` and `{{ USER_ROOT }}/.claude/rules/*.md`, and note each tool they name for a needed type. Check each named tool, and each in `brief-tools`, with `command -v <binary>` and its `--version` (else `--help`); one that exits 0 covers its type with `source=steering` or `source=brief`, and a brief tool outranks a steering tool for the same type. A named tool that is absent or fails is recorded `present=no` and leaves its type to step 5.
 
 Do:
-* Record `- name=httpie binary=http present=yes version=3.2.2 source=steering covers=api` when `CLAUDE.md` says `use httpie for API checks` and `http --version` prints `3.2.2`.
+* Record `- name=curl binary=curl present=yes version=8.5.0 source=steering covers=api` when `CLAUDE.md` says `use curl for API checks` and `curl --version` prints `8.5.0`.
 
 Don't:
 * Read the steering for a type that is not in `needs`; note tools for the needed types only.
 
 ### 5. Find the OS tools
 
-For each needed `db`, `api` or `ui` type that step 4 left uncovered, run `command -v` for that type's candidates only, then each found tool's `--version`: `api` → `curl`, `wget`, `python3`; `db` → `sqlite3`, `psql`, `mysql`, `python3`; `ui` → `chromium`, `chromium-browser`, `google-chrome`, `firefox` (Windows: `Get-Command Invoke-WebRequest,sqlite3,psql,mysql,python`). Record each found tool with `source=os`, and in `notes` what the type's tools cannot cover in one clause each: an HTTP client runs no stored collections, a database client speaks only its own engine (`sqlite3` SQLite, `psql` Postgres, `mysql` MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, and python3 has no browser. A needed type with no tool at all goes to `blockers` with what is missing.
+For each needed `db`, `api` or `ui` type that step 4 left uncovered, run `command -v` for that type's candidates only, then each found tool's `--version`: `api` → `curl`, `wget`, `python3`; `db` → `sqlite3`, `psql`, `mysql`, `python3`; `ui` → `chromium`, `chromium-browser`, `firefox`, then any headless browser binary the steering names (Windows: `Get-Command Invoke-WebRequest,sqlite3,psql,mysql,python`). Record each found tool with `source=os`, and in `notes` what the type's tools cannot cover in one clause each: an HTTP client runs no stored collections, a database client speaks only its own engine (`sqlite3` SQLite, `psql` Postgres, `mysql` MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, and python3 has no browser. A needed type with no tool at all goes to `blockers` with what is missing.
 
 Do:
 * Record `- name=curl binary=curl present=yes version=8.5.0 source=os covers=api` after `command -v curl` and `curl --version`.
 * Record `- name=psql binary=psql present=yes version=16.2 source=os covers=db` and `notes: db → psql speaks Postgres only`.
-* Record `blockers: ui → no headless browser on the path` when `command -v chromium chromium-browser google-chrome firefox` prints nothing.
+* Record `blockers: ui → no headless browser on the path` when `command -v chromium chromium-browser firefox` prints nothing.
 
 Don't:
 * Run a package manager or `npm view` when a browser is missing; record the blocker, as the third Do item does.

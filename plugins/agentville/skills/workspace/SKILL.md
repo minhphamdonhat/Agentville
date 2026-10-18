@@ -1,6 +1,6 @@
 ---
 name: "workspace"
-description: "Gives one run its workspace folders: from a topic id and an agent name it returns the absolute artefacts and scratch paths under '<workspace>/<topic-id>/<agent-name>/', the cleanup rule and whether the workspace is git-ignored, and creates both folders. The default reads the workspace folder that project rules, the project CLAUDE.md, user rules or the user CLAUDE.md name, and with none named uses '{{ PROJECT_ROOT }}/tmp/' without asking. Use before writing any artefact, evidence or scratch file, when asked where a run's artefacts go, or to locate another run's artefacts folder read-only."
+description: "Gives one run its workspace folders: from a topic id and an agent name it returns the absolute artefacts and scratch paths under '<workspace>/<topic-id>/<agent-name>/', the cleanup rule and whether the workspace is git-ignored, and creates both folders. The default reads a 'workspace-folder: <path>' line in project rules, the project CLAUDE.md, user rules or the user CLAUDE.md, and with none found uses '{{ PROJECT_ROOT }}/tmp/' without asking. Use before writing any artefact, evidence or scratch file, when asked where a run's artefacts go, or to locate another run's artefacts folder read-only."
 ---
 
 # Role
@@ -39,15 +39,15 @@ Don't:
 
 ### 2. Find the named workspace folder
 
-Look for a workspace folder in this order and stop at the first that names one, reading with `Read`, `Glob` and `Grep` (`{{ PROJECT_ROOT }}` is `project-root` and `{{ USER_ROOT }}` is `user-root`): `{{ PROJECT_ROOT }}/.claude/rules/*.md` (`project-rules`), `{{ PROJECT_ROOT }}/CLAUDE.md` and `{{ PROJECT_ROOT }}/.claude/CLAUDE.md` with their one-level `@<path>` imports (`project-claude-md`), `{{ USER_ROOT }}/.claude/rules/*.md` (`user-rules`), then `{{ USER_ROOT }}/.claude/CLAUDE.md` (`user-claude-md`). A file names a folder with a line `workspace-folder: <path>` (optionally after a list marker and in backticks), or with a sentence that names one folder as the agents' workspace, such as "The workspace is `tmp/`". Read a `{{ PROJECT_ROOT }}` or `{{ USER_ROOT }}` placeholder in the named path as that root, resolve a relative path against `{{ PROJECT_ROOT }}` and a leading `~` against `{{ USER_ROOT }}`, and drop a trailing `/`. When nothing names a folder, use `{{ PROJECT_ROOT }}/tmp` with source `default`.
+Look for a workspace folder in this order and stop at the first that names one, reading with `Read`, `Glob` and `Grep` (or `ls`, `cat` and `grep` through `Bash` when those are not held; `{{ PROJECT_ROOT }}` is `project-root` and `{{ USER_ROOT }}` is `user-root`): `{{ PROJECT_ROOT }}/.claude/rules/*.md` (`project-rules`), `{{ PROJECT_ROOT }}/CLAUDE.md` and `{{ PROJECT_ROOT }}/.claude/CLAUDE.md` with their one-level `@<path>` imports (`project-claude-md`), `{{ USER_ROOT }}/.claude/rules/*.md` (`user-rules`), then `{{ USER_ROOT }}/.claude/CLAUDE.md` (`user-claude-md`). A file names a folder only with a line `workspace-folder: <path>` (optionally after a list marker and in backticks); prose that mentions a workspace is not read. Read a `{{ PROJECT_ROOT }}` or `{{ USER_ROOT }}` placeholder in the named path as that root, resolve a relative path against `{{ PROJECT_ROOT }}` and a leading `~` against `{{ USER_ROOT }}`, and drop a trailing `/`. When nothing names a folder, use `{{ PROJECT_ROOT }}/tmp` with source `default`.
 
 Do:
-* Use `{{ PROJECT_ROOT }}/tmp` with source `project-claude-md` when `{{ PROJECT_ROOT }}/CLAUDE.md` says "Agents' workspace: `tmp/`".
+* Use `{{ PROJECT_ROOT }}/tmp` with source `project-claude-md` when `{{ PROJECT_ROOT }}/CLAUDE.md` has the line `workspace-folder: tmp/`.
 * Use `{{ PROJECT_ROOT }}/tmp` with source `default` when no rule or CLAUDE.md names a folder, and go on.
 
 Don't:
 * Return `needs-input` with `missing: workspace` because nothing names a folder; use the default, as the second Do item does.
-* Take a folder from a line that names a build output, such as "Artefacts of the build go to `dist/`"; only a folder named as the agents' workspace counts.
+* Take a folder from a sentence such as "The workspace is `tmp/`" or "Artefacts of the build go to `dist/`"; only a `workspace-folder:` line counts, so use the default for both.
 
 ### 3. Create the run folders
 

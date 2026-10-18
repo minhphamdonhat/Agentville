@@ -53,19 +53,53 @@ SKIP_DIRS = {".git", "__pycache__", "node_modules"}
 # Rule 22, injectable slots.
 SLOTS = ("workspace", "toolbelt", "draft", "plan", "report")  # injectable slots; add a future slot here only
 CI_CALL = "Skill(agentville:context-injection)"
-SLOT_CALL_RE = re.compile(r"Skill\(agentville:(" + "|".join(SLOTS) + r")\)")
-SLOT_USE_RE = re.compile(r"`(" + "|".join(SLOTS) + r")` (?:slot|skill)\b")
-PLUGIN_DEFAULT = "the plugin default"
+SLOT_ALT = "|".join(SLOTS)
+# A direct use of a slot's default: Skill(agentville:<slot>), Skill(<slot>), /agentville:<slot> or a bare agentville:<slot>.
+SLOT_CALL_RE = re.compile(r"Skill\((?:agentville:)?(" + SLOT_ALT + r")\)|(?<![\w:-])/?agentville:(" + SLOT_ALT + r")(?![\w-])")
+SLOT_USE_RE = re.compile(r"`(" + SLOT_ALT + r")` (?:slot|skill)\b")
+# Exempt only a hit that sits next to the words "the plugin default" or in a record such as "(plugin-default)",
+# never a hit that merely shares a line with them.
+PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[^.;]{0,20}$")
+PLUGIN_DEFAULT_AFTER_RE = re.compile(r"[`)]*[,;]?\s*(?:the plugin default|\((?:plugin[- ]default|(?:project|user)-[\w-]+)\))")
 
 
-def slot_hits(lines, exempt=False):
-    """Slot rule: a file that uses an injectable slot names CI_CALL and never calls Skill(agentville:<slot>) itself."""
+def slot_default_described(line, m):
+    """True when the hit only describes the plugin default: the phrase is adjacent to it, not elsewhere on the line."""
+    return bool(PLUGIN_DEFAULT_BEFORE_RE.search(line[:m.start()]) or PLUGIN_DEFAULT_AFTER_RE.match(line[m.end():]))
+
+
+def reference_lines(folder, name):
+    """(relative path, lines) for each Markdown file under references/, minus skill-smith's own quoting files."""
+    found = []
+    base = os.path.join(folder, "references")
+    for root, dirs, files in os.walk(base):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+        for fn in sorted(files):
+            if not fn.endswith(".md"):
+                continue
+            full = os.path.join(root, fn)
+            rel = os.path.relpath(full, folder).replace(os.sep, "/")
+            if name == "skill-smith" and rel in INDEP_ALLOWLIST:
+                continue
+            try:
+                with open(full, encoding="utf-8") as f:
+                    found.append((rel, f.read().splitlines()))
+            except (OSError, UnicodeError):
+                continue
+    return found
+
+
+def slot_hits(lines, exempt=False, extra=()):
+    """Slot rule: a file that uses an injectable slot names CI_CALL and never calls Skill(agentville:<slot>) itself.
+    `extra` holds (relative path, lines) pairs for the skill's reference files, which are scanned the same way."""
     if exempt:
         return [], []
-    direct = [f"{i + 1}:{m.group(0)}" for i, l in enumerate(lines) for m in SLOT_CALL_RE.finditer(l)
-              if PLUGIN_DEFAULT not in l]
-    used = sorted({m.group(1) for l in lines for m in SLOT_USE_RE.finditer(l)})
-    return direct, ([] if CI_CALL in "\n".join(lines) else used)
+    sets = [("", lines)] + [(rel + ":", ls) for rel, ls in extra]
+    direct = [f"{pre}{i + 1}:{m.group(0)}" for pre, ls in sets for i, l in enumerate(ls)
+              for m in SLOT_CALL_RE.finditer(l) if not slot_default_described(l, m)]
+    used = sorted({m.group(1) for _, ls in sets for l in ls for m in SLOT_USE_RE.finditer(l)})
+    every = "\n".join("\n".join(ls) for _, ls in sets)
+    return direct, ([] if CI_CALL in every else used)
 
 
 def independence_hits(folder, name, doc, lines, desc, kind):
@@ -565,7 +599,7 @@ def main(argv):
         fails.add(20)
     for h in indep:
         out.append("independence_hit: " + h)
-    direct, no_ci = ([], []) if template else slot_hits(lines, name in SLOTS or name == "context-injection")
+    direct, no_ci = ([], []) if template else slot_hits(lines, name in SLOTS or name == "context-injection", reference_lines(folder, name))
     out.append("slot_direct_calls: " + (", ".join(direct) or "none"))
     out.append("slot_without_context_injection: " + (", ".join(no_ci) or "none"))
     if direct or no_ci:

@@ -70,10 +70,10 @@ Context injection works like dependency injection. Agentville refers to a slot b
 Resolution order, first match wins:
 
 1. Project rules, `{{ PROJECT_ROOT }}/.claude/rules/*.md`.
-2. Project `CLAUDE.md`, `{{ PROJECT_ROOT }}/CLAUDE.md` then `{{ PROJECT_ROOT }}/.claude/CLAUDE.md`.
+2. Project `CLAUDE.md`, `{{ PROJECT_ROOT }}/CLAUDE.md` then `{{ PROJECT_ROOT }}/.claude/CLAUDE.md`, each with the files it imports on an `@<path>` line, one level deep.
 3. A project skill named exactly the slot.
 4. User rules, `{{ USER_ROOT }}/.claude/rules/*.md`.
-5. User `CLAUDE.md`, `{{ USER_ROOT }}/.claude/CLAUDE.md`.
+5. User `CLAUDE.md`, `{{ USER_ROOT }}/.claude/CLAUDE.md`, with its one-level `@<path>` imports.
 6. A user skill named exactly the slot.
 7. The plugin default, `Skill(agentville:<slot>)`.
 
@@ -81,7 +81,7 @@ A binding is one line, `<slot>: Skill(<namespace>:<name>)`, anywhere in a rules 
 
 How a tool is used is set by the agent's own file or by the steering, never by the toolbelt.
 
-Both pairs of smiths enforce the two-step use. `measure.py` holds the injectable slots in one `SLOTS` constant (`workspace`, `toolbelt`, `draft`, `plan`, `report`). An agent (rule A18) or a skill (rule 22) that uses a slot must name `Skill(agentville:context-injection)` and must not call `Skill(agentville:<slot>)` directly, except on a line that describes "the plugin default". The slot's own default skill and `context-injection` are exempt. Add a future slot to `SLOTS` in all four `measure.py` files.
+Both pairs of smiths enforce the two-step use. `measure.py` holds the injectable slots in one `SLOTS` constant (`workspace`, `toolbelt`, `draft`, `plan`, `report`). An agent (rule A18) or a skill (rule 22) that uses a slot must name `Skill(agentville:context-injection)` and must not call `Skill(agentville:<slot>)` directly (nor as `Skill(<slot>)`, `/agentville:<slot>` or a bare `agentville:<slot>`), except where the words "the plugin default" sit next to it or it stands in a slot record such as `(plugin-default)`. A skill scans its `references/` files too. A skill named after a slot is treated as a slot implementation, so it and `context-injection` are exempt. Add a future slot to `SLOTS` in all four `measure.py` files.
 
 This repository binds the `workspace` slot to the default and names the folder the default reads:
 

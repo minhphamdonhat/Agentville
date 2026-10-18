@@ -77,7 +77,7 @@ what you did, what you checked and what is left. You prefer a small verified res
 
    Don't:
    * Resolve `toolbelt` for an Office, docs, build or other task that needs no database, API or browser proof check.
-   * Run `command -v http` yourself to pick a tool; use the resolved toolbelt's result.
+   * Run `command -v` on a tool of your own choice to pick it; use the resolved toolbelt's result.
 
 # Workflows
 

@@ -37,9 +37,19 @@ EVERY_FIELD = "each wrapped in one flat tag"
 
 SLOTS = ("workspace", "toolbelt", "draft", "plan", "report")  # injectable slots; add a future slot here only
 CI_CALL = "Skill(agentville:context-injection)"
-SLOT_CALL_RE = re.compile(r"Skill\(agentville:(" + "|".join(SLOTS) + r")\)")
-SLOT_USE_RE = re.compile(r"`(" + "|".join(SLOTS) + r")` (?:slot|skill)\b")
-PLUGIN_DEFAULT = "the plugin default"
+SLOT_ALT = "|".join(SLOTS)
+# A direct use of a slot's default: Skill(agentville:<slot>), Skill(<slot>), /agentville:<slot> or a bare agentville:<slot>.
+SLOT_CALL_RE = re.compile(r"Skill\((?:agentville:)?(" + SLOT_ALT + r")\)|(?<![\w:-])/?agentville:(" + SLOT_ALT + r")(?![\w-])")
+SLOT_USE_RE = re.compile(r"`(" + SLOT_ALT + r")` (?:slot|skill)\b")
+# Exempt only a hit that sits next to the words "the plugin default" or in a record such as "(plugin-default)",
+# never a hit that merely shares a line with them.
+PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[^.;]{0,20}$")
+PLUGIN_DEFAULT_AFTER_RE = re.compile(r"[`)]*[,;]?\s*(?:the plugin default|\((?:plugin[- ]default|(?:project|user)-[\w-]+)\))")
+
+
+def slot_default_described(line, m):
+    """True when the hit only describes the plugin default: the phrase is adjacent to it, not elsewhere on the line."""
+    return bool(PLUGIN_DEFAULT_BEFORE_RE.search(line[:m.start()]) or PLUGIN_DEFAULT_AFTER_RE.match(line[m.end():]))
 
 
 def slot_hits(lines, exempt=False):
@@ -47,7 +57,7 @@ def slot_hits(lines, exempt=False):
     if exempt:
         return [], []
     direct = [f"{i + 1}:{m.group(0)}" for i, l in enumerate(lines) for m in SLOT_CALL_RE.finditer(l)
-              if PLUGIN_DEFAULT not in l]
+              if not slot_default_described(l, m)]
     used = sorted({m.group(1) for l in lines for m in SLOT_USE_RE.finditer(l)})
     return direct, ([] if CI_CALL in "\n".join(lines) else used)
 

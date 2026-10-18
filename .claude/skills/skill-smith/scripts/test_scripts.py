@@ -532,6 +532,31 @@ class MeasureTests(unittest.TestCase):
         text = GOOD.replace('name: "demo"', 'name: "workspace"').replace("Search with", "Resolve with Skill(agentville:workspace), then search with")
         self.assertNotIn(22, fails(self.m(text)[1]))
 
+    def test_22_plugin_default_elsewhere_on_line_does_not_exempt(self):
+        line = "Fall back to the plugin default and say so in the report, then call Skill(agentville:workspace), then search with"
+        out = self.m(GOOD.replace("Search with", line))[1]
+        self.assertIn(22, fails(out))
+
+    def test_22_other_call_forms_fail(self):
+        for form in ("agentville:toolbelt", "/agentville:toolbelt", "Skill(toolbelt)"):
+            out = self.m(GOOD.replace("Search with", f"Load {form} first, then search with"))[1]
+            self.assertIn(22, fails(out), form)
+
+    def test_22_slot_record_with_source_allowed(self):
+        out = self.m(GOOD.replace("Search with", "Write `workspace: agentville:workspace (plugin-default)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_reference_files_are_scanned(self):
+        d = os.path.join(self.tmp, "withrefs")
+        os.makedirs(os.path.join(d, "references"))
+        with open(os.path.join(d, "references", "notes.md"), "w", encoding="utf-8") as f:
+            f.write("Resolve with Skill(agentville:workspace) first.\nUse the `toolbelt` slot.\n")
+        out = self.m(GOOD, folder=d)[1]
+        self.assertIn(22, fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "references/notes.md:1:Skill(agentville:workspace)" in l
+                            for l in out.splitlines()), out)
+        self.assertIn("slot_without_context_injection: toolbelt", out)
+
 
 class StageTests(unittest.TestCase):
     def setUp(self):

@@ -263,6 +263,22 @@ class TestMeasure(Base):
         _, out = self.measure(BASE_TEXT + "\n* Use the `toolbelt` slot, resolved with `Skill(agentville:context-injection)`.\n")
         self.assertNotIn("A18", fails(out))
 
+    def test_slot_plugin_default_elsewhere_on_line_does_not_exempt(self):
+        old = "and report a fallback to the plugin default in `<deviations>`."
+        self.assertIn(old, BASE_TEXT)
+        _, out = self.measure(BASE_TEXT.replace(old, old + " Then call Skill(agentville:toolbelt)."))
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_slot_other_call_forms_fail_a18(self):
+        for form in ("agentville:toolbelt", "/agentville:toolbelt", "Skill(toolbelt)"):
+            _, out = self.measure(BASE_TEXT + f"\n* Load {form} first.\n")
+            self.assertIn("A18", fails(out), form)
+
+    def test_slot_record_with_source_allowed(self):
+        _, out = self.measure(BASE_TEXT + "\n* Write `workspace: agentville:workspace (plugin-default)` in the claims.\n")
+        self.assertNotIn("A18", fails(out))
+
 
 class TestStage(Base):
     def create(self, *args):
