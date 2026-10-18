@@ -62,15 +62,20 @@ SLOT_USE_RE = re.compile(r"`(" + SLOT_ALT + r")` (?:slot|skill)\b")
 #   * the call right before "(plugin-default)", with at most backticks or a space between;
 #   * a record "<slot>: <ns>:<name> (<source>)" with <source> in SLOT_SOURCES, written without Skill( or a slash.
 # A hit that merely shares a line with these words, or carries another parenthesis, is a direct call.
+# A hit preceded by an imperative verb (call, load, run, invoke or use), with at most backticks, spaces or
+# "the plugin default" between, is a direct call even when "(plugin-default)" follows it.
 SLOT_SOURCES = ("plugin-default", "project-rules", "project-claude-md", "project-skill", "user-rules", "user-claude-md", "user-skill")
 PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[`\s]*$")
 PLUGIN_DEFAULT_AFTER_RE = re.compile(r"`*\s?\(plugin-default\)")
+IMPERATIVE_BEFORE_RE = re.compile(r"(?i)\b(?:call|load|run|invoke|use)\b[`\s]*(?:the plugin default[`\s]*)?$")
 RECORD_AFTER_RE = re.compile(r"\s\((?:" + "|".join(SLOT_SOURCES) + r")\)")
 
 
 def slot_default_described(line, m):
     """True when the hit only describes the plugin default or stands as the skill id of a slot record."""
     before, after = line[:m.start()], line[m.end():]
+    if IMPERATIVE_BEFORE_RE.search(before):
+        return False
     if PLUGIN_DEFAULT_BEFORE_RE.search(before) or PLUGIN_DEFAULT_AFTER_RE.match(after):
         return True
     slot = m.group(1) or m.group(2)

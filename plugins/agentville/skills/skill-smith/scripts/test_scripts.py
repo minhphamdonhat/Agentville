@@ -534,6 +534,20 @@ class MeasureTests(unittest.TestCase):
         out = self.m(GOOD.replace("Search with", "Name `Skill(agentville:toolbelt) (plugin-default)`, then search with"))[1]
         self.assertNotIn(22, fails(out))
 
+    def test_22_imperative_verb_before_default_call_fails(self):
+        for text in ("Call `Skill(agentville:toolbelt) (plugin-default)`", "Load the plugin default `Skill(agentville:workspace)`",
+                     "then run Skill(agentville:draft) (plugin-default)", "Invoke the plugin default Skill(agentville:plan)",
+                     "Use `Skill(agentville:report)` (plugin-default)"):
+            out = self.m(GOOD.replace("Search with", text + ", then search with"))[1]
+            self.assertIn(22, fails(out), text)
+            self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:" in l for l in out.splitlines()), text)
+
+    def test_22_non_imperative_default_description_still_allowed(self):
+        for text in ("The slot falls back to the plugin default `Skill(agentville:draft)`", "Name `Skill(agentville:plan) (plugin-default)`",
+                     "Write `report: agentville:report (plugin-default)`"):
+            out = self.m(GOOD.replace("Search with", text + ", then search with"))[1]
+            self.assertNotIn(22, fails(out), text)
+
     def test_22_record_needs_known_source_and_own_slot(self):
         for text in ("toolbelt: agentville:toolbelt (project-x)", "workspace: agentville:toolbelt (project-rules)"):
             out = self.m(GOOD.replace("Search with", f"Write `{text}`, then search with"))[1]
