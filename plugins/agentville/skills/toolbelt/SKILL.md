@@ -1,6 +1,6 @@
 ---
 name: "toolbelt"
-description: "Finds which verification tools this run can use, for the check types a task needs and no others, and reports each tool's name, binary, presence, version, source and the check type it covers, with the surface, the OS and any blockers. db, api and ui checks are covered by the tools the steering or the request names, else by tools the OS already provides (a database client, an HTTP client, a headless browser, python3); office, docs, build, pipeline and infra checks are covered only by named tools. It only discovers: it changes nothing on the host, probes no network or registry, and says nothing about how a tool is used. Use before database, API or browser proof checks, when asked which check tools are present here, or when a named check tool may be missing."
+description: "Finds which verification tools this run can use, for the check types a task needs and no others (db, api, ui, office, docs, build, pipeline, infra), and reports each tool's name, binary, presence, version, source and the check type it covers, with the surface, the OS and any blockers. For every type, the tools the steering or the request names come first; where nothing names a tool, it reports the OS-provided tools that are present for that type (a database client, an HTTP client, a headless browser, python3, unzip, grep, make). It only discovers: it changes nothing on the host, probes no network or registry, and says nothing about how a tool is used. Use before proof checks that need a command-line tool, when asked which check tools are present here, or when a named check tool may be missing."
 ---
 
 # Role
@@ -13,15 +13,15 @@ You are a tool finder for verification work. You take the check types in `needs`
 * Ask the user when a person is reachable; otherwise return `status: needs-input` with `missing:` naming each fact, because an unattended run cannot answer.
 * Look for tools only for the types in `needs`, because a tool the task does not need is cost and risk with no benefit.
 * Change nothing on the host, run no package manager, download nothing, and probe no network, registry or release page, because discovery must leave the host as it found it.
-* Run only `command -v` (PowerShell `Get-Command`), a tool's own `--version` or `--help`, `uname`, `env | cut -d= -f1` and file reads, because any other command can change the host or reach a service.
+* Run only `command -v` (PowerShell `Get-Command`), a tool's own `--version` or `--help`, `uname`, `env | cut -d= -f1`, and file reads and listings, because any other command can change the host or reach a service.
 * Report which tools exist and never how to run a check with them, because the steering or the check's own procedure sets how a tool is used.
-* Confirm only that a tool exists and runs (its version or help command exits 0); never judge a driver, a connection or a target, because a failing connection is a target problem, not a tool problem.
+* Confirm only that a tool exists and runs (its version or help command exits 0; for `grep`, `sed`, `awk` and `unzip`, whose version flags differ by platform, `command -v` finding them is enough); never judge a driver, a connection or a target, because a failing connection is a target problem, not a tool problem.
 * Print environment variable names only, never their values, because the output is read by others and logs are kept.
 
 # Input
 
 * **mode:** optional - default: `lookup` - `validate` (find tools for checks about to run; `needs` is required) or `lookup` (a read-only report of what is present).
-* **needs:** optional - default: `db, api, ui` in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`. `db`, `api` and `ui` can be covered by OS tools; `office`, `docs`, `build`, `pipeline` and `infra` only by a named tool.
+* **needs:** optional - default: `db, api, ui` in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`, from `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` and `infra`. Every type can be covered by a named tool or by an OS tool.
 * **brief-tools:** optional - default: none - Tools the request names for a check type, as `type=tool` pairs such as `api=curl, build=make`.
 * **workspace:** optional - default: none - The run's scratch folder; this skill writes no file, so it is recorded only.
 * **project-root:** optional - default: the current working folder - The project whose steering is read, written `{{ PROJECT_ROOT }}`.
@@ -41,17 +41,17 @@ Don't:
 
 ### 2. Gate on need
 
-List the needed types. When no type is `db`, `api` or `ui`, skip steps 3 and 5: write `not probed (no db, api or ui check needed)` in `surface` and `os`, run step 4 only for the tools the steering or `brief-tools` name for the needed types, and leave `tools` empty when none is named.
+List the needed types, each one of `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` or `infra`; a word outside the eight goes to `blockers` as `<word> → unknown check type`. Every later step covers the listed types only.
 
 Do:
-* Treat `needs: office` with no `brief-tools` as nothing to probe, and still read the steering in step 4 for an office tool.
+* For `needs: office` with no `brief-tools`, read the steering in step 4 for an office tool, then find the office candidates in step 5.
 
 Don't:
-* Run `command -v curl psql chromium` for `needs: office`; nothing maps to an OS tool there.
+* Run `command -v curl psql chromium` for `needs: office`; probe the office candidates only.
 
 ### 3. Find the surface
 
-When you hold no shell tool (no `Bash` and no PowerShell), the surface is `chat`: skip step 5, record a blocker `<type> → no shell` for each needed `db`, `api` and `ui` type, and note that docs and file checks stay in reach by reading. With a shell, run `env | cut -d= -f1 | grep -E '^(CLAUDE_CODE_REMOTE|CCR_)'`; any name it prints gives `cloud-code`, else `local-code`. Then run `uname -s` and `uname -m` (Windows: `[System.Environment]::OSVersion.VersionString` and `$env:PROCESSOR_ARCHITECTURE`) for `os`.
+When you hold no shell tool (no `Bash` and no PowerShell), the surface is `chat`: skip step 5, record a blocker `<type> → no shell` for each needed type, and note that docs and file checks stay in reach by reading. With a shell, run `env | cut -d= -f1 | grep -E '^(CLAUDE_CODE_REMOTE|CCR_)'`; any name it prints gives `cloud-code`, else `local-code`. Then run `uname -s` and `uname -m` (Windows: `[System.Environment]::OSVersion.VersionString` and `$env:PROCESSOR_ARCHITECTURE`) for `os`.
 
 Do:
 * Record `surface: cloud-code (CLAUDE_CODE_REMOTE set)` and `os: Linux x86_64`.
@@ -71,12 +71,26 @@ Don't:
 
 ### 5. Find the OS tools
 
-For each needed `db`, `api` or `ui` type that step 4 left uncovered, run `command -v` for that type's candidates only, then each found tool's `--version`: `api` → `curl`, `wget`, `python3`; `db` → `sqlite3`, `psql`, `mysql`, `python3`; `ui` → `chromium`, `chromium-browser`, `firefox`, then any headless browser binary the steering names (Windows: `Get-Command Invoke-WebRequest,sqlite3,psql,mysql,python`). Record each found tool with `source=os`, and in `notes` what the type's tools cannot cover in one clause each: an HTTP client runs no stored collections, a database client speaks only its own engine (`sqlite3` SQLite, `psql` Postgres, `mysql` MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, and python3 has no browser. A needed type with no tool at all goes to `blockers` with what is missing.
+For each needed type that step 4 left uncovered, run `command -v` for that type's candidates only, then each found tool's `--version`:
+
+| Type | Candidates |
+| --- | --- |
+| `api` | `curl`, `wget`, `python3` (Windows: `Invoke-WebRequest`) |
+| `db` | `sqlite3`, `psql`, `mysql`, `python3` |
+| `ui` | `chromium`, `chromium-browser`, `firefox` |
+| `office` | `python3`, `unzip`, `soffice`, `libreoffice` |
+| `docs` | `grep`, `sed`, `awk`, `python3` |
+| `build` | `make`, `python3` |
+| `pipeline` | `python3`, `sqlite3` |
+| `infra` | `python3` |
+
+Add a headless browser binary or any other tool the steering names for the type. For `build` and `infra`, list the project root with `Glob` (or `ls`) for `Makefile`, `build.sh` and `scripts/*.sh`, and name any found in `notes` as the project's own script; it is not a tool entry. Record each found tool with `source=os`, and in `notes` what the type's tools cannot cover in one clause each: an HTTP client runs no stored collections, a database client speaks only its own engine (`sqlite3` SQLite, `psql` Postgres, `mysql` MySQL), a bare headless browser gives screenshots and DOM dumps but no scripted steps, `python3` has no browser, `unzip` and `python3` read office files but do not recalculate or render them (`soffice` converts), the text utilities match and rewrite text and run nothing else, `make` runs only a `Makefile`, and no cloud CLI is reported for `infra` unless it is named. A needed type with no tool at all goes to `blockers` with what is missing.
 
 Do:
 * Record `- name=curl binary=curl present=yes version=8.5.0 source=os covers=api` after `command -v curl` and `curl --version`.
 * Record `- name=psql binary=psql present=yes version=16.2 source=os covers=db` and `notes: db → psql speaks Postgres only`.
 * Record `blockers: ui → no headless browser on the path` when `command -v chromium chromium-browser firefox` prints nothing.
+* Record `- name=grep binary=grep present=yes version=unknown source=os covers=docs` for `needs: docs` when nothing names a docs tool and `command -v grep` prints a path.
 
 Don't:
 * Run a package manager or `npm view` when a browser is missing; record the blocker, as the third Do item does.
@@ -93,8 +107,8 @@ The reply returns these fields:
 
 * **status:** always - `completed`, `blocked`, `partial` or `needs-input`; `completed` or `partial` in `lookup` mode.
 * **mode:** always - `validate` or `lookup`.
-* **surface:** always - `chat`, `local-code` or `cloud-code`, with the variable names that decided it, or `not probed (...)`.
-* **os:** always - The OS and architecture, `unknown` on `chat`, or `not probed (...)`.
+* **surface:** always - `chat`, `local-code` or `cloud-code`, with the variable names that decided it.
+* **os:** always - The OS and architecture, or `unknown` on `chat`.
 * **tools:** always - One line per tool considered: name, binary, present, version, source (`steering`, `brief`, `os` or `none`) and the check type it covers.
 * **notes:** always - What each found tool cannot cover, one clause per type, or `none`.
 * **blockers:** always - Each needed type with no tool and why, or `none`.
@@ -118,14 +132,15 @@ blockers: none
 Do:
 * `status: blocked`, `blockers: ui → no headless browser on the path`, `reason: no tool covers the ui check` in `validate` mode with `needs: ui`.
 * `surface: chat (no shell tool)`, `os: unknown`, `blockers: api → no shell`, `notes: docs checks by reading only`, `status: blocked` for `needs: docs, api` without a shell.
-* `status: completed`, `tools:` empty, `notes: none`, `blockers: none` for `needs: office` with no named office tool.
+* `status: completed`, `- name=unzip binary=unzip present=yes version=unknown source=os covers=office`, `blockers: none` for `needs: office` with no named office tool and `unzip` on the path.
+* `status: blocked`, `blockers: office → no office tool on the path`, `reason: no tool covers the office check` for `needs: office` when none of its candidates is found.
 
 Don't:
 * Add a `recommendation:` or any other line; return the fields listed above only, as the template does.
 * Write a value such as `HTTPS_PROXY=http://user:pass@proxy:3128` in `surface`; write variable names only.
 * Reply with only `status:` and `reason:` after step 5 found a blocker; return the full field block, as the first Do item does.
 
-When the run stops before step 2 finishes, reply with this block only:
+When the run stops before step 3 finishes, reply with this block only:
 
 ```text
 status: partial | blocked | needs-input | failed

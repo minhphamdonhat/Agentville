@@ -41,15 +41,25 @@ SLOT_ALT = "|".join(SLOTS)
 # A direct use of a slot's default: Skill(agentville:<slot>), Skill(<slot>), /agentville:<slot> or a bare agentville:<slot>.
 SLOT_CALL_RE = re.compile(r"Skill\((?:agentville:)?(" + SLOT_ALT + r")\)|(?<![\w:-])/?agentville:(" + SLOT_ALT + r")(?![\w-])")
 SLOT_USE_RE = re.compile(r"`(" + SLOT_ALT + r")` (?:slot|skill)\b")
-# Exempt only a hit that sits next to the words "the plugin default" or in a record such as "(plugin-default)",
-# never a hit that merely shares a line with them.
-PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[^.;]{0,20}$")
-PLUGIN_DEFAULT_AFTER_RE = re.compile(r"[`)]*[,;]?\s*(?:the plugin default|\((?:plugin[- ]default|(?:project|user)-[\w-]+)\))")
+# Exempt a hit only when the text reads exactly as a description of the default or as a slot record:
+#   * "the plugin default" right before it, with at most backticks or spaces between (the plugin default `Skill(agentville:<slot>)`);
+#   * the call right before "(plugin-default)", with at most backticks or a space between;
+#   * a record "<slot>: <ns>:<name> (<source>)" with <source> in SLOT_SOURCES, written without Skill( or a slash.
+# A hit that merely shares a line with these words, or carries another parenthesis, is a direct call.
+SLOT_SOURCES = ("plugin-default", "project-rules", "project-claude-md", "project-skill", "user-rules", "user-claude-md", "user-skill")
+PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[`\s]*$")
+PLUGIN_DEFAULT_AFTER_RE = re.compile(r"`*\s?\(plugin-default\)")
+RECORD_AFTER_RE = re.compile(r"\s\((?:" + "|".join(SLOT_SOURCES) + r")\)")
 
 
 def slot_default_described(line, m):
-    """True when the hit only describes the plugin default: the phrase is adjacent to it, not elsewhere on the line."""
-    return bool(PLUGIN_DEFAULT_BEFORE_RE.search(line[:m.start()]) or PLUGIN_DEFAULT_AFTER_RE.match(line[m.end():]))
+    """True when the hit only describes the plugin default or stands as the skill id of a slot record."""
+    before, after = line[:m.start()], line[m.end():]
+    if PLUGIN_DEFAULT_BEFORE_RE.search(before) or PLUGIN_DEFAULT_AFTER_RE.match(after):
+        return True
+    slot = m.group(1) or m.group(2)
+    bare = bool(m.group(2)) and not m.group(0).startswith("/")
+    return bare and bool(re.search(r"(?<![\w-])" + slot + r":\s+$", before)) and bool(RECORD_AFTER_RE.match(after))
 
 
 def slot_hits(lines, exempt=False):

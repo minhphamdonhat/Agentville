@@ -251,7 +251,29 @@ class TestMeasure(Base):
         self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
 
     def test_slot_plugin_default_mention_allowed(self):
-        _, out = self.measure(BASE_TEXT + "\n* The slot default is `Skill(agentville:toolbelt)`, the plugin default.\n")
+        _, out = self.measure(BASE_TEXT + "\n* The slot default is the plugin default `Skill(agentville:toolbelt)`.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_plugin_default_then_call_fails_a18(self):
+        _, out = self.measure(BASE_TEXT + "\n* Fall back to the plugin default, then call Skill(agentville:toolbelt).\n")
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_slot_call_with_source_outside_record_fails_a18(self):
+        for text in ("Call `Skill(agentville:toolbelt) (project-x)` now.", "Call `Skill(agentville:toolbelt) (project-rules)` now.",
+                     "Write `toolbelt: Skill(agentville:toolbelt) (project-rules)` now."):
+            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            self.assertIn("A18", fails(out), text)
+
+    def test_slot_call_followed_by_plugin_default_record_allowed(self):
+        _, out = self.measure(BASE_TEXT + "\n* Name `Skill(agentville:toolbelt) (plugin-default)` in the claims.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_record_needs_known_source_and_own_slot(self):
+        for text in ("toolbelt: agentville:toolbelt (project-x)", "workspace: agentville:toolbelt (project-rules)"):
+            _, out = self.measure(BASE_TEXT + f"\n* Write `{text}` in the claims.\n")
+            self.assertIn("A18", fails(out), text)
+        _, out = self.measure(BASE_TEXT + "\n* Write `toolbelt: agentville:toolbelt (project-rules)` in the claims.\n")
         self.assertNotIn("A18", fails(out))
 
     def test_slot_without_context_injection_fails_a18(self):

@@ -30,7 +30,7 @@ The shipped skills are:
 * `intelligence-routing-model` picks the cheapest model and effort that still succeeds.
 * `context-injection` resolves a slot (`workspace`, `toolbelt` or any named slot) to the skill that fills it for this run. One call takes a list of slots and returns, per slot, the resolved skill id, the absolute path of its SKILL.md, the binding's source and any fallback. It does not load or run the resolved skills.
 * `workspace` is the default for the `workspace` slot: it returns a run's artefacts and scratch folders and never asks.
-* `toolbelt` is the default for the `toolbelt` slot: it discovers which tools are present for the db, api or ui checks a task needs, from the steering's and the request's tools, then the OS's own tools. It is discovery only and says nothing about how a tool is used.
+* `toolbelt` is the default for the `toolbelt` slot: it discovers which tools are present for the checks a task needs, from the steering's and the request's tools first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. It is discovery only and says nothing about how a tool is used.
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
@@ -81,7 +81,7 @@ A binding is one line, `<slot>: Skill(<namespace>:<name>)`, anywhere in a rules 
 
 How a tool is used is set by the agent's own file or by the steering, never by the toolbelt.
 
-Both pairs of smiths enforce the two-step use. `measure.py` holds the injectable slots in one `SLOTS` constant (`workspace`, `toolbelt`, `draft`, `plan`, `report`). An agent (rule A18) or a skill (rule 22) that uses a slot must name `Skill(agentville:context-injection)` and must not call `Skill(agentville:<slot>)` directly (nor as `Skill(<slot>)`, `/agentville:<slot>` or a bare `agentville:<slot>`), except where the words "the plugin default" sit next to it or it stands in a slot record such as `(plugin-default)`. A skill scans its `references/` files too. A skill named after a slot is treated as a slot implementation, so it and `context-injection` are exempt. Add a future slot to `SLOTS` in all four `measure.py` files.
+Both pairs of smiths enforce the two-step use. `measure.py` holds the injectable slots in one `SLOTS` constant (`workspace`, `toolbelt`, `draft`, `plan`, `report`). An agent (rule A18) or a skill (rule 22) that uses a slot must name `Skill(agentville:context-injection)` and must not call `Skill(agentville:<slot>)` directly (nor as `Skill(<slot>)`, `/agentville:<slot>` or a bare `agentville:<slot>`), except where the text reads as a description of the default (the words "the plugin default" right before it, or `(plugin-default)` right after it) or it is the skill id of a slot record `<slot>: <namespace>:<name> (<source>)` with a known source. A skill scans its `references/` files too. A skill named after a slot is treated as a slot implementation, so it and `context-injection` are exempt. Add a future slot to `SLOTS` in all four `measure.py` files.
 
 This repository binds the `workspace` slot to the default and names the folder the default reads:
 

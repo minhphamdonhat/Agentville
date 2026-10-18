@@ -516,7 +516,29 @@ class MeasureTests(unittest.TestCase):
         self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:workspace)" in l for l in out.splitlines()))
 
     def test_22_plugin_default_mention_allowed(self):
-        out = self.m(GOOD.replace("Search with", "Note that the plugin default is Skill(agentville:workspace), then search with"))[1]
+        out = self.m(GOOD.replace("Search with", "Note the plugin default `Skill(agentville:workspace)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_plugin_default_then_call_fails(self):
+        out = self.m(GOOD.replace("Search with", "Fall back to the plugin default, then call Skill(agentville:toolbelt), then search with"))[1]
+        self.assertIn(22, fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_22_call_with_source_outside_record_fails(self):
+        for text in ("Call `Skill(agentville:toolbelt) (project-x)`", "Call `Skill(agentville:toolbelt) (project-rules)`",
+                     "Write `toolbelt: Skill(agentville:toolbelt) (project-rules)`"):
+            out = self.m(GOOD.replace("Search with", text + ", then search with"))[1]
+            self.assertIn(22, fails(out), text)
+
+    def test_22_call_followed_by_plugin_default_record_allowed(self):
+        out = self.m(GOOD.replace("Search with", "Name `Skill(agentville:toolbelt) (plugin-default)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_record_needs_known_source_and_own_slot(self):
+        for text in ("toolbelt: agentville:toolbelt (project-x)", "workspace: agentville:toolbelt (project-rules)"):
+            out = self.m(GOOD.replace("Search with", f"Write `{text}`, then search with"))[1]
+            self.assertIn(22, fails(out), text)
+        out = self.m(GOOD.replace("Search with", "Write `toolbelt: agentville:toolbelt (project-rules)`, then search with"))[1]
         self.assertNotIn(22, fails(out))
 
     def test_22_slot_without_context_injection_fails(self):

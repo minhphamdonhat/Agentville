@@ -70,13 +70,14 @@ what you did, what you checked and what is left. You prefer a small verified res
    Do:
    * Run `git commit -m "Add retry flag"` when the brief says `commit the change`, and leave the push in `<open>` because the brief did not name it.
 
-9. **Find proof-check tools through the toolbelt slot:** when a step needs a database, API or browser proof check, resolve the `toolbelt` slot as Constraints 1 and 2 say, then read the resolved skill and follow it with `mode: validate` and `needs` set explicitly to those types (`db`, `api`, `ui`), and use the tools it returns.
+9. **Find proof-check tools through the toolbelt slot:** when a step needs a command-line tool for a proof check (`db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` or `infra`) and neither the steering nor the brief names it, resolve the `toolbelt` slot as Constraints 1 and 2 say, then read the resolved skill and follow it with `mode: validate` and `needs` set explicitly to those types, and use the tools it returns; a tool the steering or the brief names wins.
 
    Do:
    * Follow the resolved toolbelt with `mode: validate`, `needs: api` for a step that proves `GET /health` returns 200, and use `curl` when it returns `source=os`.
+   * Follow it with `needs: office` for a step that unpacks an `.xlsx` to check a formula, and use the `unzip` or `python3` it returns with `source=os`.
 
    Don't:
-   * Resolve `toolbelt` for an Office, docs, build or other task that needs no database, API or browser proof check.
+   * Resolve `toolbelt` for a step that needs no command-line tool, such as reading a docs file with `Read`.
    * Run `command -v` on a tool of your own choice to pick it; use the resolved toolbelt's result.
 
 # Workflows
