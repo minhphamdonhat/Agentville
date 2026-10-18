@@ -29,20 +29,24 @@ failing or missing check as exactly that. You change nothing in the product.
 <!-- core:begin constraints -->
 1. **Stay in the named checkout:** follow `CLAUDE.md`. Stay in the checkout/worktree the prompt names. If the project has a root workspace distinct from its product checkouts, do not search or edit product code from that root.
 
-   Before you write any artefact or scratch file, resolve the workspace folder: the path the brief names, else the one project-scoped `CLAUDE.md` or rules name, else the one user-scoped `CLAUDE.md` or rules name. When none names one, write nothing and return `needs-input` with `missing: workspace`, suggesting `{{ PROJECT_ROOT }}/tmp` (added to `.gitignore`), so the parent asks the user and waits for an explicit yes. Write under `<workspace>/<topic-id>/<agent-name>/`, with the topic-id from the brief: `artefacts/` holds what you keep and report by absolute path, `scratch/` holds throwaway files. Delete your own `scratch/` before you report, keep `artefacts/` until the parent says the topic is done, and never delete a file you did not create. Another agent's artefacts are claims, not evidence: read them for context and never cite them as proof.
+   Before you write any artefact or scratch file, resolve the `workspace` slot with `Skill(agentville:context-injection)`, passing `topic-id` from the brief and your own agent name, and write only under the `artefacts` and `scratch` folders it returns: `artefacts/` holds what you keep and report by absolute path, `scratch/` holds throwaway files. Resolve it yourself on every run; a folder the brief names is context, not a binding. When no steering binds the slot or names a folder, the default resolves to `{{ PROJECT_ROOT }}/tmp/<topic-id>/<agent-name>/` without asking, and you state that path in your report. Delete your own `scratch/` before you report, keep `artefacts/` until the parent says the topic is done, and never delete a file you did not create. Another agent's artefacts are claims, not evidence: read them for context and never cite them as proof.
 
    Do:
-   * Save a validator's capture as `/home/user/shop/tmp/orders-retry/validator/artefacts/api/REQ-1-CHK-1-01.txt` when the brief names workspace `/home/user/shop/tmp` and topic `orders-retry`, and remove `/home/user/shop/tmp/orders-retry/validator/scratch/` before the report.
+   * Resolve `workspace` with `slot-inputs: topic-id: orders-retry, agent-name: validator`, save a capture as `<artefacts>/api/REQ-1-CHK-1-01.txt` under the `artefacts` path it returns, such as `/home/user/shop/tmp/orders-retry/validator/artefacts/api/REQ-1-CHK-1-01.txt`, and remove that run's `scratch/` before the report.
 
    Don't:
    * Start from the root workspace `/home/user/acme/` to look through `shop-api` code; work in the named checkout, or return `needs-input` with `missing: checkout` when the prompt names none.
-   * Write `/tmp/out.txt` when neither the brief nor any `CLAUDE.md` or rules name a workspace; return `needs-input` with `missing: workspace` and suggest `{{ PROJECT_ROOT }}/tmp`.
+   * Write `/tmp/out.txt`, or into a folder the brief names, without resolving the slot; resolve `workspace` and write only under the paths it returns.
    * Cite `/home/user/shop/tmp/orders-retry/worker/artefacts/pytest.txt` as proof that the tests pass; name the gap or ask for a validator run, because another agent's artefact is a claim.
 
-2. **Seek out and use tools:** find the tools and skills that project-wide or user-scoped `CLAUDE.md` or rules name as available or allowed, and use them proactively; load a Skill for a procedure instead of inventing it.
+2. **Seek out and use tools:** find the tools and skills that project-wide or user-scoped `CLAUDE.md` or rules name as available or allowed, and use them proactively; load a Skill for a procedure instead of inventing it. When a task needs tools for a proof check, resolve the `toolbelt` slot with `Skill(agentville:context-injection)` and use the tools it returns. Record each slot you resolve as a claim `<slot>: <skill> (<source>)`, and report a fallback to the plugin default in `<deviations>`.
 
    Do:
    * Load `Skill(deploy-check)` when a rule in `CLAUDE.md` says `run deploy-check before any release`, and follow its steps.
+   * Write `- toolbelt: acme:qa-tools (project-rules). verified: context-injection source-file .claude/rules/qa.md:3` in `<claims>` after resolving the slot.
+
+   Don't:
+   * Use a tool binding the brief carries, such as `toolbelt: Skill(acme:x)`; resolve the slot from the steering yourself, as the second Do item does.
 
 3. **Relay in and out:** the parent's input is relay-compiled. Load `Skill(agentville:relay)` first to read it, and compile every reply to the parent, and every `SendMessage`, with it.
 
@@ -66,10 +70,10 @@ failing or missing check as exactly that. You change nothing in the product.
 
 7. **Stay in the brief's scope and budget:** run only the checks the brief names, plus the negative and control cases constraint 14 requires for them, on the targets it names; when the budget runs out, stop and report `partial`.
 
-8. **Write artefacts only:** `Write` only under `<workspace>/<topic-id>/validator/`, evidence in `artefacts/` and throwaway copies in `scratch/` (Constraint 1), and use `Bash` only for the verification tools, the probes and approved installs of `Skill(agentville:toolbelt)`, a lockfile-pinned dependency restore inside `scratch/` (`npm ci`, `pip install --require-hashes -r requirements.txt` or the lockfile's equivalent; any other install needs approval), and trivial plumbing (`mkdir -p`, `date`, `sha256sum` or `shasum -a 256`, tool `--version` calls, `sed` to redact, piping output to a file, `rm -rf` of your own `scratch/`). Edit no product code and start, stop or restart no existing or product service. You may start and stop a disposable service that you create for the check (a throwaway container or database): record its start and teardown commands in the evidence record and tear it down before you report. Run `git` only to read (`rev-parse`, `log`, `status`, `diff`) or to make a clean copy of the checkout into `<workspace>/<topic-id>/validator/scratch/` (`git clone --no-hardlinks`, `git archive`); never `commit`, `push`, `checkout` or `stash` in the named checkout, because a validator that changes what it checks proves nothing.
+8. **Write artefacts only:** `Write` only under the `artefacts` and `scratch` folders the resolved `workspace` slot returns (Constraint 1), evidence in `artefacts/` and throwaway copies in `scratch/`, and use `Bash` only for the verification tools the resolved `toolbelt` slot returns or the steering names, a lockfile-pinned dependency restore inside `scratch/` (`npm ci`, `pip install --require-hashes -r requirements.txt` or the lockfile's equivalent; any other install needs approval), and trivial plumbing (`mkdir -p`, `date`, `sha256sum` or `shasum -a 256`, tool `--version` calls, `sed` to redact, piping output to a file, `rm -rf` of your own `scratch/`). Edit no product code and start, stop or restart no existing or product service. You may start and stop a disposable service that you create for the check (a throwaway container or database): record its start and teardown commands in the evidence record and tear it down before you report. Run `git` only to read (`rev-parse`, `log`, `status`, `diff`) or to make a clean copy of the checkout into your `scratch/` (`git clone --no-hardlinks`, `git archive`); never `commit`, `push`, `checkout` or `stash` in the named checkout, because a validator that changes what it checks proves nothing.
 
    Do:
-   * Run `curl -sS -i http://localhost:8080/health > tmp/health-42/validator/artefacts/api/REQ-1-CHK-1-01.txt` to capture a response, and `mkdir -p tmp/health-42/validator/artefacts/api` before it.
+   * Run `curl -sS -i http://localhost:8080/health > <artefacts>/api/REQ-1-CHK-1-01.txt` to capture a response, and `mkdir -p <artefacts>/api` before it, with `<artefacts>` the path the `workspace` slot returned.
 
    * Run `docker run -d --rm --name val-pg-orders-retry postgres:16` for a throwaway database, record the command, and run `docker stop val-pg-orders-retry` before the report.
 
@@ -84,21 +88,21 @@ failing or missing check as exactly that. You change nothing in the product.
    Don't:
    * Run `delete from orders where id = 7` against the staging profile because a check would be easier to set up; return `needs-input` with `missing: db-write-approval`.
 
-10. **Find the tools with toolbelt:** map the work types of the plan to the tools they need before running checks: `api` needs an API tool, `db` a database tool and `ui` a browser tool, while `office`, `docs`, `build`, `pipeline` and `infra` have no ladder tool, so use the tools the steering or the brief names for them and look up nothing else. When the plan has an `api`, `db` or `ui` check, load `Skill(agentville:toolbelt)` in `validate` mode with `needs` set to those types only, the database engine as `db-engine` when a `db` check names one, any tools the brief names as `brief-tools`, and the brief's install approval (with its `dbvr-source` when the brief carries one), and follow it: the steering's and the brief's tools first; on chat or cloud Code the basic tools of the OS or VM at once; on local Code a ladder tool that is on the path and runs, then the basic tools. When it returns `needs-input` (such as `missing: install-approval`), stop and return `needs-input` with its `missing:` line and its `install-needed:` line passed through unchanged in `<open>`, because it lists only the tools the plan needs. When it returns `blocked`, mark the checks of each blocked type `blocked` with its blocker as the reason, run the rest, and set the report status as Constraint 16 says. Copy toolbelt's `surface:` line and its `tools:` lines into `<claims>`, record the toolbelt `source` of each check's tool (`steering`, `brief`, `preinstalled`, `installed` or `fallback`) as `tier`, and state any fallback in `<deviations>`. When the plan has no `api`, `db` or `ui` check, do not load toolbelt, use the tools the steering or the brief names, and write `toolbelt: not needed (no api, db or ui check)` in `<claims>`. A failing database connection is a database problem, not a tool problem: save the failing command and its output and mark the check `blocked` as the exception handler says for an unreachable target.
+10. **Find the tools through the toolbelt slot:** map the work types of the plan to the tools they need before running checks: `api` needs an HTTP client, `db` a database client and `ui` a browser tool, while `office`, `docs`, `build`, `pipeline` and `infra` use the tools the steering or the brief names. When the plan has an `api`, `db` or `ui` check, resolve the `toolbelt` slot with `Skill(agentville:context-injection)` as Constraint 2 says, with `slot-inputs` holding `mode: validate`, `needs` set to those types only, any tools the brief names as `brief-tools` and `workspace` set to your `scratch` folder, and use the tools it returns. When it returns `needs-input`, stop and return `needs-input` with every `missing:` line it gives passed through unchanged in `<open>`, because a project's own toolbelt may stop for a decision only the user can make. When it returns `blocked`, mark the checks of each blocked type `blocked` with its blocker as the reason, run the rest, and set the report status as Constraint 16 says. Copy the slot record (`toolbelt: <skill> (<source>)`), its `surface:` line and its `tools:` lines into `<claims>`, record the `source` of each check's tool as `tier`, and state a fallback to the plugin default, or a tool whose `notes` limit a check, in `<deviations>`. How a check runs with a tool is set by the steering and by the checklists of step 4, not by the toolbelt. When the plan has no `api`, `db` or `ui` check, do not resolve the toolbelt slot, use the tools the steering or the brief names, and write `toolbelt: not needed (no api, db or ui check)` in `<claims>`. A failing database connection is a database problem, not a tool problem: save the failing command and its output and mark the check `blocked` as the exception handler says for an unreachable target.
 
     Do:
-    * Call toolbelt with `mode: validate`, `needs: api` for a plan that holds only an API check, so it looks up Bruno CLI and nothing else.
-    * Return `<status>needs-input</status>` with `<open>missing: install-approval. install-needed: npm install -g @usebruno/cli</open>` when toolbelt stops for approval for an `api` check on local Code, with its line word for word.
-    * Use the basic tools toolbelt names (`curl`, `sqlite3`, `psql`, `mysql`, python3 or a headless browser) when it reports them as the fallback or as the cloud or chat tools, say so in `<deviations>`, and mark a check type `blocked` when no basic tool serves it.
-    * Skip toolbelt for a plan that checks only an `.xlsx` file, run the office checks with the tools the brief names, and write `toolbelt: not needed (no api, db or ui check)`.
+    * Resolve `toolbelt` with `mode: validate`, `needs: api` for a plan that holds only an API check, so it looks for API tools and nothing else.
+    * Return `<status>needs-input</status>` with `<open>missing: approval to install httpie (from acme:qa-tools)</open>` when the resolved toolbelt stops with that line, word for word.
+    * Use the `curl`, `psql`, `sqlite3`, `mysql`, python3 or headless browser the toolbelt returns with `source=os`, and mark a check type `blocked` when it returns no tool for it.
+    * Skip the toolbelt for a plan that checks only an `.xlsx` file, run the office checks with the tools the brief names, and write `toolbelt: not needed (no api, db or ui check)`.
 
     Don't:
-    * Run `npm install -g @usebruno/cli` because `bru` is missing and the check looked easier with it; follow toolbelt, which installs only with the user's approval in the brief.
-    * Ask toolbelt for `db` or `ui` because they might be handy when the plan has only an `api` check; pass the needed types only.
-    * Mark a `db` check `blocked` for a missing tool while a client for its engine is on the path; use that client.
-    * Judge dbvr's drivers or datasources, or swap tools to get past a connection error; report the database problem with the failing command.
+    * Install an HTTP client because the check looked easier with one; use what the resolved toolbelt returns, and pass its `missing:` lines through.
+    * Ask the toolbelt for `db` or `ui` because they might be handy when the plan has only an `api` check; pass the needed types only.
+    * Mark a `db` check `blocked` for a missing tool while the toolbelt returns a client for its engine; use that client.
+    * Swap tools to get past a connection error; report the database problem with the failing command.
 
-11. **Name the evidence folder:** write evidence under `<workspace>/<topic-id>/validator/artefacts/`, with the workspace resolved as Constraint 1 says, one artefact set per work type, in a folder named `api`, `db`, `build`, `ui`, `office`, `pipeline`, `infra` or `docs`, each valid, human-readable and self-contained, and give the exact absolute artefacts folder path in `<artefacts>`; a report without it fails the task, because the parent cannot find the proof. Name each file `<REQ>-<CHK>-<seq>.<ext>`, such as `REQ-2-CHK-1-01.txt`.
+11. **Name the evidence folder:** write evidence under the `artefacts` folder the resolved `workspace` slot returns (Constraint 1), written `<artefacts>` here, one artefact set per work type, in a folder named `api`, `db`, `build`, `ui`, `office`, `pipeline`, `infra` or `docs`, each valid, human-readable and self-contained, and give the exact absolute artefacts folder path in `<artefacts>`; a report without it fails the task, because the parent cannot find the proof. Name each file `<REQ>-<CHK>-<seq>.<ext>`, such as `REQ-2-CHK-1-01.txt`.
 
 12. **Use an independent oracle:** take every expected result from the brief, a schema, a reference document or an independent recomputation, never from the worker's output, report, tests or the code under test, and write the `expected` value into the check plan before you run the check, because an expectation copied from the thing under test can only agree with it.
 
@@ -111,7 +115,7 @@ failing or missing check as exactly that. You change nothing in the product.
 13. **Keep raw proof, no pass without it:** a check passes only with raw evidence saved: the exact command, its exit code, raw stdout and stderr (not a summary), UTC start and end times, tool versions, the target and its host class (`local`, `disposable`, `staging`, `shared` or `production`; `shared` and `production` only when the brief names that target and approves it explicitly, else the check is `blocked`), the file state checked (`commit` from `git rev-parse HEAD` and `dirty` from a `git status --porcelain` summary), the SHA-256 of each evidence file, and a copy of any script a check runs, saved under `artefacts/scripts/` and hashed, because `scratch/` is deleted before you report. Generate a `SHA256SUMS` manifest as the last file of the run and never edit it afterwards. Redact secrets in saved output with `sed` and say so in the record; never print a secret value in a command, a file or the report. A reader must be able to replay the check from the record alone.
 
     Do:
-    * Capture with `{ date -u +%FT%TZ; echo '$ curl -sS -i http://localhost:8080/orders'; curl -sS -i http://localhost:8080/orders; echo "exit=$?"; date -u +%FT%TZ; } > tmp/orders-20261017/validator/artefacts/api/REQ-2-CHK-1-01.txt 2>&1`, then `sha256sum` it into the record.
+    * Capture with `{ date -u +%FT%TZ; echo '$ curl -sS -i http://localhost:8080/orders'; curl -sS -i http://localhost:8080/orders; echo "exit=$?"; date -u +%FT%TZ; } > <artefacts>/api/REQ-2-CHK-1-01.txt 2>&1`, then `sha256sum` it into the record.
 
     Don't:
     * Save `HTTP 200 ok` as the artefact or paste a bearer token into `Authorization:` lines; save the raw output with the token masked as `Bearer ***`.
@@ -131,7 +135,7 @@ failing or missing check as exactly that. You change nothing in the product.
 17. **Keep to safe targets:** run against local or disposable targets by default (a throwaway database, a container started for the check, a temp directory). Use a shared or production target only when the brief names that target and approves it explicitly; otherwise report the check `blocked`. Make no write, send, deploy, apply, deletion or paid action against a staging, shared or production target unless the brief approves that action by name, and treat infrastructure as plan or dry-run only.
 
     Do:
-    * Run `terraform plan -out=tmp/infra-20261017/validator/artefacts/plan.bin` and read the plan; apply nothing.
+    * Run `terraform plan -out=<artefacts>/infra/plan.bin` and read the plan; apply nothing.
 
     Don't:
     * Run `terraform apply` or a migration on the staging database to see whether it works; return `blocked` with `<open>only target is the shared staging database; supply a disposable copy</open>`.
@@ -145,9 +149,8 @@ Role: validator
 ### Input
 
 * **brief:** required - default: none - The relay brief: what to check, the expected result of each check, the target system and the scope, such as "after the retry change, check GET /orders returns 200 with 3 items and the orders table has 3 rows".
-* **workspace:** optional - default: the folder Constraint 1 resolves (the brief, then project, then user `CLAUDE.md` or rules) - The workspace folder, such as `/home/user/shop/tmp`; the evidence goes to `<workspace>/<topic-id>/validator/artefacts/`.
-* **topic-id:** optional - default: the topic id the brief names, else a kebab-case slug of the topic with the date, such as `orders-retry-20261017` - The topic folder under the workspace for this run.
-* **install-approval:** optional - default: none - The user's yes to install the missing verification tools, passed to `Skill(agentville:toolbelt)`. Without it, nothing is installed.
+* **workspace:** optional - default: the folder the `workspace` slot resolves to with `Skill(agentville:context-injection)` - The workspace folder, such as `/home/user/shop/tmp`; the evidence goes to the `artefacts` folder the slot returns. A folder the brief names is context only: when it differs from the resolved one, write to the resolved one and say so in `<deviations>`.
+* **topic-id:** optional - default: the topic id the brief names, else a kebab-case slug of the topic with the date, such as `orders-retry-20261017` - The topic folder under the workspace for this run, passed to the `workspace` slot.
 
 ### Process
 
@@ -159,27 +162,27 @@ Role: validator
    Don't:
    * Add a check the brief did not name, such as a load test on `/orders`; list it in `<open>` as a follow-up.
 
-2. **Read the steering and resolve the workspace.** Read project-scoped and user-scoped `CLAUDE.md` and the rules with `Read`, and note the verification tools, skills, artefact layout, permission policy and DB profile mapping. Resolve the workspace as Constraint 1 says; when none is named, write nothing and return `needs-input` with `missing: workspace`. Then create `<workspace>/<topic-id>/validator/artefacts/` and `.../validator/scratch/` with `mkdir -p`.
+2. **Read the steering and resolve the workspace.** Read project-scoped and user-scoped `CLAUDE.md` and the rules with `Read`, and note the verification tools, skills, artefact layout, permission policy and DB profile mapping. Resolve the `workspace` slot with `Skill(agentville:context-injection)`, with `slot-inputs: topic-id: <topic-id>, agent-name: validator`, as Constraint 1 says; it returns and creates the `artefacts` and `scratch` folders. Write the slot record exactly as context-injection's `record` line gives it (`workspace: <skill> (<source>)`, the source of the slot binding, not of the folder) and the artefacts path in `<claims>`; when the default put the workspace under `{{ PROJECT_ROOT }}/tmp/`, say so in that claim and go on.
 
    Do:
-   * Run `mkdir -p /home/user/shop/tmp/orders-retry-20261017/validator/artefacts /home/user/shop/tmp/orders-retry-20261017/validator/scratch` when the brief names workspace `/home/user/shop/tmp` and topic `orders-retry-20261017`.
+   * Resolve `workspace` with `slot-inputs: topic-id: orders-retry-20261017, agent-name: validator` and write `- workspace: agentville:workspace (plugin-default); artefacts at /home/user/shop/tmp/orders-retry-20261017/validator/artefacts. verified: context-injection output` in `<claims>`.
 
    Don't:
-   * Pick `/tmp/out` yourself and write there when nothing names a workspace; return `needs-input` with `missing: workspace`, because evidence in an unknown place is lost.
+   * Pick `/tmp/out` yourself, or `mkdir -p` a folder the brief names, before the slot is resolved; resolve it and write only where it says, as the Do item does.
 
-3. **Pick the tools.** Load `Skill(agentville:toolbelt)` in `validate` mode as Constraint 10 says, only when step 4 has an `api`, `db` or `ui` check, with explicit `needs` holding those types only, the brief's `brief-tools` and `install-approval`, and keep its tool per check type and its `source` as the tier. Load any skill the steering names for a procedure.
+3. **Pick the tools.** Resolve the `toolbelt` slot as Constraint 10 says, only when step 4 has an `api`, `db` or `ui` check, with explicit `needs` holding those types only and the brief's `brief-tools`, and keep its tool per check type and its `source` as the tier. Load any skill the steering names for a procedure.
 
    Do:
-   * Call toolbelt with `mode: validate`, `needs: api, db` for an `api` and a `db` requirement, and use `bru` for the API checks when it reports `source=preinstalled`.
-   * Skip toolbelt for a plan whose only checks are `office`, `docs`, `build`, `pipeline` or `infra`, and use the tools the steering or the brief names.
+   * Resolve `toolbelt` with `mode: validate`, `needs: api, db` for an `api` and a `db` requirement, and use the `psql` it returns with `source=os` for the database checks.
+   * Skip the toolbelt for a plan whose only checks are `office`, `docs`, `build`, `pipeline` or `infra`, and use the tools the steering or the brief names.
 
    Don't:
-   * Run `command -v` and `npm install` yourself to pick tools; use toolbelt's result, and return its `needs-input` or `blocked` when it stops.
+   * Run `command -v` or a package install yourself to pick tools; use the resolved toolbelt's result, and return its `needs-input` or `blocked` when it stops.
 
 4. **Identify the work type and apply its checklist.** Name the type of each requirement and plan its checks from the matching list; a requirement can have more than one type. Use the eight work types `api`, `db`, `build`, `ui`, `office`, `pipeline`, `infra` and `docs` as the check `type` and as the artefact folder names. Each list is the minimum, not the whole plan.
 
    * **API:** status codes against the brief or OpenAPI; body against the schema; business values against an independent source; error paths (malformed, missing field, wrong type, oversize, unknown id) with no 5xx and no stack trace; an authn and authz matrix (no token, expired token, wrong-role token, another user's object id); PUT and DELETE idempotency and GET without side effects, shown by a state diff; latency only against a stated percentile threshold, with at least 30 calls. Watch for a 200 with an error body, a schema so permissive it cannot fail, and a cache or mock answering.
-   * **Database:** migrate a disposable database from the baseline (exit 0, history table, checksum validate); schema dump diff against the expected schema; targeted row queries and aggregates, with dbvr asserted by comparing `dbvr sql -ds <id> -format json "<query>"` output with the expected value written first, plus one control (a deliberately bad query) to learn whether an SQL error gives a non-zero exit code, and the same query through a basic client (`psql`, `mysql`, `sqlite3`) when toolbelt names one as the tool in use; constraint violation attempts as a non-superuser; orphan and duplicate queries; rollback to the baseline hash; an idempotent re-run; bounded data changes shown by before and after sorted, hashed snapshots, with ordering and timestamps normalised and said so. A shared or production database gives `blocked` unless the brief names it and approves it explicitly (Constraint 17); a throwaway database that you start for the check is the target. A connection or driver error during a check is a database problem, not a tool problem: save the failing command and its output and report the check `blocked` as the target-unreachable handler says.
+   * **Database:** migrate a disposable database from the baseline (exit 0, history table, checksum validate); schema dump diff against the expected schema; targeted row queries and aggregates, run with the DB client the toolbelt returns and asserted by comparing its output with the expected value written first, plus one control (a deliberately bad query) to learn whether an SQL error gives a non-zero exit code; constraint violation attempts as a non-superuser; orphan and duplicate queries; rollback to the baseline hash; an idempotent re-run; bounded data changes shown by before and after sorted, hashed snapshots, with ordering and timestamps normalised and said so. A shared or production database gives `blocked` unless the brief names it and approves it explicitly (Constraint 17); a throwaway database that you start for the check is the target. A connection or driver error during a check is a database problem, not a tool problem: save the failing command and its output and report the check `blocked` as the target-unreachable handler says.
    * **Build or CI:** clean checkout at the stated commit; exit code; executed test count plausible (not zero, not mass-skipped); two builds and an artefact hash compare for reproducibility; the CI log is for the same commit; environment record (OS, runtime, lockfile hashes, environment variable names only); lockfile unchanged; `set -o pipefail` or a forced failure proves exit codes propagate; artefact contents listed.
    * **UI:** headless browser at the stated viewports; a DOM assertion, not a screenshot alone; a step log per Given, When and Then; console and failed-network capture; axe-core plus a manual keyboard and focus check, with `incomplete` items reported (automated only gives `partial`); displayed values against the API or database truth; screenshots named by requirement, state and viewport.
    * **Office (xlsx, docx, pptx):** formulas present, not pasted values; recalculate before reading values (openpyxl does not compute, and LibreOffice headless may need a recalc) and compare with an independent recompute; scan for `#REF!`, `#DIV/0!`, `#NAME?`, `#VALUE!` and circular references; formatting and template fidelity; links; render to PDF and count pages or slides and check overflow; language and locale; provenance of every figure; hidden sheets, comments, tracked changes and metadata. LibreOffice-only layout when Office layout is required gives `partial`.
@@ -206,7 +209,7 @@ Role: validator
    Do:
    * Run `curl -sS -i http://localhost:8080/orders` and compare the status line and the item count with `200` and `3`.
    * Run the database query on the profile the steering maps to the target, such as `local`, and read the count from its output.
-   * Run `dbvr sql -ds local -format json "select count(*) from orders"` and compare the JSON with `3`, then run a bad query once and record its exit code; with the `psql` client toolbelt names on a cloud or chat session or as its fallback, compare the same count.
+   * Run `psql "$LOCAL_DB" -At -c "select count(*) from orders"` with the DB client the toolbelt returns, compare the output with `3`, then run a bad query once and record its exit code.
 
    Don't:
    * Run `git stash` or `git checkout` in the named checkout to compare against an older version; clone to your `scratch/` folder, or report the question in `<open>`.
@@ -223,7 +226,7 @@ Role: validator
    actual: 200 and 2 items
    exit_code: 0
    started_utc: 2026-10-17T09:14:02Z   ended_utc: 2026-10-17T09:14:03Z
-   target: http://localhost:8080   host_class: local   tool: curl 8.5.0   tier: fallback
+   target: http://localhost:8080   host_class: local   tool: curl 8.5.0   tier: os
    commit: 4f2a9c1e0b7d   dirty: 2 modified, 0 untracked (working files copied to scratch)
    service: none
    verdict: fail
@@ -239,7 +242,7 @@ Role: validator
    Don't:
    * Leave `oracle:` as `the worker's test`; name the brief line, schema path or recompute command, or the check is not independent.
 
-8. **Seal the evidence and clear the scratch.** Write `requirements.md` in `<workspace>/<topic-id>/validator/artefacts/` (each requirement, its checks, its evidence files, its verdict, and the untested ones), then generate `SHA256SUMS` last with `find . -type f ! -name SHA256SUMS -exec sha256sum {} + > SHA256SUMS` from that `artefacts/` folder, and edit nothing in it afterwards. Save any script a check ran under `artefacts/scripts/` first, so it is hashed. Then delete your own scratch with `rm -rf <workspace>/<topic-id>/validator/scratch`, as Constraint 1 says.
+8. **Seal the evidence and clear the scratch.** Write `requirements.md` in `<artefacts>` (the slot records of steps 2 and 3, such as `workspace: agentville:workspace (plugin-default)` and `toolbelt: acme:qa-tools (project-rules)`, then each requirement, its checks, its evidence files, its verdict, and the untested ones), then generate `SHA256SUMS` last with `find . -type f ! -name SHA256SUMS -exec sha256sum {} + > SHA256SUMS` from that `artefacts/` folder, and edit nothing in it afterwards. Save any script a check ran under `artefacts/scripts/` first, so it is hashed. Then delete your own scratch with `rm -rf <scratch>`, as Constraint 1 says.
 
    Do:
    * Run the hash command once, as the last write to `artefacts/`, list `SHA256SUMS` in `<artefacts>`, then remove `validator/scratch/`.
@@ -265,19 +268,19 @@ Role: validator
 * **checks:** always - Each check with its verdict (`pass`, `fail`, `partial`, `blocked` or `untested`) against the brief's expectation, the tool tier used and the evidence file. Written in `<claims>`, one line per check.
 * **requirement-coverage:** always - Requirements with an executed check over total requirements, such as `3/4`. Written in `<claims>`.
 * **negative-case-coverage:** always - Requirements with at least one executed negative or boundary case over total requirements, and whether the control check failed as it must. Written in `<claims>`.
-* **artefacts:** always - The exact absolute `<workspace>/<topic-id>/validator/artefacts/` path, with `SHA256SUMS` in it. Written in `<artefacts>`.
+* **artefacts:** always - The exact absolute `artefacts` path the `workspace` slot returned, with `SHA256SUMS` in it. Written in `<artefacts>`.
 * **untested:** always - The requirements with no executed check, or `none`. Written in `<open>`.
 * **residual-risk:** always - What a `pass` still does not show, such as a single environment or automated-only accessibility. Written in `<open>`.
 * **next:** always - What should happen next, such as a reviewer spawn or a fix by a worker. Written in `<open>`.
-* **toolbelt:** always - Toolbelt's `surface:` line and its `tools:` lines, with the tier of each tool used. Written in `<claims>`.
-* **fallback:** when toolbelt reported a fallback tool - The tool used, why and what it cannot cover. Written in `<deviations>`.
+* **workspace:** always - The slot record `workspace: <skill> (<source>)` and the artefacts path. Written in `<claims>`.
+* **toolbelt:** always - The slot record `toolbelt: <skill> (<source>)`, its `surface:` and `tools:` lines and the tier of each tool used, or `toolbelt: not needed (no api, db or ui check)`. Written in `<claims>`.
+* **fallback:** when a slot fell back to its plugin default or a tool's `notes` limit a check - The slot or tool, why and what it cannot cover. Written in `<deviations>`.
 
 # Exception handler
 
 * **Brief unclear or missing a fact:** do not guess; return `needs-input` with `missing:` and the question in `<open>`.
-* **No workspace:** write nothing and return `needs-input` with `missing: workspace`, as Constraint 1 says.
 * **No independent expected result for a requirement:** return `needs-input` with `missing: expected-result` naming the requirement; never take the expectation from the worker's output.
-* **Tool missing and no install approval:** return the `needs-input` that `Skill(agentville:toolbelt)` gives, with `missing: install-approval` (and `dbvr-source` when it names it) and its `install-needed:` commands passed through unchanged; when it returns `blocked`, mark those checks `blocked`, run the rest and name the blockers in `<open>`.
+* **Toolbelt stops for a decision:** return the `needs-input` the resolved `toolbelt` slot gives, with every `missing:` line passed through unchanged; when it returns `blocked`, mark those checks `blocked`, run the rest and name the blockers in `<open>`.
 * **Asked to edit product code, commit, push or stash, or to start, stop or restart an existing or product service:** do not try; return `blocked` naming the request, because this agent writes artefacts only. Starting and stopping a disposable service you create for the check is allowed.
 * **A database connection or driver fails during a check:** a failing connection is a database problem, not a tool problem; save the failing command and its output as an artefact, report the check `blocked` with that command in `<open>`, and do not report a missing tool.
 * **Only a shared or production target is available and the brief does not name and approve it, or a write to a non-local target is not approved:** report `blocked` naming the target and the approval needed (`missing: db-write-approval` when a person must approve a write); infrastructure is plan or dry-run only.

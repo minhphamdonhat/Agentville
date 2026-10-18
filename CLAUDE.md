@@ -28,11 +28,13 @@ The shipped skills are:
 * `relay` is the writing standard for text another agent reads.
 * `voice` is the writing standard for text a person reads.
 * `intelligence-routing-model` picks the cheapest model and effort that still succeeds.
-* `toolbelt` finds only the db, api or ui verification tools a task needs, uses the OS's basic tools on chat and cloud Code, and on local Code asks once for install approval before it falls back to them.
+* `context-injection` resolves a slot (`workspace`, `toolbelt` or any named slot) to the skill that fills it for this run, loads it and returns its output with the binding's source.
+* `workspace` is the default for the `workspace` slot: it returns a run's artefacts and scratch folders and never asks.
+* `toolbelt` is the default for the `toolbelt` slot: it reports which tools are present for the db, api or ui checks a task needs, from the steering's and the request's tools, then the OS's own tools. It installs nothing and says nothing about how a tool is used.
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
-The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence and finds its tools with `toolbelt`) and `reviewer` (reviewer role, read-only).
+The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot) and `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering).
 
 ## Agent format
 
@@ -55,6 +57,34 @@ Don't:
 * Write `model` or `effort` in an agent's frontmatter. `dispatch` chooses both on every spawn.
 
 `plugins/agentville/agents/worker.md`, `plugins/agentville/skills/agent-smith/assets/base/worker.md` and `.claude/skills/agent-smith/assets/base/worker.md` must stay byte-identical. Edit one, copy it to the others, then run `cmp` on each pair.
+
+## Context injection
+
+Context injection works like dependency injection. Agentville refers to a slot by its contract, and each agent resolves the concrete skill for itself at runtime with `Skill(agentville:context-injection)`. An agent never resolves a slot for another agent, and briefs carry no bindings, only the topic-id and any steering locations as context. The plugin ships a default skill for each slot.
+
+| Slot | Contract | Default |
+| --- | --- | --- |
+| `workspace` | In: topic-id, agent-name. Out: artefacts path, scratch path, cleanup rule, git-ignore status. | `agentville:workspace`: the folder the steering names, else `{{ PROJECT_ROOT }}/tmp/`, never asking. |
+| `toolbelt` | In: needs, mode, workspace, optional brief-tools. Out: surface, os, tools with their source, notes, blockers, optional `missing:`. Discovery only. | `agentville:toolbelt`: named tools, then tools the OS provides; no installs, no network probes. |
+
+Resolution order, first match wins:
+
+1. Project rules, `{{ PROJECT_ROOT }}/.claude/rules/*.md`.
+2. Project `CLAUDE.md`, `{{ PROJECT_ROOT }}/CLAUDE.md` then `{{ PROJECT_ROOT }}/.claude/CLAUDE.md`.
+3. A project skill named exactly the slot.
+4. User rules, `{{ USER_ROOT }}/.claude/rules/*.md`.
+5. User `CLAUDE.md`, `{{ USER_ROOT }}/.claude/CLAUDE.md`.
+6. A user skill named exactly the slot.
+7. The plugin default, `Skill(agentville:<slot>)`.
+
+A binding is one line, `<slot>: Skill(<namespace>:<name>)`, anywhere in a rules file or `CLAUDE.md` or under a `## Context injection` heading. When the bound or named skill cannot be loaded, the agent falls back to the plugin default and reports the fallback and its reason in `<deviations>`. Every agent records each slot it resolved as a claim `<slot>: <skill> (<source>)`, such as `toolbelt: acme:qa-tools (project-rules)`.
+
+How a tool is used is set by the agent's own file or by the steering, never by the toolbelt.
+
+This repository binds the `workspace` slot to the default and names the folder the default reads:
+
+* `workspace: Skill(agentville:workspace)`
+* `workspace-folder: {{ PROJECT_ROOT }}/tmp/`
 
 ## Two pairs of smiths
 
