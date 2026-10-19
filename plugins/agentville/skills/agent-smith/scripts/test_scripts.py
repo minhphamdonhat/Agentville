@@ -244,6 +244,77 @@ class TestMeasure(Base):
         with open(PLUGIN_WORKER, "rb") as a, open(BASE, "rb") as b:
             self.assertEqual(a.read(), b.read(), "assets/base/worker.md differs from the plugin's agents/worker.md")
 
+    def test_slot_direct_call_fails_a18(self):
+        _, out = self.measure(BASE_TEXT + "\n* Resolve with `Skill(agentville:toolbelt)` now.\n")
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_slot_plugin_default_mention_allowed(self):
+        _, out = self.measure(BASE_TEXT + "\n* The slot default is the plugin default `Skill(agentville:toolbelt)`.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_plugin_default_then_call_fails_a18(self):
+        _, out = self.measure(BASE_TEXT + "\n* Fall back to the plugin default, then call Skill(agentville:toolbelt).\n")
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_slot_call_with_source_outside_record_fails_a18(self):
+        for text in ("Call `Skill(agentville:toolbelt) (project-x)` now.", "Call `Skill(agentville:toolbelt) (project-rules)` now.",
+                     "Write `toolbelt: Skill(agentville:toolbelt) (project-rules)` now."):
+            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            self.assertIn("A18", fails(out), text)
+
+    def test_slot_call_followed_by_plugin_default_record_allowed(self):
+        _, out = self.measure(BASE_TEXT + "\n* Name `Skill(agentville:toolbelt) (plugin-default)` in the claims.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_imperative_verb_before_default_call_fails_a18(self):
+        for text in ("Call `Skill(agentville:toolbelt) (plugin-default)` now.", "Load the plugin default `Skill(agentville:workspace)`.",
+                     "Then run Skill(agentville:draft) (plugin-default).", "Invoke the plugin default Skill(agentville:plan).",
+                     "Use `Skill(agentville:report)` (plugin-default)."):
+            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            self.assertIn("A18", fails(out), text)
+            self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:" in l for l in out.splitlines()), text)
+
+    def test_slot_non_imperative_default_description_still_allowed_a18(self):
+        for text in ("The slot falls back to the plugin default `Skill(agentville:draft)`.", "Name `Skill(agentville:plan) (plugin-default)` in the claims.",
+                     "Write `report: agentville:report (plugin-default)` in the claims."):
+            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            self.assertNotIn("A18", fails(out), text)
+
+    def test_slot_record_needs_known_source_and_own_slot(self):
+        for text in ("toolbelt: agentville:toolbelt (project-x)", "workspace: agentville:toolbelt (project-rules)"):
+            _, out = self.measure(BASE_TEXT + f"\n* Write `{text}` in the claims.\n")
+            self.assertIn("A18", fails(out), text)
+        _, out = self.measure(BASE_TEXT + "\n* Write `toolbelt: agentville:toolbelt (project-rules)` in the claims.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_without_context_injection_fails_a18(self):
+        text = BASE_TEXT.replace("Skill(agentville:context-injection)", "Skill(agentville:relay)")
+        _, out = self.measure(text + "\n* Use the `toolbelt` slot.\n")
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_without_context_injection:") and "toolbelt" in l for l in out.splitlines()), out)
+
+    def test_slot_via_context_injection_passes(self):
+        _, out = self.measure(BASE_TEXT + "\n* Use the `toolbelt` slot, resolved with `Skill(agentville:context-injection)`.\n")
+        self.assertNotIn("A18", fails(out))
+
+    def test_slot_plugin_default_elsewhere_on_line_does_not_exempt(self):
+        old = "and report a fallback to the plugin default in `<deviations>`."
+        self.assertIn(old, BASE_TEXT)
+        _, out = self.measure(BASE_TEXT.replace(old, old + " Then call Skill(agentville:toolbelt)."))
+        self.assertIn("A18", fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_slot_other_call_forms_fail_a18(self):
+        for form in ("agentville:toolbelt", "/agentville:toolbelt", "Skill(toolbelt)"):
+            _, out = self.measure(BASE_TEXT + f"\n* Load {form} first.\n")
+            self.assertIn("A18", fails(out), form)
+
+    def test_slot_record_with_source_allowed(self):
+        _, out = self.measure(BASE_TEXT + "\n* Write `workspace: agentville:workspace (plugin-default)` in the claims.\n")
+        self.assertNotIn("A18", fails(out))
+
 
 class TestStage(Base):
     def create(self, *args):

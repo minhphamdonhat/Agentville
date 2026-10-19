@@ -35,6 +35,47 @@ SKILL_REF_RE = re.compile(r"Skill\(([^)]*)\)")
 STATUS_LINE = "`<status>` comes first and holds one of"
 EVERY_FIELD = "each wrapped in one flat tag"
 
+SLOTS = ("workspace", "toolbelt", "draft", "plan", "report")  # injectable slots; add a future slot here only
+CI_CALL = "Skill(agentville:context-injection)"
+SLOT_ALT = "|".join(SLOTS)
+# A direct use of a slot's default: Skill(agentville:<slot>), Skill(<slot>), /agentville:<slot> or a bare agentville:<slot>.
+SLOT_CALL_RE = re.compile(r"Skill\((?:agentville:)?(" + SLOT_ALT + r")\)|(?<![\w:-])/?agentville:(" + SLOT_ALT + r")(?![\w-])")
+SLOT_USE_RE = re.compile(r"`(" + SLOT_ALT + r")` (?:slot|skill)\b")
+# Exempt a hit only when the text reads exactly as a description of the default or as a slot record:
+#   * "the plugin default" right before it, with at most backticks or spaces between (the plugin default `Skill(agentville:<slot>)`);
+#   * the call right before "(plugin-default)", with at most backticks or a space between;
+#   * a record "<slot>: <ns>:<name> (<source>)" with <source> in SLOT_SOURCES, written without Skill( or a slash.
+# A hit that merely shares a line with these words, or carries another parenthesis, is a direct call.
+# A hit preceded by an imperative verb (call, load, run, invoke or use), with at most backticks, spaces or
+# "the plugin default" between, is a direct call even when "(plugin-default)" follows it.
+SLOT_SOURCES = ("plugin-default", "project-rules", "project-claude-md", "project-skill", "user-rules", "user-claude-md", "user-skill")
+PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[`\s]*$")
+PLUGIN_DEFAULT_AFTER_RE = re.compile(r"`*\s?\(plugin-default\)")
+IMPERATIVE_BEFORE_RE = re.compile(r"(?i)\b(?:call|load|run|invoke|use)\b[`\s]*(?:the plugin default[`\s]*)?$")
+RECORD_AFTER_RE = re.compile(r"\s\((?:" + "|".join(SLOT_SOURCES) + r")\)")
+
+
+def slot_default_described(line, m):
+    """True when the hit only describes the plugin default or stands as the skill id of a slot record."""
+    before, after = line[:m.start()], line[m.end():]
+    if IMPERATIVE_BEFORE_RE.search(before):
+        return False
+    if PLUGIN_DEFAULT_BEFORE_RE.search(before) or PLUGIN_DEFAULT_AFTER_RE.match(after):
+        return True
+    slot = m.group(1) or m.group(2)
+    bare = bool(m.group(2)) and not m.group(0).startswith("/")
+    return bare and bool(re.search(r"(?<![\w-])" + slot + r":\s+$", before)) and bool(RECORD_AFTER_RE.match(after))
+
+
+def slot_hits(lines, exempt=False):
+    """Slot rule: a file that uses an injectable slot names CI_CALL and never calls Skill(agentville:<slot>) itself."""
+    if exempt:
+        return [], []
+    direct = [f"{i + 1}:{m.group(0)}" for i, l in enumerate(lines) for m in SLOT_CALL_RE.finditer(l)
+              if not slot_default_described(l, m)]
+    used = sorted({m.group(1) for l in lines for m in SLOT_USE_RE.finditer(l)})
+    return direct, ([] if CI_CALL in "\n".join(lines) else used)
+
 
 class ReadError(Exception):
     pass
@@ -318,6 +359,11 @@ def measure(path, base_path, allow_agent):
     out.append("bare_skill_refs: " + (", ".join(dict.fromkeys(bare)) or "none"))
     if bare:
         warns.add("A9")
+    direct, no_ci = slot_hits(lines)
+    out.append("slot_direct_calls: " + (", ".join(direct) or "none"))
+    out.append("slot_without_context_injection: " + (", ".join(no_ci) or "none"))
+    if direct or no_ci:
+        fails.add("A18")
     if len(lines) > MAX_LINES:
         fails.add("A11")
 

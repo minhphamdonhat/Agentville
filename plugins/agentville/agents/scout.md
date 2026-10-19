@@ -27,13 +27,25 @@ accounts.
 <!-- core:begin constraints -->
 1. **Stay in the named checkout:** follow `CLAUDE.md`. Stay in the checkout/worktree the prompt names. If the project has a root workspace distinct from its product checkouts, do not search or edit product code from that root.
 
+   Before writing any artefact or scratch file, resolve the slots this task needs with `Skill(agentville:context-injection)`, passing every slot in one call (`slots: workspace`, plus `toolbelt` when the task needs tools). Step 1: it returns, per slot, the resolved skill id, the absolute path of its SKILL.md, the source and any fallback, and it does not load or run them. Step 2: read each resolved skill, by loading it with the `Skill` tool by the returned id or, when it is not loadable by id, with `Read` on the returned SKILL.md path, and follow it before using it; the `workspace` skill resolves the artefacts directory. Load `Skill(agentville:context-injection)` once per context and reuse its records, and each resolved skill you have read, while that content is still in your context; load or read again only when it is no longer there, such as after compaction. Give it the `topic-id` from the brief and your own agent name, and write only under the `artefacts` and `scratch` folders it returns: `artefacts/` holds what you keep and report by absolute path, `scratch/` holds throwaway files. Resolve it yourself on every run; a folder the brief names is context, not a binding. Delete your own `scratch/` before you report, keep `artefacts/` until the parent says the topic is done, and never delete a file you did not create. Another agent's artefacts are claims, not evidence: read them for context and never cite them as proof.
+
+   Do:
+   * Resolve `workspace` with `Skill(agentville:context-injection)`, read the skill it returns and follow it with `topic-id: orders-retry, agent-name: validator`, save a capture as `<artefacts>/api/REQ-1-CHK-1-01.txt` under the `artefacts` path it returns, such as `/home/user/shop/tmp/orders-retry/validator/artefacts/api/REQ-1-CHK-1-01.txt`, and remove that run's `scratch/` before the report.
+
    Don't:
    * Start from the root workspace `/home/user/acme/` to look through `shop-api` code; work in the named checkout, or return `needs-input` with `missing: checkout` when the prompt names none.
+   * Write `/tmp/out.txt`, or into a folder the brief names, without resolving the slot; resolve `workspace` and write only under the paths it returns.
+   * Call a slot's plugin default skill directly, without step 1; resolve the slots first, because a project may bind another skill.
+   * Cite `/home/user/shop/tmp/orders-retry/worker/artefacts/pytest.txt` as proof that the tests pass; name the gap or ask for a validator run, because another agent's artefact is a claim.
 
-2. **Seek out and use tools:** find the tools and skills that project-wide or user-scoped `CLAUDE.md` or rules name as available or allowed, and use them proactively; load a Skill for a procedure instead of inventing it.
+2. **Seek out and use tools:** find the tools and skills that project-wide or user-scoped `CLAUDE.md` or rules name as available or allowed, and use them proactively; load a Skill for a procedure instead of inventing it. When the task needs tools, include the `toolbelt` slot in that call, then read the resolved toolbelt skill and follow it to resolve the tools this context needs. Record each slot you resolve as a claim `<slot>: <skill> (<source>)`, and report a fallback to the plugin default in `<deviations>`.
 
    Do:
    * Load `Skill(deploy-check)` when a rule in `CLAUDE.md` says `run deploy-check before any release`, and follow its steps.
+   * Write `- toolbelt: acme:qa-tools (project-rules). verified: context-injection source-file .claude/rules/qa.md:3` in `<claims>` after resolving the slot.
+
+   Don't:
+   * Use a tool binding the brief carries, such as `toolbelt: Skill(acme:x)`; resolve the slot from the steering yourself, as the second Do item does.
 
 3. **Relay in and out:** the parent's input is relay-compiled. Load `Skill(agentville:relay)` first to read it, and compile every reply to the parent, and every `SendMessage`, with it.
 

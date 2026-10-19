@@ -50,6 +50,71 @@ INDEP_NAMED_RE = re.compile(
 # references/validate-rules.md under Rule 20. Applies only when the frontmatter name is skill-smith.
 INDEP_ALLOWLIST = {"references/validate-rules.md", "scripts/measure.py", "scripts/test_scripts.py"}
 SKIP_DIRS = {".git", "__pycache__", "node_modules"}
+# Rule 22, injectable slots.
+SLOTS = ("workspace", "toolbelt", "draft", "plan", "report")  # injectable slots; add a future slot here only
+CI_CALL = "Skill(agentville:context-injection)"
+SLOT_ALT = "|".join(SLOTS)
+# A direct use of a slot's default: Skill(agentville:<slot>), Skill(<slot>), /agentville:<slot> or a bare agentville:<slot>.
+SLOT_CALL_RE = re.compile(r"Skill\((?:agentville:)?(" + SLOT_ALT + r")\)|(?<![\w:-])/?agentville:(" + SLOT_ALT + r")(?![\w-])")
+SLOT_USE_RE = re.compile(r"`(" + SLOT_ALT + r")` (?:slot|skill)\b")
+# Exempt a hit only when the text reads exactly as a description of the default or as a slot record:
+#   * "the plugin default" right before it, with at most backticks or spaces between (the plugin default `Skill(agentville:<slot>)`);
+#   * the call right before "(plugin-default)", with at most backticks or a space between;
+#   * a record "<slot>: <ns>:<name> (<source>)" with <source> in SLOT_SOURCES, written without Skill( or a slash.
+# A hit that merely shares a line with these words, or carries another parenthesis, is a direct call.
+# A hit preceded by an imperative verb (call, load, run, invoke or use), with at most backticks, spaces or
+# "the plugin default" between, is a direct call even when "(plugin-default)" follows it.
+SLOT_SOURCES = ("plugin-default", "project-rules", "project-claude-md", "project-skill", "user-rules", "user-claude-md", "user-skill")
+PLUGIN_DEFAULT_BEFORE_RE = re.compile(r"the plugin default[`\s]*$")
+PLUGIN_DEFAULT_AFTER_RE = re.compile(r"`*\s?\(plugin-default\)")
+IMPERATIVE_BEFORE_RE = re.compile(r"(?i)\b(?:call|load|run|invoke|use)\b[`\s]*(?:the plugin default[`\s]*)?$")
+RECORD_AFTER_RE = re.compile(r"\s\((?:" + "|".join(SLOT_SOURCES) + r")\)")
+
+
+def slot_default_described(line, m):
+    """True when the hit only describes the plugin default or stands as the skill id of a slot record."""
+    before, after = line[:m.start()], line[m.end():]
+    if IMPERATIVE_BEFORE_RE.search(before):
+        return False
+    if PLUGIN_DEFAULT_BEFORE_RE.search(before) or PLUGIN_DEFAULT_AFTER_RE.match(after):
+        return True
+    slot = m.group(1) or m.group(2)
+    bare = bool(m.group(2)) and not m.group(0).startswith("/")
+    return bare and bool(re.search(r"(?<![\w-])" + slot + r":\s+$", before)) and bool(RECORD_AFTER_RE.match(after))
+
+
+def reference_lines(folder, name):
+    """(relative path, lines) for each Markdown file under references/, minus skill-smith's own quoting files."""
+    found = []
+    base = os.path.join(folder, "references")
+    for root, dirs, files in os.walk(base):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+        for fn in sorted(files):
+            if not fn.endswith(".md"):
+                continue
+            full = os.path.join(root, fn)
+            rel = os.path.relpath(full, folder).replace(os.sep, "/")
+            if name == "skill-smith" and rel in INDEP_ALLOWLIST:
+                continue
+            try:
+                with open(full, encoding="utf-8") as f:
+                    found.append((rel, f.read().splitlines()))
+            except (OSError, UnicodeError):
+                continue
+    return found
+
+
+def slot_hits(lines, exempt=False, extra=()):
+    """Slot rule: a file that uses an injectable slot names CI_CALL and never calls Skill(agentville:<slot>) itself.
+    `extra` holds (relative path, lines) pairs for the skill's reference files, which are scanned the same way."""
+    if exempt:
+        return [], []
+    sets = [("", lines)] + [(rel + ":", ls) for rel, ls in extra]
+    direct = [f"{pre}{i + 1}:{m.group(0)}" for pre, ls in sets for i, l in enumerate(ls)
+              for m in SLOT_CALL_RE.finditer(l) if not slot_default_described(l, m)]
+    used = sorted({m.group(1) for _, ls in sets for l in ls for m in SLOT_USE_RE.finditer(l)})
+    every = "\n".join("\n".join(ls) for _, ls in sets)
+    return direct, ([] if CI_CALL in every else used)
 
 
 def independence_hits(folder, name, doc, lines, desc, kind):
@@ -549,6 +614,11 @@ def main(argv):
         fails.add(20)
     for h in indep:
         out.append("independence_hit: " + h)
+    direct, no_ci = ([], []) if template else slot_hits(lines, name in SLOTS or name == "context-injection", reference_lines(folder, name))
+    out.append("slot_direct_calls: " + (", ".join(direct) or "none"))
+    out.append("slot_without_context_injection: " + (", ".join(no_ci) or "none"))
+    if direct or no_ci:
+        fails.add(22)
     out.append("unresolved_links: " + (", ".join(dict.fromkeys(unresolved)) or "none"))
     out.append("skill_mentions: " + (", ".join(dict.fromkeys(mentions)) or "none"))
     out.append("legacy: " + (", ".join(legacy) or "none"))

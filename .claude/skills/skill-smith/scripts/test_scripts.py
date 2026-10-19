@@ -510,6 +510,89 @@ class MeasureTests(unittest.TestCase):
         out = run(MEASURE, REAL)[1]
         self.assertNotIn(20, fails(out), out)
 
+    def test_22_slot_direct_call_fails(self):
+        out = self.m(GOOD.replace("Search with", "Resolve with Skill(agentville:workspace), then search with"))[1]
+        self.assertIn(22, fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:workspace)" in l for l in out.splitlines()))
+
+    def test_22_plugin_default_mention_allowed(self):
+        out = self.m(GOOD.replace("Search with", "Note the plugin default `Skill(agentville:workspace)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_plugin_default_then_call_fails(self):
+        out = self.m(GOOD.replace("Search with", "Fall back to the plugin default, then call Skill(agentville:toolbelt), then search with"))[1]
+        self.assertIn(22, fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
+
+    def test_22_call_with_source_outside_record_fails(self):
+        for text in ("Call `Skill(agentville:toolbelt) (project-x)`", "Call `Skill(agentville:toolbelt) (project-rules)`",
+                     "Write `toolbelt: Skill(agentville:toolbelt) (project-rules)`"):
+            out = self.m(GOOD.replace("Search with", text + ", then search with"))[1]
+            self.assertIn(22, fails(out), text)
+
+    def test_22_call_followed_by_plugin_default_record_allowed(self):
+        out = self.m(GOOD.replace("Search with", "Name `Skill(agentville:toolbelt) (plugin-default)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_imperative_verb_before_default_call_fails(self):
+        for text in ("Call `Skill(agentville:toolbelt) (plugin-default)`", "Load the plugin default `Skill(agentville:workspace)`",
+                     "then run Skill(agentville:draft) (plugin-default)", "Invoke the plugin default Skill(agentville:plan)",
+                     "Use `Skill(agentville:report)` (plugin-default)"):
+            out = self.m(GOOD.replace("Search with", text + ", then search with"))[1]
+            self.assertIn(22, fails(out), text)
+            self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:" in l for l in out.splitlines()), text)
+
+    def test_22_non_imperative_default_description_still_allowed(self):
+        for text in ("The slot falls back to the plugin default `Skill(agentville:draft)`", "Name `Skill(agentville:plan) (plugin-default)`",
+                     "Write `report: agentville:report (plugin-default)`"):
+            out = self.m(GOOD.replace("Search with", text + ", then search with"))[1]
+            self.assertNotIn(22, fails(out), text)
+
+    def test_22_record_needs_known_source_and_own_slot(self):
+        for text in ("toolbelt: agentville:toolbelt (project-x)", "workspace: agentville:toolbelt (project-rules)"):
+            out = self.m(GOOD.replace("Search with", f"Write `{text}`, then search with"))[1]
+            self.assertIn(22, fails(out), text)
+        out = self.m(GOOD.replace("Search with", "Write `toolbelt: agentville:toolbelt (project-rules)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_slot_without_context_injection_fails(self):
+        out = self.m(GOOD.replace("Search with", "Use the `toolbelt` slot, then search with"))[1]
+        self.assertIn(22, fails(out))
+        self.assertIn("slot_without_context_injection: toolbelt", out)
+
+    def test_22_slot_via_context_injection_passes(self):
+        out = self.m(GOOD.replace("Search with", "Use the `toolbelt` slot through Skill(agentville:context-injection), then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_slot_default_skill_exempt(self):
+        text = GOOD.replace('name: "demo"', 'name: "workspace"').replace("Search with", "Resolve with Skill(agentville:workspace), then search with")
+        self.assertNotIn(22, fails(self.m(text)[1]))
+
+    def test_22_plugin_default_elsewhere_on_line_does_not_exempt(self):
+        line = "Fall back to the plugin default and say so in the report, then call Skill(agentville:workspace), then search with"
+        out = self.m(GOOD.replace("Search with", line))[1]
+        self.assertIn(22, fails(out))
+
+    def test_22_other_call_forms_fail(self):
+        for form in ("agentville:toolbelt", "/agentville:toolbelt", "Skill(toolbelt)"):
+            out = self.m(GOOD.replace("Search with", f"Load {form} first, then search with"))[1]
+            self.assertIn(22, fails(out), form)
+
+    def test_22_slot_record_with_source_allowed(self):
+        out = self.m(GOOD.replace("Search with", "Write `workspace: agentville:workspace (plugin-default)`, then search with"))[1]
+        self.assertNotIn(22, fails(out))
+
+    def test_22_reference_files_are_scanned(self):
+        d = os.path.join(self.tmp, "withrefs")
+        os.makedirs(os.path.join(d, "references"))
+        with open(os.path.join(d, "references", "notes.md"), "w", encoding="utf-8") as f:
+            f.write("Resolve with Skill(agentville:workspace) first.\nUse the `toolbelt` slot.\n")
+        out = self.m(GOOD, folder=d)[1]
+        self.assertIn(22, fails(out))
+        self.assertTrue(any(l.startswith("slot_direct_calls:") and "references/notes.md:1:Skill(agentville:workspace)" in l
+                            for l in out.splitlines()), out)
+        self.assertIn("slot_without_context_injection: toolbelt", out)
+
 
 class StageTests(unittest.TestCase):
     def setUp(self):
