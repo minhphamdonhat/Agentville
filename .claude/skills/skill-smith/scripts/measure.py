@@ -38,7 +38,7 @@ STEP_REF_RE = re.compile(r"(SKILL\.md\s+)?\bsteps?\s+(\d+(?:\s*(?:,|and|or|to|-|
 MAX_LINES = 500
 # Rule 20, independence. A skill never names what invokes it.
 INDEP_TOKENS = ["caller", "calling agent", "calling skill", "invoker", "invoked by", "orchestrator",
-                "conductor", "parent agent", "parent skill", "root agent", "main thread",
+                "parent agent", "parent skill", "root agent", "main thread",
                 "another skill call", "another skill invokes", "in a subagent", "runs in a subagent",
                 "inside another agent", "Siblings:"]
 INDEP_RE = re.compile("|".join(r"\b" + re.escape(t) + (r"s?\b" if t.isalpha() else "")

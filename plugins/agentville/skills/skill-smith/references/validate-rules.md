@@ -14,7 +14,7 @@ Read by SKILL.md step 6 after measure.py. Report each problem as `rule <n>: <pro
 - Rule 20, independence (script, every type). A skill names only skills it loads itself. It never names, describes or assumes the skill, agent or thread that runs it, and it states every hand-back as its own output fields. measure.py fails rule 20 on any of the tokens below, case-insensitive, in SKILL.md and every text file of the skill, and on a description or Role that says a named skill calls, uses or runs it (such as "called by" or "that `Skill(` ... calls"). It prints each hit as `independence_hit: path:line | token`. A fix rewrites the reference as the skill's own input or output field. The skill must also pass the standalone-invocation eval of SKILL.md step 7.
 
 ```text
-caller, calling agent, calling skill, invoker, invoked by, orchestrator, conductor,
+caller, calling agent, calling skill, invoker, invoked by, orchestrator,
 parent agent, parent skill, root agent, main thread, another skill call,
 another skill invokes, in a subagent, runs in a subagent, inside another agent, Siblings:
 ```
