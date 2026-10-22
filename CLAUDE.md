@@ -12,7 +12,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 | Path | Holds |
 | --- | --- |
-| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md` (web research only), `validator.md` (independent checks with sealed evidence) and `reviewer.md` (read-only diff review). |
+| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md` (web research only), `validator.md` (independent checks with sealed evidence) `reviewer.md` (read-only diff review) and `conductor.md` (main-session orchestrator). |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
 | `plugins/agentville/rules/root-agent.md` | Standing policy for the root agent. |
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
@@ -36,7 +36,7 @@ The shipped skills are:
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
-The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot, resolved in two steps) and `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering).
+The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot, resolved in two steps) and `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering) and `conductor` (the main session's orchestrator, which routes through `orchestrate`, spawns through `dispatch` and holds no edit, search or shell tool).
 
 ## Agent format
 
