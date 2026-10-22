@@ -1,6 +1,8 @@
 ---
 name: "workspace"
 description: "Returns a run's folders: the topic folder '<workspace>/<topic-id>/' and the artefacts and scratch paths under '<workspace>/<topic-id>/<agent-name>/', with the cleanup rule and git-ignore status, and creates them. Workspace is a 'workspace-folder: <path>' steering line, else the working folder's 'tmp/'; with no folder at all it returns none. Use before writing any artefact, evidence or scratch file, or to locate a run's folders read-only."
+metadata:
+  version: 1.0.1
 ---
 
 # Role
@@ -31,7 +33,7 @@ You are a workspace planner. You settle the workspace folder, and return the abs
 Read `topic-id`, `agent-name`, `access` and `gitignore-edit` from the request. Use the defaults for a missing `topic-id` or `agent-name`. A value that is not kebab-case returns `status: needs-input` with `missing:` naming it.
 
 Do:
-* Read `topic-id: orders-retry-20261017` and `agent-name: validator` from "workspace for the validator on topic orders-retry-20261017".
+* Read `topic-id: orders-retry-2026-10-17` and `agent-name: validator` from "workspace for the validator on topic orders-retry-2026-10-17".
 
 Don't:
 * Ask for a missing `topic-id` or `agent-name`; use the defaults.
@@ -53,10 +55,10 @@ Don't:
 Set `topic` to `<workspace>/<topic-id>`, the folder shared by everything on the topic for topic-level documents; it holds no run's files. Set `artefacts` to `<workspace>/<topic-id>/<agent-name>/artefacts` and `scratch` to `<workspace>/<topic-id>/<agent-name>/scratch`. With `access: write`, create both with `mkdir -p "<artefacts>" "<scratch>"` through `Bash`; without a shell tool, write no placeholder file and report `created: no (no shell; the folders appear with the first file written)`. With `access: read`, create nothing and report `created: no (read access)`.
 
 Do:
-* Run `mkdir -p {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/scratch` for that topic and agent.
+* Run `mkdir -p {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/validator/artefacts {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/validator/scratch` for that topic and agent.
 
 Don't:
-* Create `{{ PROJECT_ROOT }}/tmp/orders-retry-20261017/worker/` while resolving for `agent-name: validator`; create only the run's own two folders.
+* Create `{{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/worker/` while resolving for `agent-name: validator`; create only the run's own two folders.
 
 ### 4. Check the git-ignore status
 
@@ -99,13 +101,13 @@ Use the first template on every run that settles the paths.
 status: completed
 workspace: {{ PROJECT_ROOT }}/tmp (default)
 workspace-source: default
-topic: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017
-artefacts: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts
-scratch: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/scratch
+topic: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17
+artefacts: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/validator/artefacts
+scratch: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/validator/scratch
 created: yes
 cleanup: delete scratch/ before reporting; keep artefacts/ until the topic is done; never delete a file this run did not create
 gitignore: not ignored (add tmp/ to .gitignore to keep artefacts out of commits)
-note: artefacts go to {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts
+note: artefacts go to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/validator/artefacts
 ```
 
 Do:

@@ -1,6 +1,8 @@
 ---
 name: "relay"
 description: 'Writing standard for text another agent reads: Agent(...) and Task briefs, SendMessage, subagent final reports and hand-backs, findings or report tools, tool results and errors you author, and handoff or resume files. Sets channel budgets, brief and report anatomy, claim labels, anti-conformity rules, safe compression, notation by job, delimiters against injection and a pre-send check. Not for text a person reads.'
+metadata:
+  version: 1.0.0
 ---
 
 # relay

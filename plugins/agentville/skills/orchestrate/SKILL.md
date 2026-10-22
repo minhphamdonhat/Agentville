@@ -1,6 +1,8 @@
 ---
 name: "orchestrate"
 description: "A sample, opt-in request workflow: it triages the request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, in that fixed order, and sends every spawn through `agentville:dispatch`. Use when a loaded instruction routes requests through it or the user asks for the session workflow; then also to decide how much process a request deserves or which stage comes next, when a failed check or review means looping back, when a plan must be drafted before work starts, or when gaps and out-of-scope findings must reach the user."
+metadata:
+  version: 1.0.1
 ---
 
 # Role
@@ -11,7 +13,7 @@ You are the workflow controller of one user request. You triage it, run the stag
 
 * Stage order is fixed: Discuss, Plan, Execute, Validate, Review, Report. Triage picks the first stage; after a pass each stage goes to the next one it has not skipped. Move backward only through the loop-backs of step 5, because a small task buried in a full plan wastes the user's time and a large one run without a plan builds the wrong thing.
 * Send every spawn, follow-up and message to a child through `Skill(agentville:dispatch)` with `role-hint`, `topic-id` and, from Execute on, `questions: forbidden`. Dispatch owns the brief, the agent type, routing, retries and report reading; restate none of it here.
-* Pick one kebab-case topic-id per request, such as `cases-pagination-20261018`, and pass it on every dispatch.
+* Pick one kebab-case topic-id per request, such as `cases-pagination-2026-10-18`, and pass it on every dispatch.
 * Steering is what is already in your context: project instructions, custom instructions and the conversation. Take it as given, and let a worker read any steering file it names.
 * Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, as the reply's first line, in exactly this shape: `- **Stage: <Discuss|Plan|Execute|Validate|Review|Report>**`. Write the stage name only, never the stage plan or a reason, and never repeat it on a reply that stays in the same stage.
 * Use the question tool by stage, and when no person is reachable where it is allowed, return `needs-input` with `missing:` naming the decision:

@@ -1,6 +1,8 @@
 ---
 name: "agent-smith"
 description: "Agentville maintainer copy of agent-smith, for building agents in this repository: compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (identity, base rules including relay and the report shape) verbatim, validates it, evals it against the base worker and installs it into the Agentville plugin or the project. Use when maintaining Agentville and asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
+metadata:
+  version: 1.1.0
 ---
 
 # Role
@@ -112,7 +114,7 @@ Don't:
 
 Read `<STAGING>/<agent-name>.md` with `Read` and fill every `[[...]]` fill-in from the confirmed contract with `Edit`, brackets included. Follow the drafting comment, then delete it; keep the core markers. Fill in this order:
 
-* Frontmatter: `name`, `description`, `tools` (the approved list) and `disallowedTools` (the base worker's denied tools minus any the user granted). No `model` or `effort` key.
+* Frontmatter: `name`, `description`, `tools` (the approved list), `disallowedTools` (the base worker's denied tools minus any the user granted) and `metadata` holding `version: 1.0.0` on a compile; on improve, raise the seeded version by semver (major for a breaking contract change, minor for new behaviour, patch for a wording change). No `model` or `effort` key.
 * `# Role`: the personality, after the core identity block.
 * `# Constraints`: the extending rules, numbered after the core rules, each with a one-clause reason.
 * `# Workflows`: one `## <Name>` per workflow, each with a `Role:` line and `### Input`, `### Process` and `### Output`. Input lines read `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`. Steps are numbered `1.` to `n.`; each names its tool or loads a `Skill(namespace:name)`, or stops and hands back a spawn request. Output lines read `* **field:** always - what` or `* **field:** when <condition> - what`. End each process with a Report step.

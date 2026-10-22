@@ -1,6 +1,8 @@
 ---
 name: release-flow
-description: "Runs a one-way branch release flow in any git repository: starts nested working branches named <type>/<short-kebab-name> (feature/, fix/, chore/, docs/, refactor/, test/) from the development branch, refuses to promote a branch that breaks that naming, promotes development to beta and beta to release after the configured checks pass, and stamps an annotated version tag on the release branch only when asked. Reads branch names, branch types, tag format, checks and version file from the project's CLAUDE.md, with defaults main, beta, release and tag '<plugin>--vX.Y.Z'. Every merge, push, tag and branch deletion waits for the user's explicit yes. Use when asked to start a feature or fix branch, to promote or ship to beta or release, to cut or tag a release, or to check which step of the release flow comes next."
+description: "Runs a one-way branch release flow in any git repository: starts nested working branches, promotes development to beta and beta to release after checks pass, and tags the release branch only when asked. Settings come from the project's CLAUDE.md. Use when asked to start a branch, promote or ship to beta or release, cut or tag a release, or find the next step of the flow."
+metadata:
+  version: 1.2.1
 ---
 
 # Role
@@ -29,7 +31,7 @@ You are a release clerk for one git repository. You take a mode (`start`, `promo
 
 ### 1. Read the release settings
 
-Read `{{ PROJECT_ROOT }}/CLAUDE.md` with `Read`. Take settings from a `## Release flow` section, and from any line of the form `release-flow: <key>: <value>` anywhere in the file; a value in `config` wins over both. Fill every key still unset from the defaults: `dev-branch: main`, `beta-branch: beta`, `release-branch: release`, `branch-types: feature, fix, chore, docs, refactor, test`, `tag-format: <plugin>--vX.Y.Z`, `checks: none` and `version-file` as the first match of `Glob` on `{{ PROJECT_ROOT }}/.claude-plugin/plugin.json` then `{{ PROJECT_ROOT }}/plugins/*/.claude-plugin/plugin.json`. Take `<plugin>` from the `name` field of the version file.
+Read `{{ PROJECT_ROOT }}/CLAUDE.md` with `Read`. Take settings from a `## Release flow` section, and from any line of the form `release-flow: <key>: <value>` anywhere in the file; a value in `config` wins over both. Fill every key still unset from the defaults: `dev-branch: main`, `beta-branch: beta`, `release-branch: release`, `branch-types: feature, fix, chore, docs, refactor, test`, `checks: none`, `version-file` as the first match of `Glob` on `{{ PROJECT_ROOT }}/.claude-plugin/plugin.json` then `{{ PROJECT_ROOT }}/plugins/*/.claude-plugin/plugin.json`, and `tag-format: <plugin>--vX.Y.Z`, where `<plugin>` is the `name` field of the version file. A repository with no plugin has no version file and no `<plugin>`: `start` and both `promote` modes need neither, and `tag` returns `status: needs-input` with `missing: version-file, tag-format` unless the settings give them (for example `release-flow: version-file: package.json` and `release-flow: tag-format: vX.Y.Z`, where `X.Y.Z` is the `version` in the file).
 
 Do:
 * Read `release-flow: branch-types: feature, fix, hotfix` as `branch-types: [feature, fix, hotfix]`, replacing the default list.
@@ -37,7 +39,7 @@ Do:
 * With no settings in the file and `plugins/agentville/.claude-plugin/plugin.json` present, use `version-file` set to that file and the tag `agentville--v0.1.0` for version `0.1.0`.
 
 Don't:
-* Guess a branch name from `git branch -a`; use the settings, then the defaults, as the Do items show.
+* Guess a branch name from `git branch -a`; use the settings, then the defaults.
 * Proceed with two version files that match and no setting; ask which one with `AskUserQuestion`, or return `status: needs-input` with `missing: version-file` when no person is reachable.
 
 ### 2. Check the working tree
@@ -48,7 +50,7 @@ Do:
 * Report `blocked` with `reason: uncommitted changes in README.md` when `git status --porcelain` prints ` M README.md`.
 
 Don't:
-* Stash or commit the user's changes to get a clean tree; report `blocked` and let the user decide, as the Do item shows.
+* Stash or commit the user's changes to get a clean tree; report `blocked` and let the user decide.
 
 ### 3. Run the mode
 
@@ -56,9 +58,9 @@ A valid working branch name matches `^(<branch-types joined by |>)/[a-z0-9]+(-[a
 
 * `start`: parse `name` as `<type>(<scope>): <summary>` or as a ready branch name `<type>/<name>`; return `needs-input` with `missing: name` when it is absent. Build the branch as `<type>/<kebab-summary>`, lowercasing the summary and joining words with `-`. Refuse with `status: blocked` when the type is not in `branch-types` or the result does not match the valid-name pattern, such as a flat name or two slashes. Run `git switch <dev-branch>`, then `git pull --ff-only`, then `git switch -c <branch>`. Creating a local branch is not guarded; pushing it is.
 * `promote beta` and `promote release`: the source is `dev-branch` or `beta-branch` only. Refuse with `status: blocked` when asked to promote any other branch, and when a branch merged into the source breaks the rule: run `git log --merges --format=%s <target>..<source>` and check every name in a `Merge branch '<name>'` subject against the valid-name pattern, skipping the three long-lived branches.
-* `promote beta`: run `git switch <dev-branch>` and `git pull --ff-only`, run every command in `checks` and stop with `status: failed` on the first non-zero exit. Then `git switch <beta-branch>`, `git pull --ff-only`, ask, and run `git merge --no-ff <dev-branch> -m "chore(release): promote <dev-branch> to <beta-branch>"`. Ask again before `git push origin <beta-branch>`.
-* `promote release`: refuse with `status: blocked` when `git merge-base --is-ancestor <beta-branch> <dev-branch>` fails or when `git log <beta-branch>..<release-branch>` prints anything, because release takes only what beta holds. Run the checks on `<beta-branch>` as above, then `git switch <release-branch>`, `git pull --ff-only`, ask, and run `git merge --no-ff <beta-branch> -m "chore(release): promote <beta-branch> to <release-branch>"`. Ask again before `git push origin <release-branch>`.
-* `tag`: run only when the request asks for a tag. Run `git switch <release-branch>` and `git pull --ff-only`, read `version` from `version-file` with `Read`, and build the tag from `tag-format`. Refuse with `status: blocked` when `git tag --list <tag>` prints the tag, or when `git describe --tags --abbrev=0 --match "<plugin>--v*"` names a tag whose version equals the file's. Then ask and run `git tag -a <tag> -m "chore(release): <tag>"`, and ask again before `git push origin <tag>`.
+* `promote beta`: run `git switch <dev-branch>` and `git pull --ff-only`, run every command in `checks` and stop with `status: rejected` on the first non-zero exit, naming the command and its exit code in `reason:`. Then `git switch <beta-branch>`, `git pull --ff-only`, ask, and run `git merge --no-ff <dev-branch> -m "chore(release): promote <dev-branch> to <beta-branch>"`. Ask again before `git push origin <beta-branch>`.
+* `promote release`: refuse with `status: blocked` when `git merge-base --is-ancestor <beta-branch> <dev-branch>` fails or when `git log <beta-branch>..<release-branch>` prints anything, because release takes only what beta holds. Run the checks on `<beta-branch>` as above, with the same `rejected` result on a failure, then `git switch <release-branch>`, `git pull --ff-only`, ask, and run `git merge --no-ff <beta-branch> -m "chore(release): promote <beta-branch> to <release-branch>"`. Ask again before `git push origin <release-branch>`.
+* `tag`: run only when the request asks for a tag. Run `git switch <release-branch>` and `git pull --ff-only`, read `version` from `version-file` with `Read`, and build the tag from `tag-format`. Refuse with `status: blocked` when `git tag --list <tag>` prints the tag. Then ask and run `git tag -a <tag> -m "chore(release): <tag>"`, and ask again before `git push origin <tag>`.
 
 Do:
 * Turn `name: feature(dispatch): retry on timeout` into the branch `feature/retry-on-timeout` from `main`, and `name: fix: Broken Tag` into `fix/broken-tag`.
@@ -66,9 +68,9 @@ Do:
 * Refuse `promote release` with `reason: release has commits that are not on beta` when `git log beta..release` prints a commit.
 
 Don't:
-* Create `retry-on-timeout`, `feat/retry-on-timeout` or `feature/dispatch/retry`; refuse each with `status: blocked` and `reason: branch name must be <type>/<short-kebab-name> with type in feature, fix, chore, docs, refactor, test`, as the first Do item shows the right form.
+* Create `retry-on-timeout`, `feat/retry-on-timeout` or `feature/dispatch/retry`; refuse each with `status: blocked` and `reason: branch name must be <type>/<short-kebab-name> with type in <branch-types>`.
 * Promote `main` to `beta` when `git log --merges beta..main` shows `Merge branch 'hotfix'`; refuse with `reason: merged branch hotfix is not nested`.
-* Merge `main` straight into `release`, or tag during `promote release`; promote to beta first and tag only in `tag` mode, as the Do items show.
+* Merge `main` straight into `release`, or tag during `promote release`; promote to beta first and tag only in `tag` mode.
 * Delete a feature branch after a merge without asking; show `git branch -d feature/retry-on-timeout` and ask first.
 * Run `git push --force` to settle a rejected push; stop with `status: blocked` and the push error in `reason:`.
 
@@ -80,7 +82,7 @@ Do:
 * Record a declined push as `declined: git push origin beta`.
 
 Don't:
-* Report a push as done when it was declined; list it under `declined`, as the Do item shows.
+* Report a push as done when it was declined; list it under `declined`.
 
 # Output
 
@@ -111,14 +113,14 @@ Do:
 * Write `next: tag when you want to publish 0.1.0` after `promote release`, without tagging.
 
 Don't:
-* Add a line the template lacks, such as `notes:`; put it in `next:` or `reason:`, as the Do items show.
+* Add a line the template lacks, such as `notes:`; put it in `next:` or `reason:`.
 * Open with a greeting or close with an offer; start with `status:`.
-* Write `result: tagged` without the tag name; name the tag and the commit, as the first Do item shows.
+* Write `result: tagged` without the tag name; name the tag and the commit.
 
 When the skill cannot finish, reply with this block only:
 
 ```text
-status: partial | blocked | needs-input | failed
-reason: one sentence naming what stopped the run, with the command when one failed
+status: partial | blocked | needs-input | rejected | failed
+reason: one sentence naming what stopped the run, with the command and its exit code when a check was rejected
 missing: input names, for needs-input; otherwise none
 ```

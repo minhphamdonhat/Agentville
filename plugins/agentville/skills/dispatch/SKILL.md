@@ -1,6 +1,8 @@
 ---
 name: "dispatch"
 description: "Procedure for one delegated task: sharpen it, choose the role (worker, validator, reviewer or scout), route model and effort, write a relay brief, spawn the child, judge its report, retry or escalate that spawn and return the outcome. Use whenever you are about to delegate a task to a worker, validator, reviewer or scout, must pick a model or effort for a child, must judge a child's report, or must retry or escalate a failed spawn. With `questions: forbidden` it asks no one and returns every gap as needs-input."
+metadata:
+  version: 1.0.0
 ---
 
 # Role

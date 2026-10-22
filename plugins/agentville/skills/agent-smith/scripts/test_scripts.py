@@ -121,6 +121,15 @@ class TestMeasure(Base):
         for c in ("identity", "constraints"):
             self.assertIn(f"{c} | identical", kv(out)["core"])
 
+    def test_02b_version_missing_or_malformed_fails(self):
+        text = self.filled()
+        self.assertIn("  version: 1.0.0\n", text)
+        for bad in (text.replace("metadata:\n  version: 1.0.0\n", ""), text.replace("version: 1.0.0", "version: 1.0")):
+            rc, out = self.measure(bad)
+            self.assertEqual(rc, 1, out)
+            self.assertIn("A1", fails(out))
+            self.assertIn("version_error:", out)
+
     def test_02_filled_fork_passes(self):
         rc, out = self.measure(self.filled())
         self.assertEqual(rc, 0, out)
@@ -246,7 +255,7 @@ class TestMeasure(Base):
 
     def test_21_pod_lead_is_standalone(self):
         text = ("---\nname: pod-lead\ndescription: Standalone lead of a pod's agents.\n"
-                "tools: Skill, Agent(worker)\n---\n\n# Role\n\nYou are pod-lead.\n\n"
+                "tools: Skill, Agent(worker)\nmetadata:\n  version: 1.0.0\n---\n\n# Role\n\nYou are pod-lead.\n\n"
                 "# Constraints\n\n1. **Orchestrate:** route every request through `Skill(agentville:orchestrate)`.\n\n"
                 "# Workflows\n\n## Conduct\n\nRole: pod-lead\n\n### Input\n\n"
                 "* **request:** required - default: none - The request.\n\n### Process\n\n"

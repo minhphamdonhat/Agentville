@@ -4,8 +4,8 @@ Read by SKILL.md step 7 after measure.py. Report each problem as `rule <id>: <pr
 
 ## Frontmatter
 
-- Rule A1, required keys (script). `name` is kebab-case and at most 64 characters, `description` is non-empty and at most 1,024 characters, and `tools` lists at least one tool.
-- Rule A2, no model or effort (script). A `model` or `effort` key fails, because the model and effort are chosen per spawn, not per agent. A key other than `name`, `description`, `tools` and `disallowedTools` is a warning.
+- Rule A1, required keys (script). `name` is kebab-case and at most 64 characters, `description` is non-empty and at most 1,024 characters, `tools` lists at least one tool, and `metadata.version` is present in semver form `X.Y.Z`, such as `1.0.0`; a missing or malformed version fails with a `version_error:` line.
+- Rule A2, no model or effort (script). A `model` or `effort` key fails, because the model and effort are chosen per spawn, not per agent. A key other than `name`, `description`, `tools`, `disallowedTools` and `metadata` is a warning.
 - Rule A3, no spawning (script). `Agent` (or its older name `Task`) in `tools` fails unless measure.py runs with `--allow-agent`, which is passed only when the user asked for the tool by name.
 - Rule A10, no contradiction (script). A tool listed in both `tools` and `disallowedTools` fails.
 - Rule A12, tools match the steps (judged). Every tool a workflow step names is in `tools`, and `tools` holds no tool that no step or core rule needs.

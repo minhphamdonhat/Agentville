@@ -17,7 +17,7 @@ DEFAULT_BASE = os.path.join(os.path.dirname(HERE), "assets", "base", "worker.md"
 SECTIONS = ["Role", "Constraints", "Workflows", "Exception handler"]
 CORE_HOME = {"identity": "Role", "constraints": "Constraints"}
 ROLES = {"worker", "validator", "reviewer", "scout"}
-ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools"}
+ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools", "metadata"}
 FORBIDDEN_KEYS = {"model", "effort"}
 SPAWN_TOOLS = {"Agent", "Task"}
 MAX_LINES = 500
@@ -267,6 +267,12 @@ def measure(path, base_path, allow_agent):
     # A1 required frontmatter
     if not NAME_RE.match(name) or len(name) > 64 or not desc or len(desc) > 1024 or not tools:
         fails.add("A1")
+    vm = re.search(r"(?:^|\s)version:\s*(\S+)", fm.get("metadata", ""))
+    version = vm.group(1) if vm else ""
+    if not re.match(r"^\d+\.\d+\.\d+$", version):
+        fails.add("A1")
+        out.append("version_error: metadata.version is " + ("missing" if not version else f"malformed ({version!r})")
+                   + "; frontmatter needs 'metadata:' then an indented 'version: X.Y.Z' (semver, such as 1.0.0)")
     # A2 forbidden and unknown keys
     if FORBIDDEN_KEYS & set(keys):
         fails.add("A2")

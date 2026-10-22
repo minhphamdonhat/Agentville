@@ -1,6 +1,8 @@
 ---
 name: "intelligence-routing-model"
 description: Framework to triage any task to the cheapest Claude tier (Haiku, Sonnet, Opus) and effort level that still succeeds. Score ceiling to pick tier, depth to pick effort, adjust for domain, gate Haiku on task shape and a deterministic check. Use whenever you must pick a model or effort, budget a run, or decide whether to escalate after a failure, even if nobody says "routing".
+metadata:
+  version: 1.0.1
 ---
 
 # intelligence-routing-model
@@ -110,19 +112,13 @@ Apply in order. Each overrides §4.
 
 ## 6. Worker contract
 
-Brief per relay §3, with all five of these. Low-effort cells need it most: they scope literally and skip unrequested checks.
-
-- **Scope:** exactly what to do, what not to touch.
-- **Inputs:** paths, IDs, prior findings. Never "go find context".
-- **Check:** command or criterion that proves done.
-- **Budget:** step, tool-call and spawn ceiling, plus stop condition.
-- **Output shape:** what to return, plus length cap; low effort does not reliably shorten prose.
+Write the brief per relay §3. Low-effort cells need it most: they scope literally and skip unrequested checks, and low effort does not reliably shorten prose, so cap the output length.
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
 **Report format.** Every report, Haiku included, follows relay §4 and quotes its evidence. A `<status>` that is still missing or unknown after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as `failed`: small models fabricate there.
 
-**Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
+**Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output. Haiku rejects non-default sampling parameters, prefill and the old computer tool, so share no request template across tiers. A forced `tool_choice` yields no thinking, and with thinking disabled a per-message effort change returns 400.
 
 **Verifier and audit.** Verify in a fresh context; for judgement checks the verifier sits at or above the worker's tier, and a different tier applies only where a peer-or-higher one exists, so Opus work is verified by Opus in a fresh context. A Haiku verifier runs ground-truth checks only (tests, build, schema, diff against spec), never judges a higher tier's work. Verifiers check independently, not rate rationale. Each run, re-check a random sample of accepted Haiku output on a higher tier.
 
@@ -204,7 +200,7 @@ Tiers stay version-free, but **effort levels are not portable across versions**:
 Run before handing a task over.
 
 1. Spec names a check; cell comes from C and adjusted D (§1–§3).
-2. Haiku cell passes the whole gate; no Sonnet `max`, default Sonnet `xhigh` or unevaluated Haiku `xhigh`/`max`; human gate on irreversible steps (§4, §5).
-3. Brief has five contract fields, brief and report follow relay §3 and §4, verifier is fresh and peer-or-higher (§6).
+2. Haiku cell passes the whole gate; effort caps held (§5.2, §3); human gate on irreversible steps (§4, §5).
+3. Brief and report follow relay §3 and §4; verifier is fresh and peer-or-higher (§6).
 4. Failure move matches failure class; Haiku left on structure, not confidence (§7).
-5. Request fits the tier: Haiku rejects non-default sampling parameters, prefill and the old computer tool, so no shared request template across tiers; forced `tool_choice` yields no thinking; with thinking disabled, a per-message effort change returns 400; confirm the model the worker actually ran on (§5, §6).
+5. Request fits the tier (§6); confirm the model the worker actually ran on.

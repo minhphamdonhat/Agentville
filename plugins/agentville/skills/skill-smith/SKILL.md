@@ -1,6 +1,8 @@
 ---
 name: "skill-smith"
 description: "The canonical way to create, improve or convert a Claude skill. Use when asked to create, write or compile a skill or SKILL.md, to fix or re-test an existing one, or to convert an older skill to the current format."
+metadata:
+  version: 1.1.0
 ---
 
 # Role
@@ -16,11 +18,11 @@ You are a skill compiler. skill-smith is the canonical route for authoring any s
 * Install only to project scope (`{{ PROJECT_ROOT }}/.claude/skills/<skill-name>`) or user scope (`{{ USER_ROOT }}/.claude/skills/<skill-name>`), and never to a plugin folder or any other directory, because the shipped smiths must never rewrite a plugin, including Agentville itself; the user chooses only between those two scopes.
 * Return `status: blocked` with the reason when `path` is inside a plugin (under a `.claude-plugin` folder or a folder holding `.claude-plugin/plugin.json`) or outside both skills folders, and change nothing, because improve and convert would rewrite the plugin.
 * Seed the staging folder from the existing skill before an improve or convert, because install removes every target file the staging folder lacks.
-* Write frontmatter with `name` and `description` only, because the type is read from the body and any other key goes stale.
+* Write frontmatter with `name`, `description` and `metadata.version` only, because the type is read from the body and any other key goes stale.
 * One workflow per skill; a request that needs two is split into two skills, because each skill can then run alone.
 * Process skills use the sections Role, Constraints, Input, Process and Output, in that order, because hard rules read first are followed best.
 * Scale the examples to the item, in Process steps and Constraints alike: none on a simple one-line step or constraint; one Do and one Don't where the rule needs explanation; up to three of each for the hardest items, which are the step breakdown, the execution (what may run, which tools are allowed and forbidden) and the Output the skill returns. Write every example with real values, end each Don't with its fix, and pair every Don't with a Do that shows the right form, because a pair teaches more than a bare prohibition and an example on every line buries the hard rules (rule 21).
-* Every process skill's Output lists its returned fields and ends with the failure block (`status: partial | blocked | needs-input | failed`, `reason:`, `missing:`), because `status` states the outcome in one token.
+* Every process skill's Output lists its returned fields and ends with the failure block (`status: partial | blocked | needs-input | rejected | failed`, `reason:`, `missing:`), because `status` states the outcome in one token.
 * Write every path with a placeholder (`{{ SKILL_ROOT }}`, `{{ USER_ROOT }}`, `{{ PROJECT_ROOT }}`), never a host path such as a spelt-out home folder, because a host path breaks on every other machine.
 * Name no file outside the skill's own folder, because a skill must work when installed alone.
 * Deliver every skill independent, whatever its type and whether created, improved or converted: it names only skills it loads itself, never names, describes or assumes the skill, agent or thread that runs it, states every hand-back as its own output fields, and is tested by running it alone, because a skill that depends on a particular parent breaks when run on its own.
@@ -120,7 +122,7 @@ On a failure, fix it with `Edit` and validate again. A warning, such as a slash 
 
 Do:
 * Fix `rule 5: step 3 has no Don't list` by adding two concrete Don't examples to that step.
-* Fix `rule 15: extra frontmatter key` by deleting every key but `name` and `description`.
+* Fix `rule 15: extra frontmatter key` by deleting every key but `name`, `description` and `metadata`, and by adding `metadata.version` when it is missing or malformed.
 
 Don't:
 * Install a draft whose last validation failed; fix and validate again, as the Do items show.
@@ -132,7 +134,7 @@ Test the draft with and without the skill by calling `Skill` /skill-creator and 
 
 When the with-skill score is lower than the baseline, follow `on-eval-failure`. With `revise`, edit, re-run the evals and validate again. With `stop`, clean up and return `status: failed` with the failing cases in `reason:`. When the input was not given and a person is reachable, ask "Revise the skill to fix the failing cases?" with `AskUserQuestion` and treat yes as `revise` and no as `stop`. When it was not given and no person is reachable, do not ask: clean up and return `status: needs-input` with `missing: on-eval-failure` and the failing cases in `reason:`.
 
-Always include a standalone-invocation case, whatever else is declined or skipped. It is at least one eval case that runs the skill alone, given only its declared inputs and no surrounding workflow, no other skill and no prior conversation, and checks that the run either completes with its documented `status: completed` output fields or returns its own documented failure block (`needs-input` with `missing:`, `partial`, `blocked` or `failed`). This case is the minimum that cannot be declined: the user may decline every other eval, and the case still runs. When /skill-creator has no runnable case for it, write the case into `<STAGING>/evals/evals.json` yourself and run it. A skill whose standalone case fails has failed its evals, and `on-eval-failure` applies. Record `standalone: pass | fail` with the eval result.
+Always include a standalone-invocation case, whatever else is declined or skipped. It is at least one eval case that runs the skill alone, given only its declared inputs and no surrounding workflow, no other skill and no prior conversation, and checks that the run either completes with its documented `status: completed` output fields or returns its own documented failure block (`needs-input` with `missing:`, `partial`, `blocked`, `rejected` or `failed`). This case is the minimum that cannot be declined: the user may decline every other eval, and the case still runs. When /skill-creator has no runnable case for it, write the case into `<STAGING>/evals/evals.json` yourself and run it. A skill whose standalone case fails has failed its evals, and `on-eval-failure` applies. Record `standalone: pass | fail` with the eval result.
 
 When the user declines the other evals, or /skill-creator finds no runnable case beyond the standalone one, record the standalone result and `not run` for the rest. Return `eval-result: not run` only when the standalone case could not run, and then return `status: failed`.
 
@@ -154,7 +156,7 @@ Do:
 * Keep the description at or under 1,024 characters and keep two or more trigger contexts.
 
 Don't:
-* Add any frontmatter key other than `name` and `description`; keep the two the Do item names.
+* Add any frontmatter key other than `name`, `description` and `metadata.version`; keep the three the Do item names.
 
 ### 9. Install
 

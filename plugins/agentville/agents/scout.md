@@ -7,6 +7,8 @@ description: >-
   sources; it holds no file or shell tools.
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, WebSearch, WebFetch, Skill
 disallowedTools: EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
+metadata:
+  version: 1.0.0
 ---
 
 # Role

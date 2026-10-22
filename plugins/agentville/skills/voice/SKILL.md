@@ -1,6 +1,8 @@
 ---
 name: "voice"
 description: 'Writing standard for any Markdown a person reads: chat replies, agent status and final reports, commit and PR text, and document files (.md, .mdx, Markdoc). Sets register, stance, sentence construction, length budgets, when to use prose, lists, tables or code, headings, emphasis, alerts, links and citations, numbers, calibrated uncertainty, accessibility, renderer safety and a pre-send check. Not for agent-only scratch or resume files. Load a project authoring skill as well when one owns layout, frontmatter or file naming.'
+metadata:
+  version: 1.0.0
 ---
 
 # voice

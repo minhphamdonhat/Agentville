@@ -1,6 +1,8 @@
 ---
 name: "draft"
 description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '<topic-folder>/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
+metadata:
+  version: 1.0.1
 ---
 
 # Role
@@ -85,7 +87,7 @@ mode: append
 round: 2
 sections: Round 2 (2026-10-18), Notes, Decisions, Open points
 kept: Round 1
-workspace: workspace: agentville:workspace (plugin-default)
+workspace: agentville:workspace (plugin-default)
 note: round 2 appended to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/draft.md
 ```
 

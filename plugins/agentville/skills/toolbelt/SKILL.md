@@ -1,6 +1,8 @@
 ---
 name: "toolbelt"
 description: "Discovers which verification tools this run can use for the check types a task needs (db, api, ui, office, docs, build, pipeline, infra): name, presence, version, source, plus surface, OS and blockers. Tools named by the request or steering come first, then OS-provided tools. Discovery only: it changes nothing, probes no network and says nothing about how a tool is used. Use before checks that need a command-line tool, or to see which are present."
+metadata:
+  version: 1.0.0
 ---
 
 # Role

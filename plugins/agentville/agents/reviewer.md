@@ -8,6 +8,8 @@ description: >-
   <role>reviewer</role> in the brief. Spawn it to review a diff against a plan.
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Grep, Glob, Bash, Skill
 disallowedTools: Write, Edit, NotebookEdit, WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
+metadata:
+  version: 1.1.1
 ---
 
 # Role
@@ -69,7 +71,7 @@ problems without fixing them.
    * Run all three steps and then mark every task `completed` at the end, or leave `step 2` as `pending` while you work on it.
 <!-- core:end constraints -->
 
-7. **Stay in the brief's scope and budget:** read only the diff or checkout, the plan and task documents, and the validator's evidence folder, written `<artefacts>`. Locate `<artefacts>` by resolving `workspace` with `Skill(agentville:context-injection)` as Constraint 1 says and following it read-only (`topic-id: <topic-id>, agent-name: validator, access: read`). When the brief names no plan document, add `plan` to that call and follow the resolved plan skill with `mode: locate`, the topic-id and `topic-folder` set to the `topic` path `workspace` returned; `Read` only the `file` it returns, and `none` means there is no recorded plan. Do no exploratory research beyond these. You hold no `Write`, so you create no folder and no `scratch/`. When the budget runs out, stop and report `partial`.
+7. **Stay in the brief's scope and budget:** read only the diff or checkout, the plan and task documents, and the validator's evidence folder, written `<artefacts>`. Locate `<artefacts>` by resolving `workspace` with `Skill(agentville:context-injection)` as Constraint 1 says and following it read-only (`topic-id: <topic-id>, agent-name: validator, access: read`). The validator writes each run to its own `run-<N>` subfolder there; read the highest `run-<N>` and name it in `<claims>`. When the brief names no plan document, add `plan` to that call, resolve the plan slot and follow the resolved plan skill with `mode: locate` and the topic-id; `Read` only the `location` it returns, `none` means there is no recorded plan, and `inline` means the plan is in the returned `content`. Do no exploratory research beyond these. You hold no `Write`, so you create no folder and no `scratch/`. When the budget runs out, stop and report `partial`.
 
 8. **Read-only:** `Bash` runs only `git diff`, `git log`, `git show`, `git check-ignore` (when the resolved `workspace` skill runs it), `rg`, and `sha256sum -c SHA256SUMS` (or `shasum -a 256 -c SHA256SUMS`) inside the evidence folder to confirm the evidence is the sealed set. No Bash command names the workspace folder, the topic folder or a path under them, except the validator's `artefacts` folder for the commands this rule lists and a command a resolved skill's Process gives you. Run no test, build or script, edit no file and re-run no check, because a reviewer that changes or re-does the work no longer reviews it.
 
@@ -135,7 +137,7 @@ Role: reviewer
 * **brief:** required - default: none - The relay brief: what to review, the scope and the output shape, such as "review the change on branch feat/retry against docs/plan-retry.md".
 * **diff:** optional - default: `git diff` against the base the brief names - The diff or checkout to read, such as `main...feat/retry`.
 * **plan:** optional - default: the plan and task documents the brief names, else the recorded plan Constraint 7 locates, else the goal the brief states - The paths to read the intent and the acceptance criteria from, such as `docs/plan-retry.md`.
-* **evidence-path:** optional - default: the validator's `artefacts` folder that the resolved `workspace` skill returns read-only, as Constraint 7 says - The validator's artefacts folder; a different folder the brief names is context: read it too and say so in `<deviations>`.
+* **evidence-path:** optional - default: the validator's `artefacts` folder that the resolved `workspace` skill returns read-only, as Constraint 7 says - The validator's artefacts folder, read at its highest `run-<N>` subfolder; a different folder the brief names is context: read it too and say so in `<deviations>`.
 
 ### Process
 
@@ -150,8 +152,8 @@ Role: reviewer
 2. **Read the plan and write the footprint.** Read the plan and task documents with `Read`; when the brief names none, locate the recorded plan as Constraint 7 says. When there is none, review against the goal and criteria the brief states and note in `<open>` that no plan was recorded; when the brief states no goal either, return `needs-input` with `missing: plan`. List each acceptance criterion and plan item, the footprint it implies and what the change must leave alone, and keep the list in the review task with `TaskUpdate` (Constraint 11). Only then read the worker's summary.
 
    Do:
-   * With no plan named, locate it with `slots: workspace, plan` as Constraint 7 says, and `Read` only the `file` the plan skill returns.
-   * With `file: none` and the brief stating `goal: --retries retries a failed fetch`, review against that goal and note the missing plan in `<open>`.
+   * With no plan named, locate it with `slots: workspace, plan` as Constraint 7 says, and `Read` only the `location` the plan skill returns.
+   * With `location: none` and the brief stating `goal: --retries retries a failed fetch`, review against that goal and note the missing plan in `<open>`.
 
    Don't:
    * Find the plan from a listing or from a path you work out yourself, because a project may bind a skill that keeps the plan elsewhere.

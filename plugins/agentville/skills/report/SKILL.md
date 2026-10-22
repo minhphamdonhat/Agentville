@@ -1,6 +1,8 @@
 ---
 name: "report"
 description: "Records a topic's final report, outcome, what each task delivered, evidence pointers, review result, extra work, out-of-scope findings and open items, as '<topic-folder>/report.md', and returns the file path and sections written; with no file tool it returns the formatted report inline. Modes create, append, update, locate (read-only). Records results as given and judges nothing. Use to save a report, update it after new results, or find where it lives."
+metadata:
+  version: 1.0.1
 ---
 
 # Role
@@ -84,7 +86,7 @@ location: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/report.md
 mode: create
 sections: Outcome, Delivered, Evidence, Review, Extra work, Out of scope, Open items
 evidence: 2 pointers
-workspace: workspace: agentville:workspace (plugin-default)
+workspace: agentville:workspace (plugin-default)
 note: report written to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/report.md
 ```
 

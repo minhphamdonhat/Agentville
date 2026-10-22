@@ -20,7 +20,7 @@ NAME = r"(?:[a-z0-9][a-z0-9-]*|" + SLOT + r")"
 INPUT_RE = re.compile(r"^\* \*\*(" + NAME + r"):\*\* (required|optional) - default: (.+?) - (.+)$")
 RETURN_RE = re.compile(r"^\* \*\*(" + NAME + r"):\*\* (always|when .+?) - (.+)$")
 STEP_RE = re.compile(r"^(\d+)\.\s+(.+)$")
-STATUS_LINE_RE = re.compile(r"^status:\s*(?:partial \| )?blocked \| needs-input \| failed\s*$")
+STATUS_LINE_RE = re.compile(r"^status:\s*(?:partial \| )?blocked \| needs-input \| (?:rejected \| )?failed\s*$")
 LEGACY_RE = re.compile(
     r"^\s*(?:[*-]\s+)?\**\s*(Start\s+here:|@(?:Tool|Skill|Process|Return|ThrowError|MCP|Import)\b)")
 XML_SCOPE_RE = re.compile(r"^\s*<[a-z][\w-]*\s+scope=")
@@ -194,6 +194,8 @@ def parse_frontmatter(lines):
             vals[key] = "" if block or not val.strip() else val
         elif key and (block or vals[key]):
             vals[key] = (vals[key] + " " + raw.strip()).strip()
+        elif key == "metadata" and re.match(r"^[ \t]+version:\s*\S", raw) and "metadata.version" not in vals:
+            vals["metadata.version"] = raw.split(":", 1)[1].strip()
         else:
             nested = True
     return keys, {k: unquote(v) for k, v in vals.items()}, nested, end + 1
@@ -501,9 +503,14 @@ def main(argv):
     template = "[[" in name
     fails, warns, unresolved, mentions, out = set(), set(), [], [], []
 
-    if nested or any(k not in ("name", "description") for k in keys) or "name" not in keys \
+    if nested or any(k not in ("name", "description", "metadata") for k in keys) or "name" not in keys \
             or "description" not in keys:
         fails.add(15)
+    version = fm.get("metadata.version", "")
+    if not template and not re.match(r"^\d+\.\d+\.\d+$", version):
+        fails.add(15)
+        out.append("version_error: metadata.version is " + ("missing" if not version else f"malformed ({version!r})")
+                   + "; frontmatter needs 'metadata:' then an indented 'version: X.Y.Z' (semver, such as 1.0.0)")
     if not template:
         if not desc or len(desc) > 1024:
             fails.add(12)

@@ -1,6 +1,8 @@
 ---
 name: "plan"
 description: "Records a topic's plan, the goal, tasks with done criteria (and progress when given) and an approval status kept as a record only, as '<topic-folder>/plan.md', and returns the file path, sections and approval; with no file tool it returns the formatted plan inline. Modes create, append, update, locate (read-only). Records what it is given and approves nothing. Use to save a plan, update a task or approval, or find where the plan lives."
+metadata:
+  version: 1.0.1
 ---
 
 # Role
@@ -89,7 +91,7 @@ mode: create
 sections: Goal, Tasks, T1, T2, Approval
 tasks: T1, T2
 approval: not-required none
-workspace: workspace: agentville:workspace (plugin-default)
+workspace: agentville:workspace (plugin-default)
 note: plan with 2 tasks written to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/plan.md
 ```
 
