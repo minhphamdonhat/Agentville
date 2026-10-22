@@ -32,7 +32,7 @@ The shipped skills are:
 * `workspace` is the default for the `workspace` slot: it returns the topic folder and a run's artefacts and scratch folders and never asks.
 * `draft`, `plan` and `report` are the defaults for the slots of the same names: they record a topic's draft, plan and report as `draft.md`, `plan.md` and `report.md` in the topic folder, writing with `Write` and `Edit` only. Each also has a read-only `locate` mode that returns the path or `none` and writes nothing. They record what they are given and decide nothing.
 * `toolbelt` is the default for the `toolbelt` slot: it discovers which tools are present for the checks a task needs, from the steering's and the request's tools first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. It is discovery only and says nothing about how a tool is used.
-* `release-flow` runs the one-way release flow of any repository: starts `feat/*` or `fix/*` branches, promotes development to beta and beta to release after checks, and tags only on request. It depends on no other Agentville skill or slot.
+* `release-flow` runs the one-way release flow of any repository: starts working branches, promotes development to beta and beta to release after checks, and tags only on request. It depends on no other Agentville skill or slot.
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
@@ -127,7 +127,7 @@ Other workers may have uncommitted edits in the tree. Read them, and touch only 
 
 Agentville ships from three long-lived branches, and work moves one way only: `main` → `beta` → `release`.
 
-* `main` is the development branch. Feature and fix branches (`feat/*`, `fix/*`) start from `main` and merge back into it.
+* `main` is the development branch. Working branches start from `main` and merge back into it; `Skill(agentville:release-flow)` sets how they are named.
 * `beta` takes `main` once the checks pass; the `agentville-beta` marketplace entry installs from it.
 * `release` takes `beta` only, never `main` directly; the `agentville` marketplace entry installs from it.
 * `Skill(agentville:release-flow)` runs each step and asks before every merge, push, tag and branch deletion.
