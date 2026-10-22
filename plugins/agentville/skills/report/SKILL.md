@@ -1,6 +1,6 @@
 ---
 name: "report"
-description: "Records the final report of one topic in one Markdown file, '<topic-folder>/report.md': what was delivered against each planned task, pointers to the evidence, the review result and the open items, and returns the file path and the sections written. The slot contract comes first (inputs: topic-id, the report content to record, mode create, append, update or locate; outputs: file path, sections written); the default writes Markdown with Outcome, Delivered, Evidence, Review, Extra work and Open items sections and updates a named section in place. It records the results it is given and judges nothing. Use when the outcome of a topic must be saved as a report, when a report must be updated after a loop back, or when asked where a topic's report lives (`locate` mode, read-only)."
+description: "Records the final report of one topic in one Markdown file, '<topic-folder>/report.md': what was delivered against each planned task, pointers to the evidence, the review result, the out-of-scope findings, gaps, blockers and improvements left for the user to decide, and the open items, and returns the file path and the sections written. The slot contract comes first (inputs: topic-id, the report content to record, mode create, append, update or locate; outputs: file path, sections written); the default writes Markdown with Outcome, Delivered, Evidence, Review, Extra work, Out of scope and Open items sections and updates a named section in place. It records the results it is given and judges nothing. Use when the outcome of a topic must be saved as a report, when a report must be updated after a loop back, or when asked where a topic's report lives (`locate` mode, read-only)."
 ---
 
 # Role
@@ -26,7 +26,7 @@ The Input and Output sections are the slot contract that any replacement skill f
 * **topic-id:** required - default: none - The topic the report belongs to, such as `orders-retry-20261017`.
 * **content:** optional - default: none - Required unless `mode` is `locate`. What to record: the outcome, what each task delivered, the evidence pointers, the review result and the open items, such as `outcome: pagination added; T1 delivered, check passed; evidence: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts; review: pass-with-notes; open: push not yet approved`.
 * **mode:** optional - default: `create` when no report exists, else `update` - `create` (write a new report; refused when one exists), `append` (add a dated `## Update` section at the end), `update` (replace the body of the named sections in place) or `locate` (return the path of the existing report, or `none`; writes nothing, creates no folder and needs no `content`).
-* **sections:** optional - default: every section the content touches - In `update` mode, the sections to replace, from `Outcome`, `Delivered`, `Evidence`, `Review`, `Extra work` and `Open items`.
+* **sections:** optional - default: every section the content touches - In `update` mode, the sections to replace, from `Outcome`, `Delivered`, `Evidence`, `Review`, `Extra work`, `Out of scope` and `Open items`.
 * **topic-folder:** optional - default: the workspace topic folder when given, else `{{ PROJECT_ROOT }}/tmp/<topic-id>` - The absolute topic folder the run's workspace returned (its `topic` field); the report is `<topic-folder>/report.md`.
 * **project-root:** optional - default: the current working folder - The project, written `{{ PROJECT_ROOT }}`.
 
@@ -55,17 +55,18 @@ Don't:
 
 ### 3. Write the report
 
-For a new report, write this shape with `Write`, after `mkdir -p "<topic-folder>"` through `Bash` when the folder is missing: `# Report: <topic-id>`, a line `recorded: <UTC time>` from `date -u +%FT%TZ`, then `## Outcome` (one or two lines), `## Delivered` (one bullet per task: the task id or the change, what it delivered and its check result), `## Evidence` (one bullet per evidence pointer, copied as given), `## Review` (the review result and its findings, or `not run` with the reason given, such as `skipped on the fast path`), `## Extra work` (each extra or out-of-scope item, or `none`) and `## Open items` (each open item, or `none`). In `append` mode, add `## Update (<UTC time>)` at the end with `Edit`, holding the new content as bullets. In `update` mode, replace only the body under each named heading with `Edit` and leave every other line as it was.
+For a new report, write this shape with `Write`, after `mkdir -p "<topic-folder>"` through `Bash` when the folder is missing: `# Report: <topic-id>`, a line `recorded: <UTC time>` from `date -u +%FT%TZ`, then `## Outcome` (one or two lines), `## Delivered` (one bullet per task: the task id or the change, what it delivered and its check result), `## Evidence` (one bullet per evidence pointer, copied as given), `## Review` (the review result and its findings, or `not run` with the reason given, such as `skipped at triage: one-line rename`), `## Extra work` (each piece of work done beyond the plan, or `none`), `## Out of scope` (each out-of-scope finding, gap, blocker or improvement escalated for the user to decide, or `none`) and `## Open items` (each open item, or `none`). In `append` mode, add `## Update (<UTC time>)` at the end with `Edit`, holding the new content as bullets. In `update` mode, replace only the body under each named heading with `Edit` and leave every other line as it was.
 
 Do:
 * Write `- T1 add limit and offset to the cases endpoint: delivered; check tests/test_cases.py passed (validator reported this as verified)` under `## Delivered`.
 * Write `- {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/validator/artefacts/api/REQ-1-CHK-1-01.txt` under `## Evidence`, as the content gives it.
-* Write `not run (skipped on the fast path)` under `## Review` when the content says Review was skipped.
+* Write `not run (skipped at triage: one-line rename)` under `## Review` when the content says triage skipped Review, giving the reason as the content states it.
+* Write `- the export endpoint has the same paging bug` under `## Out of scope` when the content escalates it for the user to decide, and keep `## Extra work` for work done beyond the plan.
 
 Don't:
 * Write `- all checks passed` over a content that lists one `partial` check; record each check's result as given, as the first Do item does.
 * Shorten an evidence path to `validator/artefacts`; copy it whole, as the second Do item does.
-* Leave out `## Open items` because nothing is open; write `none` under it.
+* Leave out `## Out of scope` or `## Open items` because nothing is in it; write `none` under it.
 * Write the report with `cat > report.md`; use `Write` or `Edit`, as the Constraints say.
 
 ### 4. Report
@@ -89,7 +90,7 @@ Use the first template on every run that writes the file.
 status: completed
 file: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/report.md
 mode: create
-sections: Outcome, Delivered, Evidence, Review, Extra work, Open items
+sections: Outcome, Delivered, Evidence, Review, Extra work, Out of scope, Open items
 evidence: 2 pointers
 note: report written to {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/report.md
 ```

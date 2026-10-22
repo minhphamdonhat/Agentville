@@ -1,6 +1,6 @@
 # Agentville
 
-Agentville is a Claude Code plugin that packages fourteen skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, writing standards for what agents and people read, and five swappable slots, a workspace, a tool finder for verification checks and the draft, plan and report documents of a topic, that each agent resolves for itself. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
+Agentville is a Claude Code plugin that packages fourteen skills for running work through agents: a workflow that triages each request into six stages, a procedure that delegates one task at a time, writing standards for what agents and people read, and five swappable slots, a workspace, a tool finder for verification checks and the draft, plan and report documents of a topic, that each agent resolves for itself. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
 
 ## Install
 
@@ -25,7 +25,7 @@ Each skill is invoked as `/agentville:<name>`.
 
 | Skill | Purpose |
 | --- | --- |
-| `/agentville:orchestrate` | Routes every user request to a direct, clarify, fast or plan path and runs the stages that path needs. |
+| `/agentville:orchestrate` | Sample workflow, opt-in from your own `CLAUDE.md`. Triages each request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, role choice, model and effort routing, brief, spawn, report reading and failure handling. |
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
@@ -33,8 +33,8 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:context-injection` | Resolves a slot, such as `workspace` or `toolbelt`, to the skill that fills it in this project or for this user, and returns, for every slot in one call, the skill's id, the absolute path of its SKILL.md, the source of the binding and any fallback. It does not load or run those skills; the agent reads each one next. |
 | `/agentville:workspace` | Default for the `workspace` slot: returns a run's artefacts and scratch folders under `<workspace>/<topic-id>/<agent-name>/`, using the folder the steering names or `tmp/` in the project without asking. |
 | `/agentville:draft` | Default for the `draft` slot: records a topic's Discuss notes, decisions and open points in `<workspace>/<topic-id>/draft.md`, one round per section, appending without touching earlier rounds. |
-| `/agentville:plan` | Default for the `plan` slot: records a topic's plan in `<workspace>/<topic-id>/plan.md`, with each task and its done criteria (and its progress when given), and the approval status it is given. |
-| `/agentville:report` | Default for the `report` slot: records a topic's final report in `<workspace>/<topic-id>/report.md`, with what was delivered, the evidence pointers, the review result and the open items. |
+| `/agentville:plan` | Default for the `plan` slot: records a topic's plan in `<workspace>/<topic-id>/plan.md`, with each task and its done criteria (and its progress when given) as the topic's task ledger, and the approval status as a record only (default `not-required`). |
+| `/agentville:report` | Default for the `report` slot: records a topic's final report in `<workspace>/<topic-id>/report.md`, with what was delivered, the evidence pointers, the review result, an out-of-scope section for findings and gaps left for you to decide, and the open items. |
 | `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs, from the tools the steering or the request names first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. Discovery only; it probes no network. |
 | `/agentville:release-flow` | Runs a one-way release flow in any repository: starts nested working branches (`<type>/<short-kebab-name>`) from the development branch, promotes development to beta and beta to release after the configured checks pass, and tags a release only when asked. Every merge, push, tag and branch deletion waits for your yes. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates it and installs it to project or user scope. |
@@ -71,11 +71,15 @@ toolbelt: Skill(acme:qa-tools)
 
 With no binding, the default `workspace` uses the folder your steering names, else `tmp/` in the project, and says so in its report. The default `toolbelt` only discovers the tools that are present, naming OS-provided tools for any check type when nothing names one; bind your own skill when your checks need a specific database, HTTP or browser automation tool.
 
-The `draft`, `plan` and `report` slots say how a topic's documents are written, and `workspace` says where: the defaults write `draft.md`, `plan.md` and `report.md` in the topic folder, `<workspace>/<topic-id>/`, shared by every agent on the topic. `orchestrate` never writes them itself; it dispatches a worker in Discuss, Plan and Report, and that worker resolves `workspace` and the stage's slot in one `context-injection` call. Plan approval still comes only from you in chat, and the Report still reaches you in chat. Bind your own skill, such as `draft: Skill(acme:notes)`, to keep the notes somewhere else or not at all.
+The `draft`, `plan` and `report` slots say how a topic's documents are written, and `workspace` says where: the defaults write `draft.md`, `plan.md` and `report.md` in the topic folder, `<workspace>/<topic-id>/`, shared by every agent on the topic. `orchestrate` never writes them itself; it dispatches a worker in Discuss, Plan and Report, and that worker resolves `workspace` and the stage's slot in one `context-injection` call. Questions come to you only in Discuss and Plan, and the Report still reaches you in chat. Bind your own skill, such as `draft: Skill(acme:notes)`, to keep the notes somewhere else or not at all.
 
 ## How they fit
 
-`orchestrate` decides how much process a request deserves and runs its stages. It sends every delegated piece of work through `dispatch`, one spawn at a time.
+`orchestrate` triages each request and runs the stages it needs. It sends every delegated piece of work through `dispatch`, one spawn at a time. It is a sample workflow and is opt-in: nothing loads it by default, and the root agent reads no files itself. To use it, add this line to your own `CLAUDE.md`:
+
+```markdown
+Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
+```
 
 `dispatch` writes each brief to the `relay` standard and picks the model and effort with `intelligence-routing-model`.
 
