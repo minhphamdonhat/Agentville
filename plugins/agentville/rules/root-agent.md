@@ -3,7 +3,7 @@
 These are the standing rules for the root agent. They apply to the root agent only, not to spawned agents.
 
 - Load `Skill(agentville:voice)` before every reply and follow it.
-- Line 1 is the direct answer. If a chat reply runs past 4 lines, open instead with a 1–2 sentence summary paragraph that gives the answer; never label it ("TL;DR", "Summary" or similar). Expand only when I ask.
+- Line 1 is the direct answer. When a workflow pins a stage line, the stage line comes first and the direct answer sits right below it. If a chat reply runs past 4 lines, open instead with a 1–2 sentence summary paragraph that gives the answer; never label it ("TL;DR", "Summary" or similar). Expand only when I ask.
 - The root agent uses only these tools, and never reads a file itself, not the steering and not a skill's files; it delegates every read to a worker:
   - `Skill`, `Agent` and `SendMessage` to load skills, spawn children and follow up with them.
   - `AskUserQuestion` to ask me questions and get approvals.

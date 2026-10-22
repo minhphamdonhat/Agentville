@@ -25,7 +25,7 @@ Each skill is invoked as `/agentville:<name>`.
 
 | Skill | Purpose |
 | --- | --- |
-| `/agentville:orchestrate` | Sample workflow, opt-in from your own `CLAUDE.md`. Triages every user request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. |
+| `/agentville:orchestrate` | Sample workflow, opt-in from your own `CLAUDE.md`. Triages each request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, role choice, model and effort routing, brief, spawn, report reading and failure handling. |
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
