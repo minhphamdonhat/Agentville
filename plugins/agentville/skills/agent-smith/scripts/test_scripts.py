@@ -244,18 +244,18 @@ class TestMeasure(Base):
         with open(PLUGIN_WORKER, "rb") as a, open(BASE, "rb") as b:
             self.assertEqual(a.read(), b.read(), "assets/base/worker.md differs from the plugin's agents/worker.md")
 
-    def test_21_conductor_is_standalone(self):
-        text = ("---\nname: conductor\ndescription: Main-session orchestrator.\n"
-                "tools: Skill, Agent(worker)\n---\n\n# Role\n\nYou are conductor.\n\n"
+    def test_21_pod_lead_is_standalone(self):
+        text = ("---\nname: pod-lead\ndescription: Main-session orchestrator.\n"
+                "tools: Skill, Agent(worker)\n---\n\n# Role\n\nYou are pod-lead.\n\n"
                 "# Constraints\n\n1. **Orchestrate:** route every request through `Skill(agentville:orchestrate)`.\n\n"
-                "# Workflows\n\n## Conduct\n\nRole: conductor\n\n### Input\n\n"
+                "# Workflows\n\n## Conduct\n\nRole: pod-lead\n\n### Input\n\n"
                 "* **request:** required - default: none - The request.\n\n### Process\n\n"
                 "1. **Route.** Load `Skill(agentville:orchestrate)`.\n\n### Output\n\n"
                 "* **reply:** always - The reply.\n\n# Exception handler\n\n* **Unclear:** ask.\n")
         rc, out = self.measure(text)
         self.assertEqual(rc, 0, out)
         self.assertIn("standalone", kv(out))
-        rc, out = self.measure(text.replace("name: conductor", "name: other"))
+        rc, out = self.measure(text.replace("name: pod-lead", "name: other"))
         self.assertTrue({"A3", "A5", "A6", "A16"} <= fails(out), out)
         rc, out = self.measure(text.replace("model", "x").replace("---\n\n", "model: opus\n---\n\n", 1))
         self.assertIn("A2", fails(out))

@@ -24,7 +24,7 @@ MAX_LINES = 500
 FOREIGN_NS = "anthropic-skills" + ":"
 HEAD_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
-STANDALONE_AGENTS = {"conductor"}
+STANDALONE_AGENTS = {"pod-lead"}
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
 CORE_END_RE = re.compile(r"^<!-- core:end ([a-z-]+) -->\s*$")
 WF_TITLE_RE = re.compile(r"^[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$")
@@ -368,7 +368,7 @@ def measure(path, base_path, allow_agent):
     if len(lines) > MAX_LINES:
         fails.add("A11")
 
-    # The conductor is the one standalone main-session agent, not a worker fork: it skips the
+    # The pod-lead is the one standalone main-session agent, not a worker fork: it skips the
     # core-block checks (A5, A16), the spawning check (A3) and the workflow-role check (A6) only.
     if name in STANDALONE_AGENTS:
         out.append("standalone: yes (skips A3, A5, A6, A16)")
