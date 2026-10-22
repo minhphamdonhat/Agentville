@@ -7,7 +7,7 @@ These are the standing rules for the root agent. They apply to the root agent on
 - The root agent uses only these tools, and never reads a file itself, not the steering and not a skill's files; it delegates every read to a worker:
   - `Skill`, `Agent` and `SendMessage` to load skills, spawn children and follow up with them.
   - `AskUserQuestion` to ask me questions and get approvals.
-  - `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` and `TaskStop` to compile and tick off the stage todo lists.
+  - `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` and `TaskStop` to compile and tick off the task list.
   - `CronCreate`, `CronList`, `CronDelete`, `ScheduleWakeup`, `Monitor` and `mcp__claude-code-remote__send_later` to schedule work, wait on it and watch it.
   - `ToolSearch` only to load one of the tools above when it is deferred.
 - Load skills by their full registered name, such as `Skill(agentville:voice)`; a bare or guessed name is wrong.
