@@ -15,7 +15,7 @@ This skill is a sample workflow and is opt-in: nothing in Agentville loads it by
 * Send all stage work, every spawn, follow-up and message to a child, through `Skill(agentville:dispatch)`, and never restate its brief, model or report rules here, because two copies drift apart.
 * Pass the role on every dispatch as `role-hint` (`worker`, `validator`, `reviewer` or `scout`), because `agentville:dispatch` writes it into the brief's `<role>` tag and spawns the agent that serves it.
 * Every message to or from a child, brief and report alike, follows `Skill(agentville:relay)`, which `Skill(agentville:dispatch)` loads for each message; restate none of its rules here, because two copies drift apart.
-* Load `Skill(agentville:voice)` before you write any text the user reads, and write that text to its standard.
+* Before you write the Report or any final output, triage who receives it. When you write straight to a person (the user), from the top of the session, load `Skill(agentville:voice)` and write to its standard. When the output goes back to the agent that started this run as a hand-back report, or to another agent through `SendMessage`, load `Skill(agentville:relay)` and write in its shape, never under voice, because a person and an agent read differently.
 * Never implement or read in your own thread: no reading, editing, searching or running of the work's files or commands, and no reading of steering files or skill files either. Load skills only with the `Skill` tool, treat the project rules already in your context as given, and delegate every read to a worker through `Skill(agentville:dispatch)`, because a controller that works also stops watching.
 * Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, at the top of that reply and followed by the reply text, in this exact shape: `- **Stage: <Discuss|Plan|Execute|Validate|Review|Report>**`, such as `- **Stage: Execute**`. The stage line sits above the line-1 answer that the root rules require; the answer follows it. Never echo it on any other reply, and write only the stage name in it, never the stage plan or a reason, because the user must see where the work stands without reading the same line on every turn.
 * Use the question tool (`AskUserQuestion`) by stage. In Discuss, use it freely to clarify. In Plan, use it only to clarify a fact the plan needs, never to ask for approval. In Execute, Validate and Review, never use it, and pass `questions: forbidden` on every dispatch. In Report, ask nothing through it and put each decision to the user as plain text. When the tool is allowed and no person is reachable, return `status: needs-input` with `missing:` naming the decision, because a guess builds the wrong thing.
@@ -160,7 +160,7 @@ Don't:
 
 ### 8. Report
 
-Load `Skill(agentville:voice)` first and write the Report to its standard: the answer first, plain sentences, no agent notation. When triage sent a question straight here with no spawn, write the answer yourself and record nothing. Otherwise dispatch a worker through `Skill(agentville:dispatch)` to draft the Report from the children's reports and evidence (the drafting worker records nothing), correct the draft to the standard, then dispatch a worker to record the corrected text in the topic's report through its `report` slot, so the record matches what the user reads. Cover what each ledger task delivered, the evidence from Validate (never dropped when you rewrite), the review verdict, each stage triage skipped with its reason, and every escalated gap, blocker, improvement and out-of-scope finding as plain text for the user to decide. A yes to any of them starts a new Plan (step 4) for that item. Ask nothing through the question tool. Keep each claim label as a plain qualifier, and say plainly when the outcome is partial, blocked or failed.
+Triage who receives the Report first. When you write straight to a person (the user), from the top of the session, load `Skill(agentville:voice)` and write the Report to its standard: the answer first, plain sentences, no agent notation. When it goes back to the agent that started this run as a hand-back report, or to another agent through `SendMessage`, load `Skill(agentville:relay)` and write it in that shape instead, never under voice. When triage sent a question straight here with no spawn, write the answer yourself and record nothing. Otherwise dispatch a worker through `Skill(agentville:dispatch)` to draft the Report from the children's reports and evidence (the drafting worker records nothing), correct the draft to the standard, then dispatch a worker to record the corrected text in the topic's report through its `report` slot, so the record matches what the user reads. Cover what each ledger task delivered, the evidence from Validate (never dropped when you rewrite), the review verdict, each stage triage skipped with its reason, and every escalated gap, blocker, improvement and out-of-scope finding as plain text for the user to decide. A yes to any of them starts a new Plan (step 4) for that item. Ask nothing through the question tool. Keep each claim label as a plain qualifier, and say plainly when the outcome is partial, blocked or failed.
 
 Do:
 * Write `The pagination change is in, the validator's checks passed and the reviewer approved it. Two things are yours to decide: the reviewer found an unplanned helper in the list service, and the export endpoint has the same paging bug. Tell me which, if any, you want planned.`
@@ -169,7 +169,7 @@ Do:
 Don't:
 * Put a decision to the user through the question tool; write it as plain text, as the first Do item does.
 * Paste a child's report or start work on an escalated item without the user's yes.
-* Write the Report without loading voice.
+* Write the Report before triaging who receives it, or write a hand-back to the agent that started this run under voice instead of relay.
 * Dispatch the record before you have corrected the draft.
 
 # Output
@@ -181,11 +181,11 @@ The reply returns these fields:
 * **evidence:** when Validate ran - The validator's evidence as it reported it.
 * **review-result:** when Review ran - The reviewer's verdict and its decision, Approve, Reject or Blocker, for each round.
 * **escalated:** when any came up - The gaps, blockers, improvements and out-of-scope items carried to Report for the user to decide.
-* **user-message:** always - The Report message, written to the `Skill(agentville:voice)` standard and opening with the pinned stage line `- **Stage: Report**` when this reply enters Report.
+* **user-message:** always - The Report message, written to the standard the audience triage picks (`Skill(agentville:voice)` for a person, `Skill(agentville:relay)` for an agent) and opening with the pinned stage line `- **Stage: Report**` when this reply enters Report.
 
 The top-level `status:` here (`completed`, `needs-input`, `blocked`, `failed`) is this skill's own return code. It is not a child's status, which orchestrate reads only through `Skill(agentville:dispatch)`'s `child-status`.
 
-When a person reads the output directly, reply with the pinned stage line `- **Stage: Report**` (when this reply enters Report) and then the Report alone, written under voice, with no field block and no agent notation; otherwise return the field block, which starts with `status:` and carries the Report text, stage line first, in `user-message`. Earlier replies carry a stage line only on entering the first stage and on each stage switch, as the Constraints say.
+When a person reads the output directly, reply with the pinned stage line `- **Stage: Report**` (when this reply enters Report) and then the Report alone, written under voice, with no field block and no agent notation; otherwise return the field block, shaped per `Skill(agentville:relay)`, which starts with `status:` and carries the Report text, stage line first, in `user-message`. Earlier replies carry a stage line only on entering the first stage and on each stage switch, as the Constraints say.
 
 ```text
 status: completed
@@ -193,7 +193,7 @@ stages-run: Discuss, Plan, Execute, Validate, Review, Execute, Validate, Review,
 evidence: as the validator reported it
 review-result: needs-changes (Reject), then pass (Approve)
 escalated: unplanned helper in the list service; the export endpoint has the same paging bug
-user-message: <the Report for the user, written under voice>
+user-message: <the Report, written to the standard the audience triage picks>
 ```
 
 Do:

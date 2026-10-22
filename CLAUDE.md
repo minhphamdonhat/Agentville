@@ -36,7 +36,7 @@ The shipped skills are:
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
-The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot, resolved in two steps), `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering) and `pod-lead` (the standalone orchestrator of a pod's agents, not a worker fork, which routes every request through `orchestrate` and holds no edit, search or shell tool).
+The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot, resolved in two steps), `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering) and `pod-lead` (the standalone orchestrator of a pod's agents, not a worker fork, which runs every request through `orchestrate`, which owns triage, the stages, delegation and the Report, and holds no edit, search or shell tool).
 
 ## Agent format
 
