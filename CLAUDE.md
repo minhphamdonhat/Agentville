@@ -23,7 +23,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 The shipped skills are:
 
-* `orchestrate` routes every request to a direct, clarify, fast or plan path and runs the stages that path needs.
+* `orchestrate` is a sample workflow: it triages each request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. It is opt-in and nothing in Agentville loads it by default. Users who want it add this line to their own `CLAUDE.md` themselves: "Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it."
 * `dispatch` takes one delegated task through to one spawn and reads the report.
 * `relay` is the writing standard for text another agent reads.
 * `voice` is the writing standard for text a person reads.
@@ -71,8 +71,8 @@ Context injection works like dependency injection. Agentville refers to a slot b
 | `workspace` | In: topic-id, agent-name. Out: topic path, artefacts path, scratch path, cleanup rule, git-ignore status. | `agentville:workspace`: the folder the steering names, else `{{ PROJECT_ROOT }}/tmp/`, never asking. |
 | `toolbelt` | In: needs, mode, workspace, optional brief-tools. Out: surface, os, tools with name, presence, version and source, notes, blockers. Discovery only. | `agentville:toolbelt`: named tools, then tools the OS provides; no network probes. |
 | `draft` | In: topic-id, content (not needed for `locate`), mode (`create`, `append`, `update` or `locate`; default `append`), optional sections and topic-folder (default: the workspace topic folder when given, else `{{ PROJECT_ROOT }}/tmp/<topic-id>`). Out: file (`none` for `locate` with no draft), mode, round, sections, kept; `locate` returns the path or `none` and writes nothing. | `agentville:draft`: `<topic-folder>/draft.md`, one `## Round N` per Discuss round, appended. |
-| `plan` | In: topic-id, content (not needed for `locate`), approval (default `pending` on create, else unchanged), mode (`create`, `append`, `update` or `locate`), optional sections and topic-folder (default as for `draft`). Out: file (`none` for `locate` with no plan), mode, sections, tasks, approval; `locate` returns the path or `none` and writes nothing. | `agentville:plan`: `<topic-folder>/plan.md` with Goal, Tasks (done criteria; progress only when the content gives it) and Approval. |
-| `report` | In: topic-id, content (not needed for `locate`), mode (`create`, `append`, `update` or `locate`), optional sections and topic-folder (default as for `draft`). Out: file (`none` for `locate` with no report), mode, sections, evidence; `locate` returns the path or `none` and writes nothing. | `agentville:report`: `<topic-folder>/report.md` with Outcome, Delivered, Evidence, Review, Extra work and Open items. |
+| `plan` | In: topic-id, content (not needed for `locate`), approval (a record only; default `not-required` on create, else unchanged), mode (`create`, `append`, `update` or `locate`), optional sections and topic-folder (default as for `draft`). Out: file (`none` for `locate` with no plan), mode, sections, tasks, approval; `locate` returns the path or `none` and writes nothing. | `agentville:plan`: `<topic-folder>/plan.md` with Goal, Tasks (done criteria; progress only when the content gives it) and Approval. |
+| `report` | In: topic-id, content (not needed for `locate`), mode (`create`, `append`, `update` or `locate`), optional sections and topic-folder (default as for `draft`). Out: file (`none` for `locate` with no report), mode, sections, evidence; `locate` returns the path or `none` and writes nothing. | `agentville:report`: `<topic-folder>/report.md` with Outcome, Delivered, Evidence, Review, Extra work, Out of scope and Open items. |
 
 Resolution order, first match wins:
 
@@ -161,6 +161,6 @@ Substitute `SKILL_NAME` and `AGENT_NAME`. Exit code 0 means no failures; warning
 
 ## Root-agent policy
 
-The standing rules for the root agent are in `plugins/agentville/rules/root-agent.md` and apply to the root agent only, not to spawned agents. Children do not hold the root agent's tool list and follow their own agent file instead.
+The standing rules for the root agent are in `plugins/agentville/rules/root-agent.md` and apply to the root agent only, not to spawned agents. Children do not hold the root agent's tool list and follow their own agent file instead. The policy does not route requests through `orchestrate`; that workflow applies only where a user's own `CLAUDE.md` opts in to it.
 
 @plugins/agentville/rules/root-agent.md
