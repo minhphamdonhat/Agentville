@@ -1,13 +1,23 @@
 # Agentville
 
-Agentville is a Claude Code plugin that packages thirteen skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, writing standards for what agents and people read, and five swappable slots, a workspace, a tool finder for verification checks and the draft, plan and report documents of a topic, that each agent resolves for itself. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
+Agentville is a Claude Code plugin that packages fourteen skills for running work through agents: a workflow that routes each request, a procedure that delegates one task at a time, writing standards for what agents and people read, and five swappable slots, a workspace, a tool finder for verification checks and the draft, plan and report documents of a topic, that each agent resolves for itself. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
 
 ## Install
 
-```bash
-claude plugin marketplace add minhphamdonhat/Agentville
-claude plugin install agentville@agentville
+Add the marketplace once, then install one channel:
+
+```text
+/plugin marketplace add minhphamdonhat/agentville
+/plugin install agentville@minhphamdo
 ```
+
+| Channel | Install id | Branch |
+| --- | --- | --- |
+| Release | `agentville@minhphamdo` | `release` |
+| Beta | `agentville-beta@minhphamdo` | `beta` |
+| Development | `agentville-dev@minhphamdo` | `main` |
+
+Install one channel at a time; all three load the same skills under `agentville:`. To switch, uninstall the one you have and install the other, for example `/plugin uninstall agentville@minhphamdo` then `/plugin install agentville-beta@minhphamdo`.
 
 ## Skills
 
@@ -26,6 +36,7 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:plan` | Default for the `plan` slot: records a topic's plan in `<workspace>/<topic-id>/plan.md`, with each task and its done criteria (and its progress when given), and the approval status it is given. |
 | `/agentville:report` | Default for the `report` slot: records a topic's final report in `<workspace>/<topic-id>/report.md`, with what was delivered, the evidence pointers, the review result and the open items. |
 | `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs, from the tools the steering or the request names first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. Discovery only; it probes no network. |
+| `/agentville:release-flow` | Runs a one-way release flow in any repository: starts `feat/*` or `fix/*` branches from the development branch, promotes development to beta and beta to release after the configured checks pass, and tags a release only when asked. Every merge, push, tag and branch deletion waits for your yes. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates it and installs it to project or user scope. |
 | `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it to project or user scope. |
 

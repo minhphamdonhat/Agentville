@@ -32,6 +32,7 @@ The shipped skills are:
 * `workspace` is the default for the `workspace` slot: it returns the topic folder and a run's artefacts and scratch folders and never asks.
 * `draft`, `plan` and `report` are the defaults for the slots of the same names: they record a topic's draft, plan and report as `draft.md`, `plan.md` and `report.md` in the topic folder, writing with `Write` and `Edit` only. Each also has a read-only `locate` mode that returns the path or `none` and writes nothing. They record what they are given and decide nothing.
 * `toolbelt` is the default for the `toolbelt` slot: it discovers which tools are present for the checks a task needs, from the steering's and the request's tools first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. It is discovery only and says nothing about how a tool is used.
+* `release-flow` runs the one-way release flow of any repository: starts `feat/*` or `fix/*` branches, promotes development to beta and beta to release after checks, and tags only on request. It depends on no other Agentville skill or slot.
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
@@ -116,11 +117,21 @@ The shipped pair lets users choose a scope and nothing else. Users never pick a 
 
 Drafts, plans and reports go to the topic folder under `{{ PROJECT_ROOT }}/tmp/`, as `tmp/<topic-id>/{draft,plan,report}.md`, written by a worker through the `draft`, `plan` and `report` slots; todos stay in the session task list. Agents' artefacts go to the same workspace, laid out as `tmp/<topic-id>/<agent>/{artefacts,scratch}`. The workspace is git-ignored, and nothing else is written to the repository for plans or todos unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
 
-Commit subjects are imperative, with an optional `area:` prefix, as in `agent-smith: drop the communication core block`. Commit, push and merge only when the user asks.
+Commit subjects follow Conventional Commits: `type(scope): summary`, imperative, with `!` before the colon for a breaking change, as in `fix(agent-smith): drop the communication core block` or `feat(dispatch)!: rename the brief fields`. Commit, push and merge only when the user asks.
 
 Bump `version` in `plugins/agentville/.claude-plugin/plugin.json` whenever you change anything that ships, which means anything under `plugins/agentville/`. A change to `README.md`, `CLAUDE.md` or `.claude/` does not need a bump. When you add, remove or rename a skill or agent, update the tables in `README.md` in the same change.
 
 Other workers may have uncommitted edits in the tree. Read them, and touch only the paths your brief names.
+
+## Release flow
+
+Agentville ships from three long-lived branches, and work moves one way only: `main` → `beta` → `release`.
+
+* `main` is the development branch. Feature and fix branches (`feat/*`, `fix/*`) start from `main` and merge back into it.
+* `beta` takes `main` once the checks pass; the `agentville-beta` marketplace entry installs from it.
+* `release` takes `beta` only, never `main` directly; the `agentville` marketplace entry installs from it.
+* `Skill(agentville:release-flow)` runs each step and asks before every merge, push, tag and branch deletion.
+* Tags (`agentville--vX.Y.Z`, from `version` in `plugins/agentville/.claude-plugin/plugin.json`) are created on `release` only when the user asks.
 
 ## Verify before you finish
 
