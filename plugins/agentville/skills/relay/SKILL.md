@@ -9,7 +9,7 @@ Goal: the receiving agent can act correctly on the first read, using only what t
 
 ## 1. Know the reader
 
-The reader is another model. Four properties drive every rule below.
+The reader is another model; this skill governs text agents read. Four properties drive every rule below.
 
 - **Zero shared state.** It sees only the message, not your conversation, memory, files read or decisions made. Anything unstated does not exist for it.
 - **Literal.** It matches surface words. A paraphrased term, a pronoun pointing across sections or "the file above" can miss.
@@ -40,7 +40,7 @@ Every brief carries these six parts. The order is a working default.
 3. **Context and decisions made.** Conventions, interfaces, user preferences and choices already fixed. Never write "as discussed".
 4. **Tools and sources.** What to use, what to avoid, and any path or command it needs.
 5. **Effort budget.** Tool calls, time or depth; for example "3–10 tool calls" for fact-finding.
-6. **Output and stop criteria.** Exact return shape and length, what counts as done, and permission to return `blocked` or `needs-input` (§4).
+6. **Output and stop criteria.** Exact return shape and length, what counts as done, and permission to return `blocked` or `needs-input` (§4), and any pinned `<status>` token for a check that fails.
 
 Placement follows attention. Put the objective first. In a long brief (working default: over about 1,000 tokens), put bulky context in the middle and restate the concrete ask as the last line. Prefer a path, URL or artefact identifier to pasted content the reader can load itself.
 
@@ -57,7 +57,14 @@ Placement follows attention. Put the objective first. In a long brief (working d
 
 A report states what happened, not what was intended. Use this order.
 
-1. `<status>`, first: `completed`, `partial`, `needs-input`, `blocked` or `failed`. `needs-input` means a decision or input only the user or the parent can supply; begin `<open>` with a `missing:` line naming it. `blocked`, `needs-input` and `failed` are legitimate outcomes; never convert them into a softened success.
+1. `<status>`, first, one token:
+   - `completed`: the work was done and its checks ran.
+   - `partial`: some of it was done; `<open>` says what is left.
+   - `needs-input`: a decision or input only the user or the reader of the report can supply; begin `<open>` with a `missing:` line naming it.
+   - `blocked`: an outside condition stops the work, such as a missing tool, access or input file; `<open>` names it.
+   - `rejected`: a check ran and the product failed it; the claims hold the failing results. The run itself worked.
+   - `failed`: the run itself broke, such as a crash or a tool error, so no result stands.
+   Never convert `blocked`, `needs-input`, `rejected` or `failed` into a softened success.
 2. `<outcome>` in one or two sentences.
 3. `<claims>`, each with its evidence pointer and label (§5).
 4. `<artefacts>` by absolute path or identifier, not pasted.
@@ -171,7 +178,7 @@ Text that reaches a person verbatim, such as a report forwarded unchanged, is wr
 
 1. Channel identified; opening and budget fit it (§2).
 2. Brief has all six parts; objective first; ask restated if long (§3).
-3. Report starts with a status token; `blocked` used where true; deviations stated (§4).
+3. Report starts with one of the six status tokens; `blocked`, `rejected` and `failed` used where true; deviations stated (§4).
 4. Every material claim has evidence and a label; no label upgraded (§5).
 5. No praise, mirroring or unsupported agreement (§6).
 6. Only deletions; numbers, identifiers and negations intact; no invented shorthand (§7).

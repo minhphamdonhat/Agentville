@@ -1,11 +1,11 @@
 ---
 name: "intelligence-routing-model"
-description: Framework to triage any task to the cheapest Claude tier (Haiku, Sonnet, Opus) and effort level that still succeeds. Score ceiling to pick tier, depth to pick effort, adjust for domain, gate Haiku on task shape and a deterministic check. Use whenever an Agent(...) call, worker spawn or fan-out is about to happen, when you must pick a model or effort, budget a run, or decide whether to escalate after a failure, even if nobody says "routing".
+description: Framework to triage any task to the cheapest Claude tier (Haiku, Sonnet, Opus) and effort level that still succeeds. Score ceiling to pick tier, depth to pick effort, adjust for domain, gate Haiku on task shape and a deterministic check. Use whenever you must pick a model or effort, budget a run, or decide whether to escalate after a failure, even if nobody says "routing".
 ---
 
 # intelligence-routing-model
 
-Goal: before every Agent(...) call, pick the cheapest tier and effort cell that passes the task's check, and know which dial to move on failure.
+Goal: before choosing a model and effort for any task, pick the cheapest tier and effort cell that passes the task's check, and know which dial to move on failure.
 
 Two dials, two questions.
 
@@ -25,7 +25,7 @@ Never skip 1, 2 or 7.
 3. **Score** ceiling C and depth D (§2).
 4. **Adjust** D for domain (§3); clamp adjusted D to 0–6.
 5. **Map** to cell, apply guardrails (§4, §5).
-6. **Spawn** with contract (§6).
+6. **Hand over** with the contract (§6).
 7. **Grade, classify failure, move** (§7).
 
 ## 2. Score
@@ -78,7 +78,7 @@ Low-payoff family failing at capped effort is a **ceiling or task problem**: rai
 | 1 | `low` | `medium` |
 | 2–3 | `medium` | `high` |
 | 4–5 | `high` | not eligible |
-| 6 | decompose first (§5.7); otherwise `high`, `xhigh` only when horizon >30 min, `max` retry-only | not eligible |
+| 6 | decompose if C ≥ 6 (§5.7); else `high`, `xhigh` only when horizon >30 min, `max` retry-only | not eligible |
 
 Haiku `low` skips searches and checks: one-step work only. Haiku `xhigh`/`max` are never mapped: they cost near Sonnet `medium`/`high` without its ceiling; use only if your evals beat Sonnet.
 
@@ -103,14 +103,14 @@ Apply in order. Each overrides §4.
 6. **Haiku stretch for contained edits.** A single-purpose edit or extraction in a few files, gate otherwise passed, can take Haiku `high` in place of Sonnet `low`/`medium` up to C 4, matching it at a fraction of the cost. Provisional: one benchmark family.
 7. **Decompose gate.** C ≥ 6 and D ≥ 5 → do not spawn one worker. Split, re-score each part; parts usually drop two tiers. Merge the parts' results into one answer. Only exception: an unattended end-to-end run that is one dependent chain whose steps cannot be checked separately → one Opus worker at `high` (`xhigh` if >30 min), human gate before anything irreversible.
 8. **Prefer newer generation over higher effort.** Current model at `low` often beats prior generation at `xhigh`, cheaper.
-9. **Keep planning in one place.** Decomposition, arbitration and merge stay with the planning step; plan errors cascade.
+9. **When you split work, keep planning in one place.** Decomposition, arbitration and merge stay with one step; plan errors cascade.
 10. **Fan out rather than deepen when parallel.** Breadth-first → many cheap workers, results merged once; Haiku still needs rule 5.
 11. **Effort costs wall-clock superlinearly.** Top effort can run tens of times longer than `low`. Latency-bound → cap at `medium`, narrow scope.
 12. **Human gate.** Irreversible or production actions need human approval first, on every tier; they never run on Haiku.
 
 ## 6. Worker contract
 
-Spawn with all five. Low-effort cells need it most: they scope literally and skip unrequested checks.
+Brief per relay §3, with all five of these. Low-effort cells need it most: they scope literally and skip unrequested checks.
 
 - **Scope:** exactly what to do, what not to touch.
 - **Inputs:** paths, IDs, prior findings. Never "go find context".
@@ -120,7 +120,7 @@ Spawn with all five. Low-effort cells need it most: they scope literally and ski
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
-**Report format.** Every child report, Haiku included, opens `status: <token>` (completed, partial, needs-input, blocked or failed) and quotes its evidence. A status token that is still missing or unknown after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as failed: small models fabricate there.
+**Report format.** Every report, Haiku included, follows relay §4 and quotes its evidence. A `<status>` that is still missing or unknown after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as `failed`: small models fabricate there.
 
 **Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output.
 
@@ -132,7 +132,7 @@ Failure type names the dial: **did worker lack knowledge, or lack effort?**
 
 | Symptom | Cause | Move |
 |---|---|---|
-| Tool timeout, flake, rate limit | environment | retry same cell, once |
+| Tool timeout, flake, rate limit | environment | retry same cell, once (environment rows only) |
 | Safety refusal on benign work | environment | same effort, next tier up |
 | Skipped a file, never ran tests, bailed partway, missed edge cases it understood | effort | +1 effort, same tier |
 | Had full context, clearly tried, still wrong; wrong approach; misread domain | ceiling | +1 tier, restart at that tier's `medium` |
@@ -141,7 +141,7 @@ Failure type names the dial: **did worker lack knowledge, or lack effort?**
 
 **Wrong approach does not respond to effort.** Self-review rarely rejects its own premise; use a fresh-context reviewer.
 
-**Haiku escalates on structure, not confidence.** A structural trigger beats an effort raise: failed check, status still missing after the reminder, empty or contradictory tool result, or budget overrun → leave Haiku (`low`/`medium` → Sonnet `medium`, `high` → Sonnet `high`). Only a pure effort failure whose structure passed stays on Haiku at +1 effort. This rule overrides the table's "restart at next tier's `medium`". Flagged ambiguity → back to step 1. Never gate on Haiku's self-reported confidence. Provisional: no Haiku cascade study exists.
+**Haiku escalates on structure, not confidence.** A structural trigger beats an effort raise: failed check, `<status>` still missing after the reminder, empty or contradictory tool result, or budget overrun → leave Haiku (`low`/`medium` → Sonnet `medium`, `high` → Sonnet `high`). Only a pure effort failure whose structure passed stays on Haiku at +1 effort. This rule overrides the table's "restart at next tier's `medium`". Flagged ambiguity → back to step 1. Never gate on Haiku's self-reported confidence. Provisional: no Haiku cascade study exists.
 
 **Escalation ladder** (effort and ceiling failures): Haiku `low` (one-step starts only) → Haiku `medium` → Haiku `high` → Sonnet `high` → Opus `medium` → Opus `high` → Opus `xhigh` only if horizon >30 min → Opus `max` only per §5.4. Otherwise stop at Opus `high` per the last failure-table row.
 
@@ -199,14 +199,12 @@ Generation and verification want different levels.
 
 Tiers stay version-free, but **effort levels are not portable across versions**: same label, different thinking, moving defaults. Each release, re-sweep effort on your evals and re-check §5.2, §5.3, §5.5, §5.6, the Haiku `xhigh`/`max` rule and §3.
 
-Evidence, benchmark numbers and sources: `RESEARCH-intelligence-routing-model.md`.
-
 ## Pre-send check
 
-Run before each Agent(...) call.
+Run before handing a task over.
 
 1. Spec names a check; cell comes from C and adjusted D (§1–§3).
 2. Haiku cell passes the whole gate; no Sonnet `max`, default Sonnet `xhigh` or unevaluated Haiku `xhigh`/`max`; human gate on irreversible steps (§4, §5).
-3. Brief has five contract fields, every brief demands `status: <token>` with evidence, verifier is fresh and peer-or-higher (§6).
+3. Brief has five contract fields, brief and report follow relay §3 and §4, verifier is fresh and peer-or-higher (§6).
 4. Failure move matches failure class; Haiku left on structure, not confidence (§7).
 5. Request fits the tier: Haiku rejects non-default sampling parameters, prefill and the old computer tool, so no shared request template across tiers; forced `tool_choice` yields no thinking; with thinking disabled, a per-message effort change returns 400; confirm the model the worker actually ran on (§5, §6).
