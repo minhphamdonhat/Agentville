@@ -1,119 +1,102 @@
 ---
 name: "draft"
-description: "Records the working draft of one topic, the notes, decisions and open points gathered while a request is still being discussed, in one Markdown file, '<topic-folder>/draft.md', and returns the file path and the sections written. The slot contract comes first (inputs: topic-id, the content to record, mode create, append, update or locate; outputs: file path, sections written); the default writes Markdown with one '## Round N' section per discussion round, appends a new round without touching earlier ones, and updates a named section in place. It records what it is given and decides nothing. Use when the notes and decisions of a discussion round must be saved, when a draft for a topic must be started or extended, or when asked where a topic's draft lives (`locate` mode, read-only)."
+description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '<topic-folder>/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
 ---
 
 # Role
 
-You are a draft recorder. You take a `topic-id`, the content of one discussion round and a `mode`, write it to the topic's `draft.md`, and return the file path and the sections written.
-
-The Input and Output sections are the slot contract that any replacement skill for the `draft` slot keeps: the same inputs, the same output fields and the same failure block, and a replacement may write elsewhere or nowhere as long as it says so in `file`. The Process is the default implementation: one Markdown file per topic, appended round by round.
+You are a draft recorder. You take a topic, the content of one round and a mode, write it to the topic's `draft.md`, and return the file path and the sections written. Input and Output are the slot contract that any replacement for the `draft` slot keeps; a replacement may record elsewhere (a file, an API or the conversation) if `location` says so. The Process is the default: one Markdown file per topic, appended round by round.
 
 # Constraints
 
+* Settle the topic folder only from the `workspace` slot, as step 1 sets, and never from a path in the request, because the slot owns where a topic lives.
 * Name no skill, agent or thread that runs this skill, and state every hand-back as an output field, because the skill must run when invoked on its own.
-* Ask the user when a person is reachable; otherwise return `status: needs-input` with `missing:` naming each fact, because an unattended run cannot answer.
-* Record only the content given, word for word where it is quoted, and add no decision, approval, verdict or recommendation of your own, because the draft is a record and every decision belongs to the people discussing it.
-* Write only `<topic-folder>/draft.md`, creating `<topic-folder>` with `mkdir -p` when it is missing, and write, edit or delete no other file; in `locate` mode write nothing and create no folder, because the draft must not change the project.
-* Reach the draft only by its exact path, `<topic-folder>/draft.md`, checked with one `Glob` whose `pattern` is that absolute path, and never list, search or wildcard `<topic-folder>` or its parent, because the path is fixed and a listing reads files that are not this draft.
-* Write the document with `Write` (a new file) or `Edit` (append and update) only, and use `Bash` for `mkdir -p` and `date` only; never write it with shell redirection (`>`, `>>`, `tee` or a heredoc) or `sed -i`, because a tool call keeps the edit exact and leaves every other line as it was.
-* Never remove or reword an earlier round in `append` mode, because a later round must not erase what an earlier one recorded.
-* Accept a `topic-id` only in kebab-case (lower-case letters, digits and hyphens), because a `/` or `..` would put the file outside the topic folder.
-* Write every path in examples with a placeholder (`{{ PROJECT_ROOT }}`), and return absolute paths in the output, because examples must hold on every machine and a run needs real paths.
+* Record only the content given, word for word where quoted, and add no decision, approval, verdict or recommendation, because every decision belongs to the people who made it.
+* With `Write` and `Edit`, write only `<topic-folder>/draft.md` (making the folder with `mkdir -p`); with neither tool, or with no topic folder, write nothing and return the draft inline with `location: inline`. In `locate` mode write nothing and create no folder.
+* Reach the file only by its exact path, checked with one `Glob` on that absolute path; never list or wildcard the folder or its parent, because a listing reads files that are not this draft.
+* Write with `Write` (new file) or `Edit` (append, update); use `Bash` for `mkdir -p` and `date` only; never use redirection, `tee`, a heredoc or `sed -i`, because a tool call keeps every other line as it was.
+* Never remove or reword an earlier round in `append` mode.
+* Accept a `topic-id` only in kebab-case, because a `/` or `..` would put the file outside the folder.
+* Write placeholders (`{{ PROJECT_ROOT }}`) in examples and return absolute paths.
 
 # Input
 
-* **topic-id:** required - default: none - The topic the draft belongs to, such as `orders-retry-20261017`.
-* **content:** optional - default: none - Required unless `mode` is `locate`. What to record for this round, as notes, decisions and open points, such as `notes: the list endpoint is built in src/api/cases.py; decisions: page size 50; open: should page size be capped?`.
-* **mode:** optional - default: `append` - `create` (start a new draft; refused when one exists), `append` (add the next round, creating the file when absent), `update` (replace the body of the named sections in place) or `locate` (return the path of the existing draft, or `none`; writes nothing, creates no folder and needs no `content`).
-* **sections:** optional - default: `Notes, Decisions, Open points` - The section names to write inside the round, or, in `update` mode, the existing `##` or `###` headings whose bodies are replaced.
-* **topic-folder:** optional - default: the workspace topic folder when given, else `{{ PROJECT_ROOT }}/tmp/<topic-id>` - The absolute topic folder the run's workspace returned (its `topic` field); the draft is `<topic-folder>/draft.md`.
-* **project-root:** optional - default: the current working folder - The project, written `{{ PROJECT_ROOT }}`.
+* **topic-id:** optional - default: a kebab-case slug of the request plus the date, `<slug>-YYYY-MM-DD` - Such as `orders-retry-2026-10-17`.
+* **content:** optional - default: none - Required unless `mode` is `locate`. What to record for this round, such as `notes: the list endpoint is in src/api/cases.py; decisions: page size 50; open: cap the page size?`.
+* **mode:** optional - default: `append` - `create` (new draft; refused when one exists), `append` (next round; creates the file when absent), `update` (replace the body of named sections in place) or `locate` (return the path or `none`; writes nothing).
+* **sections:** optional - default: `Notes, Decisions, Open points` - The section names for the round, or, in `update` mode, the existing headings to replace.
+* **project-root:** optional - default: the current working folder - Written `{{ PROJECT_ROOT }}`.
 
 # Process
 
 ### 1. Collect the inputs
 
-Read `topic-id`, `content`, `mode`, `sections`, `topic-folder` and `project-root` (written `{{ PROJECT_ROOT }}`) from the request. When `topic-id` is missing or not kebab-case, or `content` is missing and `mode` is not `locate`, ask for it with `AskUserQuestion` when a person is reachable; otherwise return the failure block with `status: needs-input` and `missing:` naming it. Set the file to `<topic-folder>/draft.md`.
+Read the inputs from the request and use the defaults for what is absent. Return `status: needs-input` with `missing: content` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id` and `access: read`; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/draft.md`.
 
 Do:
-* Read `topic-id: orders-retry-20261017`, `mode: append` and the notes, decisions and open points from "record round 2 of the orders-retry-20261017 discussion: ...".
+* Take the topic-id from the request's subject and today's date when none is given.
 
 Don't:
-* Make up `content: no notes yet` when the request gives none; return `missing: content`, as the Constraints say.
+* Invent `content: no notes yet`; return `missing: content`.
 
 ### 2. Check the draft path
 
-Run one `Glob` with `pattern` set to the absolute path `<topic-folder>/draft.md`, with no wildcard. In `locate` mode stop here and reply with the locate template: `file` is that path when the `Glob` returns it, else `none`; run nothing else and read nothing. When it exists, `Read` it whole and count its `## Round N` headings; the next round is the highest number plus one. When it does not exist, the next round is 1. In `create` mode with an existing file, stop and return the failure block with `status: needs-input`, `missing: mode` and `reason: draft.md already exists; use append or update`.
+With no file tool or no topic folder: in `locate` mode return `location: none`; otherwise go to step 3 with the inline route. Else run one `Glob` on the absolute path. `locate` stops here: `location` is the path when found, else `none`. When the file exists, `Read` it whole and take the next round as the highest `## Round N` plus one; otherwise round 1. `create` with an existing file returns `needs-input`, `missing: mode`, `reason: draft.md already exists; use append or update`.
 
 Do:
-* Set the next round to 3 when the file holds `## Round 1` and `## Round 2`.
+* Set the next round to 3 when the record holds `## Round 1` and `## Round 2`.
 
 Don't:
-* Overwrite an existing draft because `mode: create` was passed; return `missing: mode`, as this step says.
-* Run `Glob` with `<topic-folder>/*.md` or `ls <topic-folder>` to see what the topic holds; check the one exact path, as this step says.
+* Overwrite an existing draft because `mode: create` was passed.
+* Glob `<topic-folder>/*.md` or `ls` the folder.
 
 ### 3. Write the draft
 
-For a new file, write `# Draft: <topic-id>` as the first line with `Write`. In `append` mode, add one block at the end of the file with `Edit` (or `Write` for a new file): the heading `## Round <N> (<UTC date>)`, with the date from `date -u +%F` through `Bash`, then one `### <section>` per name in `sections`, each holding the matching part of `content` as bullets, or `none` when the content gives nothing for it. In `update` mode, replace only the body under each named heading with `Edit` and leave every other line as it was; a `###` heading is taken from the latest round unless `sections` names one with its round, such as `Round 1 / Open points`, and a named heading that is not in the file is added at the end of the last round. Create `<topic-folder>` first with `mkdir -p "<topic-folder>"` through `Bash` when it is missing.
+Take the date from `date -u +%F` through `Bash` (omit it when `Bash` is absent). For a new file write `# Draft: <topic-id>` first. In `append` mode add one block at the end with `Edit` (or `Write` for a new file): `## Round <N> (<UTC date>)`, then one `### <section>` per name in `sections`, each holding its part of `content` as bullets, or `- none`. In `update` mode replace only the body under each named heading with `Edit`; a `###` heading is taken from the latest round unless `sections` names a round, such as `Round 1 / Open points`, and a named heading not in the file is added at the end of the last round. With no file tool, return the same text in the reply under `content:` and write nothing.
 
 Do:
-* Append `## Round 2 (2026-10-18)`, then `### Notes` with `- the list endpoint is built in src/api/cases.py`, `### Decisions` with `- page size 50` and `### Open points` with `- should page size be capped?`.
-* In `update` mode with `sections: Open points`, replace the body under the last `### Open points` with `- none` and leave Round 1 and the other sections unchanged.
-* Write `- none` under `### Decisions` when the round's content holds no decision.
+* Append `## Round 2 (2026-10-18)`, `### Notes` with `- the list endpoint is in src/api/cases.py`, `### Decisions` with `- page size 50`, `### Open points` with `- cap the page size?`.
+* In `update` mode with `sections: Open points`, replace the body under the last `### Open points` with `- none` and leave the rest.
 
 Don't:
-* Rewrite the whole file with `Write` in `append` mode; add the new round at the end with `Edit`, as the first Do item does, so earlier rounds stay byte for byte.
-* Add `- recommended: cap the page size at 100` because it seems sensible; record only what `content` says.
-* Write the draft to `<topic-folder>/worker/artefacts/draft.md` or any other path; write `<topic-folder>/draft.md` only.
-* Append a round with `cat >> draft.md`; add it with `Edit`, as the Constraints say.
+* Rewrite the whole file in `append` mode, so earlier rounds stay byte for byte.
+* Add `- recommended: ...`; record only what `content` says.
 
 ### 4. Report
 
-List the headings you wrote or replaced and reply with the Output block. `Write` and `Edit` fail loudly when they do not apply, so do not read the file back. In `locate` mode there is nothing to list.
+List the headings written or replaced and reply with the Output block. Do not read the file back: `Write` and `Edit` fail loudly.
 
 # Output
 
-The reply returns these fields:
-
-* **status:** always - `completed` when the file holds the new content.
-* **file:** always - The absolute path of the draft, such as `{{ PROJECT_ROOT }}/tmp/orders-retry-20261017/draft.md`, or `none` in `locate` mode when no draft exists.
-* **mode:** always - The mode applied: `create`, `append`, `update` or `locate`.
-* **round:** when `mode` is not `locate` - The round number written or updated.
+* **status:** always - `completed` when the draft holds the new content.
+* **location:** always - Where the draft is: an absolute path, a URL or `inline` (the record is then in `content`), or `none` when no draft exists (`locate`).
+* **mode:** always - `create`, `append`, `update` or `locate`.
+* **round:** when `mode` is not `locate` - The round written or updated.
 * **sections:** when `mode` is not `locate` - The headings written or replaced, in file order.
-* **kept:** when `mode` is not `locate` - The earlier rounds left unchanged, such as `Round 1`, or `none`.
+* **kept:** when `mode` is not `locate` - The earlier rounds left unchanged, or `none`.
+* **content:** when `location: inline` - The formatted draft text.
+* **workspace:** always - The claim `workspace: <skill> (<source>)` for the slot resolved in step 1.
 * **note:** always - One line saying where the draft is and what was added.
-
-Use the first template on every run that writes the file.
 
 ```text
 status: completed
-file: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/draft.md
+location: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/draft.md
 mode: append
 round: 2
 sections: Round 2 (2026-10-18), Notes, Decisions, Open points
 kept: Round 1
-note: round 2 appended to {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/draft.md
+workspace: workspace: agentville:workspace (plugin-default)
+note: round 2 appended to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/draft.md
 ```
 
-In `locate` mode reply with this template, which holds no other field.
-
-```text
-status: completed
-file: {{ PROJECT_ROOT }}/tmp/orders-retry-20261017/draft.md
-mode: locate
-note: draft found; nothing written
-```
+`locate` returns only `status`, `location` (the path, or `none` with `note: no draft for this topic; nothing written`), `mode: locate`, `workspace` and `note`.
 
 Do:
-* `mode: append`, `round: 1`, `kept: none` for the first round of a new draft.
-* `mode: locate`, `file: none`, `note: no draft for this topic; nothing written` when `Glob` finds no draft.md.
-* `mode: update`, `sections: Open points`, `kept: Round 1` when only the open points of round 2 were replaced.
+* `mode: locate`, `location: none` when `Glob` finds no draft.
 
 Don't:
-* Add a `decision:` or `next-step:` line; return the fields listed above only, as the template does.
-* Return a relative path such as `tmp/orders-retry-20261017/draft.md`; return the absolute path, as the template does.
-* Open with a greeting; the reply starts with `status:`, as the template does.
+* Add a `decision:` or `next-step:` line.
+* Return a relative path or open with a greeting; the reply starts with `status:`.
 
 When the draft cannot be written, reply with this block only:
 

@@ -85,7 +85,6 @@ Write a new-spawn brief per relay, with the step 1 check in its output part, and
 * Irreversible actions: without `irreversible-approval`, the brief forbids the list in Constraints. With it, the brief quotes the approving words and permits only that one action on that one target.
 * `questions: forbidden`: the brief tells the child it must not ask anyone and must return any gap as `needs-input` or `partial`.
 * `human-text` goes into the brief verbatim; the child never writes it.
-* A task to record a topic document names the document, the topic-id and the content, and no path.
 * When `effort` cannot be passed (step 5), the brief states the effort in its budget part.
 * When `parallel-writers` is `yes` and worktree isolation is unavailable, the brief gives each writer disjoint output paths.
 

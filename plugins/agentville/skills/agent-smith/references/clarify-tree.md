@@ -16,7 +16,7 @@ A slot is one decision of the contract. A slot is settled when the user has answ
 | workflow-steps | workflow-inputs | Per workflow, numbered steps; each names its tool or `Skill(namespace:name)`, or hands back a spawn request |
 | workflow-outputs | workflow-steps | Per workflow, the returned fields as `name: always or when <condition> - what it holds` |
 | rules | workflows | Extending rules, each with a one-clause reason; they follow the core constraints and never contradict them |
-| exceptions | workflow-steps | Each condition the agent can hit and the relay status token it reports: completed, partial, needs-input, blocked or failed |
+| exceptions | workflow-steps | Each condition the agent can hit and the relay §4 status token it reports |
 | tools | workflow-steps | Every tool a step names, and nothing else; asked as its own explicit question, always last |
 | disallowed-tools | tools | The base worker's denied tools minus any the user granted |
 
@@ -34,7 +34,7 @@ The frontier is every open slot whose prerequisites are settled. Ask it in this 
 
 ## The tools question
 
-Ask it explicitly, even when the steps make the answer obvious: "Which tools may `<agent-name>` use?". Option 1 (Recommended) is the list the steps need, quoted in full, such as `Read, Grep, Glob, Skill`. Offer the base worker's list `TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill` as an alternative. Never offer `Agent`: only the top-level session spawns agents, and a step that needs another agent hands a spawn request back instead. Add `Agent` only when the user names it unprompted, and then set `allow-agent` to yes.
+Ask it explicitly, even when the steps make the answer obvious: "Which tools may `<agent-name>` use?". Option 1 (Recommended) is the list the steps need, quoted in full, such as `Read, Grep, Glob, Skill`. Offer the base worker's list `TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill` as an alternative. Never offer `Agent`: a compiled agent holds no spawn tool by default, and a step that needs another agent hands a spawn request back instead. Add `Agent` only when the user names it unprompted, and then set `allow-agent` to yes.
 
 ## Scope by mode
 

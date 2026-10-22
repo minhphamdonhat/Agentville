@@ -74,7 +74,7 @@ FILLED = {
     "* **[[field-name]]:** always - [[What the field holds.]]": "* **cause:** always - The failing test.",
     "* **[[field-name]]:** when [[condition]] - [[What the field holds.]]":
         "* **fix:** when found - The proposed fix.",
-    "* **[[Condition]]:** [[what to do, and the status token to report: completed, partial, needs-input, blocked or failed]].":
+    "* **[[Condition]]:** [[what to do, and the relay §4 status token to report]].":
         "* **No log:** return `blocked`.",
 }
 
@@ -246,7 +246,7 @@ class TestMeasure(Base):
             self.assertEqual(a.read(), b.read(), "assets/base/worker.md differs from plugins/agentville/agents/worker.md")
 
     def test_21_pod_lead_is_standalone(self):
-        text = ("---\nname: pod-lead\ndescription: Standalone orchestrator of a pod's agents.\n"
+        text = ("---\nname: pod-lead\ndescription: Standalone lead of a pod's agents.\n"
                 "tools: Skill, Agent(worker)\n---\n\n# Role\n\nYou are pod-lead.\n\n"
                 "# Constraints\n\n1. **Orchestrate:** route every request through `Skill(agentville:orchestrate)`.\n\n"
                 "# Workflows\n\n## Conduct\n\nRole: pod-lead\n\n### Input\n\n"
@@ -754,7 +754,7 @@ class TestEval(Base):
     def test_bad_status_token_fails(self):
         rc, compiled = self.grade_one(GOOD_REPORT.replace("<status>completed", "<status>ok"))
         self.assertEqual(rc, 1)
-        self.assertIn("<status> is not one of completed, partial, needs-input, blocked, failed", compiled)
+        self.assertIn("<status> is not one of completed, partial, needs-input, blocked, rejected, failed", compiled)
 
     def test_old_status_format_fails(self):
         old = "status: completed\noutcome: done.\nchanged: no edits\nchecks: none\nnext: none\n"

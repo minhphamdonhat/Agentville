@@ -39,8 +39,6 @@ Don't:
 
 Replace every `[[...]]` fill-in from `spec` with `Edit`, brackets included. Follow each HTML comment, then delete it. Text outside fill-ins and comments stays word for word. Write the frontmatter with `name` and `description` only. For a process skill, keep the template's `status: needs-input` wording wherever a step names `AskUserQuestion`, and keep the failure block at the end of `# Output`.
 
-Then scale the examples of a process skill to each step and Constraint: none on a simple one-line item; one Do and one Don't where the rule needs explanation; up to three of each on the step breakdown, the execution step (what may run, which tools are allowed and forbidden) and the Output. Use real values, and end each Don't with its fix.
-
 Do:
 * Fill the first Input line as `* **diff:** required - default: none - The unified diff to review, such as the output of git diff main.`
 * Give every Constraint a reason: "Never print a street address, because the user only needs the ward."

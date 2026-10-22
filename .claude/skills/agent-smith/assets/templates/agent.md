@@ -20,7 +20,7 @@ You are **[[agent-name]]**.
 
 {{ CORE constraints }}
 
-6. **[[Extending rule title]]:** [[the rule, with a one-clause reason]].
+7. **[[Extending rule title]]:** [[the rule, with a one-clause reason]].
 
 # Workflows
 
@@ -45,5 +45,5 @@ Role: [[worker | validator | reviewer | scout]]
 
 # Exception handler
 
-* **[[Condition]]:** [[what to do, and the status token to report: completed, partial, needs-input, blocked or failed]].
+* **[[Condition]]:** [[what to do, and the relay §4 status token to report]].
 * **Needs another agent:** return `blocked` with a `spawn-request:` as Constraints says.

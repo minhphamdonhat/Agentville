@@ -56,7 +56,7 @@ Don't:
 
 ### 2. Triage the request
 
-Decide the mode, the skill type and the skill name. For improve and convert, check `path` first: when it is inside a plugin (the path has a `.claude-plugin` component, or an ancestor folder holds `.claude-plugin/plugin.json`) or in neither `{{ PROJECT_ROOT }}/.claude/skills/` nor `{{ USER_ROOT }}/.claude/skills/`, stop with `status: blocked` and `reason: improve and convert never rewrite a plugin; copy the skill into a project or user skills folder and ask again`, and clean up. Read `source-material` first when it names files, using `Glob` then `Read`.
+Decide the mode, the skill type and the skill name. For improve and convert, check `path` first; a path the constraints refuse returns `status: blocked` with that reason, and the run cleans up. Read `source-material` first when it names files, using `Glob` then `Read`.
 
 Classify the type from what the skill does. A process skill knows how to do something: input in, steps, structured output out, written in the Role, Constraints, Input, Process and Output sections. A steering skill is a standard applied to the whole session, such as a writing or naming standard, written as a document: one H1, a `Goal:` line, numbered sections and a closing Pre-send check. A knowledge skill holds facts other skills or people look up, one topic per section, in the same document shape with worked examples per topic.
 
@@ -85,29 +85,19 @@ Don't:
 
 ### 3. Clarify the contract
 
-Settle every open design decision with the user before drafting. Skip this step only when `spec` is given.
-
-Read `{{ SKILL_ROOT }}/references/clarify-tree.md` with `Read`; it defines the slots, the order of questions and the question shape. Then run `Glob` on `*/SKILL.md` under the project and user skill folders to learn which skill names are taken, so the new name does not collide.
-
-Ask with `AskUserQuestion`, at most four numbered questions per call. Option 1 is the recommended answer, labelled "(Recommended)", followed by one to three alternatives. After the last round, show the whole contract and ask "Build it?" with options "Yes, build it (Recommended)" and "Change something". Ask nothing further after a yes.
-
-When no person is reachable, do not ask: return `status: needs-input` with the unsettled slots on `missing:` and the questions in `reason:`.
+Settle every open design decision with the user before drafting. Skip this step only when `spec` is given. Follow `{{ SKILL_ROOT }}/references/clarify-tree.md`: it defines the slots, the order, the question shape, the confirmation and the no-person return. Then run `Glob` on `*/SKILL.md` under the project and user skill folders to learn which skill names are taken, so the new name does not collide.
 
 Do:
-* Quote the recommended value in full so the user can accept it unchanged: `inputs: diff (required), strictness (optional, default normal)`.
 * Look a fact up with `Glob` or `Read` before asking; ask only decisions.
 * For improve, ask only the slots the change touches; for convert, only the slots the old file leaves without a value.
 
 Don't:
 * Ask one question that covers the whole contract ("Which type, name, inputs and steps?"); ask one numbered question per slot.
 * Draft from the unconfirmed triage; wait for "Yes, build it".
-* Ask where to install; step 4 owns that.
 
 ### 4. Resolve the target
 
-Choose the install folder and check whether a skill is already there, following `{{ SKILL_ROOT }}/references/workflows/resolve-target.md`. The folder is `{{ PROJECT_ROOT }}/.claude/skills/<skill-name>` for `project` or `{{ USER_ROOT }}/.claude/skills/<skill-name>` for `user`; never offer a plugin folder or a free-form directory, and detect no plugin. Run `Glob` on `{{ PROJECT_ROOT }}/.git/HEAD` to see whether the project is a repository, then on `<path>/SKILL.md` to see whether the target exists.
-
-When `scope` was not given, ask "Is the skill for the project or the user?" with `AskUserQuestion` and exactly two options, `project` and `user`; the recommended one is `project` when the project is a repository and `user` otherwise. When the target exists and `replace` is no, ask "New name, overwrite or cancel?". A new name repeats this step, overwrite sets `replace` to yes, and cancel cleans up and stops. When not run by a person, return `status: needs-input` with `missing: scope` or `missing: replace` instead of asking. Any other `scope` value gets `status: blocked` with `reason: scope must be project or user`.
+Choose the install folder and check whether a skill is already there, following `{{ SKILL_ROOT }}/references/workflows/resolve-target.md`; it owns the scope question, the existing-target question and the no-person returns. This step only reads; step 9 writes.
 
 Do:
 * Compile "pr-review" with scope `user` into `{{ USER_ROOT }}/.claude/skills/pr-review`.
@@ -116,43 +106,15 @@ Do:
 Don't:
 * Offer `plugin` or a typed directory because the repository holds a `plugins/` folder; offer the two scopes only.
 * Write under the target at this step; this step only reads, and step 9 writes.
-* Overwrite an existing skill when `replace` is no; ask or return `needs-input`.
 
 ### 5. Draft from the template
 
-Route by type and start from the matching template, following `{{ SKILL_ROOT }}/references/workflows/draft-skill.md`. A process skill uses `{{ SKILL_ROOT }}/assets/templates/process.md`. A steering skill uses `{{ SKILL_ROOT }}/assets/templates/steering.md`. A knowledge skill uses `{{ SKILL_ROOT }}/assets/templates/knowledge.md`, the steering shape with one topic per section.
+Draft the skill in `<STAGING>`, following `{{ SKILL_ROOT }}/references/workflows/draft-skill.md` with the type, mode, `spec` and `<STAGING>`; it owns the template choice, the seeding, the fill-in and the 500-line move.
 
-For improve and convert, first seed the staging folder from the existing skill by running `python3 {{ SKILL_ROOT }}/scripts/stage.py sync <path> <STAGING>` with Bash, so its `references/`, `scripts/` and `evals/` survive install. Then read the template with `Read`. For compile, and for convert of a process skill, write a copy of the template to `<STAGING>/SKILL.md` with `Write`. For improve, and for convert of a steering or knowledge skill, edit the seeded SKILL.md in place. Use `Edit` to fill every placeholder from the confirmed spec and delete every HTML comment.
-
-Write the frontmatter with `name` and `description` only. Never emit a nested block or a `type`, `version`, `template` or `allowed-tools` key. The description says what the skill does, then names at least two trigger contexts, in at most 1,024 characters.
-
-For a process skill, fill the five sections in this order, one workflow per skill:
-* `# Role`: who the agent is and what it returns.
-* `# Constraints`: the global hard rules, each with a one-clause reason, including when the skill may ask the user.
-* `# Input`: one line per input, `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`.
-* `# Process`: `### N. Step name`, each with a body of short plain-English sentences (or plain bullets) that say what to do, name the tool and give the literal query inline, then, scaled as the Constraints say, no `Do:` and `Don't:` lists on a simple one-line step, one Do and one Don't where the rule needs explanation, and up to three of each on the step breakdown and the execution step, every Don't paired with a Do and naming its fix. Never start a step line with a label such as `**Action:**` or `**Tool:**`. A step that asks with `AskUserQuestion` does so only when a person runs the skill directly, and otherwise returns `status: needs-input` with `missing:`.
-* `# Output`: one line per returned field (`* **name:** always - what it holds` or `* **name:** when <condition> - what it holds`), the exact template or templates, Do and Don't lists (up to three of each, because the Output is a hardest item), and last the failure block with `status: partial | blocked | needs-input | failed`, `reason:` and `missing:`.
-
-For steering and knowledge, keep the template's shape: one H1, a `Goal:` line, numbered H2 sections and a closing `Pre-send check` of at least three items; knowledge adds `### Examples` per topic.
-
-Make the skill independent while drafting, for every type and every mode. It never names, describes or assumes what runs it: no named outer skill, agent or thread, no remark about where it runs, no description or Role that says a named skill uses it. It states every hand-back as its own output fields. For improve and convert, search the seeded files for such references and rewrite each one as the skill's own input or output field; keep the behaviour, drop the reference. `{{ SKILL_ROOT }}/references/validate-rules.md` lists the banned tokens under Rule 20, and measure.py fails on them.
-
-When the skill would pass 500 lines, move long material to `<STAGING>/references/<topic>.md` and link it with a relative link.
-
-Do:
-* Convert an old-format skill by keeping its behaviour: each old workflow step becomes a numbered step, each old input an Input line, each old output an Output template, each old rule and exception a Constraint or a Do/Don't pair in the step that can hit it. Save the original as `<STAGING>/references/original-SKILL.md` first.
-* Write steps as explanatory sentences with real values in the examples, as in a skill a Haiku-tier model must follow.
-* Scale the examples: leave the step "Read the file at `path` with `Read`." bare, give the rule "Name the tool inline" one Do ("Search with `Grep` for `FAILED`.") and one Don't ("Search the log; write the tool and the literal query instead."), and give the execution step up to three of each.
-
-Don't:
-* Compress steps into call syntax with at-signs and arrows; write plain sentences that name the tool inline, as the second Do item says.
-* Add a Dependencies, Workflows, Exceptions or Rules section to a process skill; move that content into Constraints or a step's Do and Don't lists.
-* Put two workflows in one skill; split it into two skills.
-* Add a Do and a Don't to a simple one-line step, or give the Output no examples; keep the simple step bare and give the Output up to three of each, as the scaling Do item shows.
 
 ### 6. Validate
 
-Check the draft against the rules for its type. Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/SKILL.md` with Bash; it infers the type from the body and prints the line count, description length, per-step Do and Don't counts and a `failures:` line. Run no other command. Then read `{{ SKILL_ROOT }}/references/validate-rules.md` with `Read` and apply the section for the type. Rule 20, independence, is script-checked for every type: measure.py prints each `independence_hit:` as `path:line | token` and fails rule 20. Remove each hit from the draft by rewriting it as the skill's own input or output field; never add the file to the allowlist. Rule 22, injectable slots, is script-checked for every type: measure.py prints `slot_direct_calls:` and `slot_without_context_injection:` and fails rule 22. Fix each by resolving the slot with `Skill(agentville:context-injection)` and deleting any direct `Skill(agentville:<slot>)` call.
+Check the draft against the rules for its type. Run `python3 {{ SKILL_ROOT }}/scripts/measure.py <STAGING>/SKILL.md` with Bash; it infers the type from the body and prints the line count, description length, per-step Do and Don't counts and a `failures:` line. Run no other command. Then read `{{ SKILL_ROOT }}/references/validate-rules.md` with `Read` and apply the section for the type.
 
 On a failure, fix it with `Edit` and validate again. A warning, such as a slash mention of another skill, does not block. After three failed rounds, clean up and return `status: failed` with the failures in `reason:`.
 
@@ -166,7 +128,7 @@ Don't:
 
 ### 7. Run the evals
 
-Test the draft with and without the skill by calling `Skill` /skill-creator and asking it to run evals on `<STAGING>` on `models`. Record the with-skill score, the baseline score and the models.
+Test the draft with and without the skill by calling `Skill` /skill-creator and asking it to run evals on `<STAGING>` on `models`. Record the with-skill score, the baseline score and the models. When /skill-creator cannot be loaded, skip its evals, run only the standalone case below by hand and record `not run` for the rest.
 
 When the with-skill score is lower than the baseline, follow `on-eval-failure`. With `revise`, edit, re-run the evals and validate again. With `stop`, clean up and return `status: failed` with the failing cases in `reason:`. When the input was not given and a person is reachable, ask "Revise the skill to fix the failing cases?" with `AskUserQuestion` and treat yes as `revise` and no as `stop`. When it was not given and no person is reachable, do not ask: clean up and return `status: needs-input` with `missing: on-eval-failure` and the failing cases in `reason:`.
 
@@ -186,7 +148,7 @@ Don't:
 
 ### 8. Optimise the description
 
-Call `Skill` /skill-creator and ask it to optimise the description of `<STAGING>/SKILL.md`; it edits the file in place. Validate again afterwards (step 6).
+When /skill-creator cannot be loaded, skip this step. Call `Skill` /skill-creator and ask it to optimise the description of `<STAGING>/SKILL.md`; it edits the file in place. Validate again afterwards (step 6).
 
 Do:
 * Keep the description at or under 1,024 characters and keep two or more trigger contexts.
@@ -196,11 +158,10 @@ Don't:
 
 ### 9. Install
 
-Copy the validated draft to the target `<PATH>`, following `{{ SKILL_ROOT }}/references/workflows/install-skill.md`. Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> <PATH> --scope <scope>` with Bash; it mirrors every file, removes target files that `<STAGING>` lacks and prints `written:`, `removed:` and `files:` lines. It refuses (exit 2) any `<PATH>` that is not `<skill-name>` inside the skills folder of the chosen scope or that lies inside a plugin; on that refusal return `status: blocked` with the script's message as `reason:`.
+Install the validated draft, following `{{ SKILL_ROOT }}/references/workflows/install-skill.md`. When `stage.py` refuses with exit 2, return `status: blocked` with its message as `reason:`.
 
 Do:
 * Install only when the last validation passed.
-* Report every `removed:` line the user did not ask for under `warnings`.
 
 Don't:
 * Edit a different skill ("also update the naming skill to match"); say a separate request is needed and stop.
@@ -208,7 +169,7 @@ Don't:
 
 ### 10. Package
 
-Call `Skill` /skill-creator and ask it to package the install folder into `output-dir`, unless packaging is declined.
+When /skill-creator cannot be loaded, record `package: not packaged` and go on. Call `Skill` /skill-creator and ask it to package the install folder into `output-dir`, unless packaging is declined.
 
 Do:
 * Return the `.skill` path, or `not packaged` when declined.
@@ -240,8 +201,6 @@ The reply returns these fields, one block per skill built:
 * **warnings:** always - Warnings from validation and install, or none.
 * **change:** when mode is improve - The revision applied.
 * **original:** when mode is convert - The installed path of the saved original, `references/original-SKILL.md` in the skill folder.
-
-Write the block plainly enough for a person to read, and keep its fields exactly as shown so the fields stay machine-readable.
 
 ```text
 status: completed

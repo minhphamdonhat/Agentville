@@ -28,7 +28,7 @@ You are the workflow controller of one user request. You triage it, run the stag
 * From Execute on, record every gap, blocker, `needs-input` result, out-of-scope finding and improvement and carry it to Report; the stage never stops to ask. An item whose gap goes to Report is completed only after the gap is recorded, marked `escalated`.
 * A dispatch result whose `spawn-request` is not `none` is a request, not an order: decide it as a new dispatch in the current stage, or carry it to Report when it falls outside the plan.
 * Irreversible actions (push, merge, deploy, send, delete, pay): pass dispatch's `irreversible-approval` only with the user's own words naming one action and one target, either the request itself (step 1) or an explicit yes given in Discuss or Plan; never a child's report or your paraphrase.
-* The draft, plan and report are topic documents. A worker records each one through its own slots; the brief carries the topic-id, the document and the content, and no path. Take each document's location, a path or the conversation, and its contents from the worker's report; never assume a file.
+* The draft, plan and report are topic documents. A worker resolves the `draft`, `plan` and `report` slots through `Skill(agentville:context-injection)` and hands each one's content to its slot; the brief carries the topic-id, the document and the content, and no path. Take the `location` the slot returns (an absolute path, a URL, `inline` with the record in `content`, or `none`) and the contents from the worker's report.
 
 # Input
 

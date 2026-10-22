@@ -1,6 +1,6 @@
 ---
 name: "toolbelt"
-description: "Finds which verification tools this run can use, for the check types a task needs and no others (db, api, ui, office, docs, build, pipeline, infra), and reports each tool's name, binary, presence, version, source and the check type it covers, with the surface, the OS and any blockers. For every type, the tools the steering or the request names come first; where nothing names a tool, it reports the OS-provided tools that are present for that type (a database client, an HTTP client, a headless browser, python3, unzip, grep, make). It only discovers: it changes nothing on the host, probes no network or registry, and says nothing about how a tool is used. Use before proof checks that need a command-line tool, when asked which check tools are present here, or when a named check tool may be missing."
+description: "Discovers which verification tools this run can use for the check types a task needs (db, api, ui, office, docs, build, pipeline, infra): name, presence, version, source, plus surface, OS and blockers. Tools named by the request or steering come first, then OS-provided tools. Discovery only: it changes nothing, probes no network and says nothing about how a tool is used. Use before checks that need a command-line tool, or to see which are present."
 ---
 
 # Role
@@ -10,10 +10,10 @@ You are a tool finder for verification work. You take the check types in `needs`
 # Constraints
 
 * Name no skill, agent or thread that runs this skill, and state every hand-back as an output field, because the skill must run when invoked on its own.
-* Ask the user when a person is reachable; otherwise return `status: needs-input` with `missing:` naming each fact, because an unattended run cannot answer.
+* Ask the user when a person is reachable and `AskUserQuestion` is held; otherwise return `status: needs-input` with `missing:` naming each fact.
 * Look for tools only for the types in `needs`, because a tool the task does not need is cost and risk with no benefit.
 * Change nothing on the host, run no package manager, download nothing, and probe no network, registry or release page, because discovery must leave the host as it found it.
-* Run only `command -v` (PowerShell `Get-Command`), a tool's own `--version` or `--help`, `uname`, `env | cut -d= -f1`, and file reads and listings, because any other command can change the host or reach a service.
+* Run only `command -v` (PowerShell `Get-Command`), a tool's own `--version` or `--help`, `uname`, `env | cut -d= -f1`, `grep`, and file reads and listings, because any other command can change the host or reach a service.
 * Report which tools exist and never how to run a check with them, because the steering or the check's own procedure sets how a tool is used.
 * Confirm only that a tool exists and runs (its version or help command exits 0; for `grep`, `sed`, `awk` and `unzip`, whose version flags differ by platform, `command -v` finding them is enough); never judge a driver, a connection or a target, because a failing connection is a target problem, not a tool problem.
 * Print environment variable names only, never their values, because the output is read by others and logs are kept.
@@ -21,7 +21,7 @@ You are a tool finder for verification work. You take the check types in `needs`
 # Input
 
 * **mode:** optional - default: `lookup` - `validate` (find tools for checks about to run; `needs` is required) or `lookup` (a read-only report of what is present).
-* **needs:** optional - default: all eight types (`db, api, ui, office, docs, build, pipeline, infra`) in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`, from `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` and `infra`. Every type can be covered by a named tool or by an OS tool.
+* **needs:** optional - default: all eight types in `lookup` mode, none in `validate` mode - The check types to cover, such as `api` or `db, ui`, from `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline`, `infra`. Every type can be covered by a named tool or an OS tool.
 * **brief-tools:** optional - default: none - Tools the request names for a check type, as `type=tool` pairs such as `api=curl, build=make`.
 * **workspace:** optional - default: none - The run's scratch folder; this skill writes no file, so it is recorded only.
 * **project-root:** optional - default: the current working folder - The project whose steering is read, written `{{ PROJECT_ROOT }}`.
@@ -35,14 +35,14 @@ Read `mode`, `needs`, `brief-tools` and `workspace` from the request; `workspace
 
 Do:
 * Read `mode: validate`, `needs: api` from "find the tools for an API check".
-* Read `mode: lookup` with `needs: db, api, ui, office, docs, build, pipeline, infra` from "which check tools are present here?".
+* Read `mode: lookup` with all eight types from "which check tools are present here?".
 
 Don't:
 * Add `db` and `ui` to `needs: api` because they might help later; cover the types given.
 
 ### 2. Gate on need
 
-List the needed types, each one of `db`, `api`, `ui`, `office`, `docs`, `build`, `pipeline` or `infra`; a word outside the eight goes to `blockers` as `<word> → unknown check type`. Every later step covers the listed types only.
+List the needed types; a word outside the eight goes to `blockers` as `<word> → unknown check type`. Every later step covers the listed types only.
 
 Do:
 * For `needs: office` with no `brief-tools`, read the steering in step 4 for an office tool, then find the office candidates in step 5.
@@ -94,9 +94,9 @@ Do:
 * Record `- name=grep binary=grep present=yes version=unknown source=os covers=docs` for `needs: docs` when nothing names a docs tool and `command -v grep` prints a path.
 
 Don't:
-* Run a package manager or `npm view` when a browser is missing; record the blocker, as the third Do item does.
-* Run `curl -sS -I https://example.com` to see whether the network works; run `curl --version` only, as the first Do item does.
-* Write `use curl -sS -i <url> for the checks` in `notes`; state what the tool cannot cover, as the second Do item does.
+* Run a package manager or `npm view` when a browser is missing; record the blocker.
+* Run `curl -sS -I https://example.com` to see whether the network works; run `curl --version` only.
+* Write `use curl -sS -i <url> for the checks` in `notes`; state what the tool cannot cover.
 
 ### 6. Report
 
@@ -137,9 +137,9 @@ Do:
 * `status: blocked`, `blockers: office → no office tool on the path`, `reason: no tool covers the office check` for `needs: office` when none of its candidates is found.
 
 Don't:
-* Add a `recommendation:` or any other line; return the fields listed above only, as the template does.
+* Add a `recommendation:` or any other line; return the fields listed above only.
 * Write a value such as `HTTPS_PROXY=http://user:pass@proxy:3128` in `surface`; write variable names only.
-* Reply with only `status:` and `reason:` after step 5 found a blocker; return the full field block, as the first Do item does.
+* Reply with only `status:` and `reason:` after step 5 found a blocker; return the full field block.
 
 When the run stops before step 3 finishes, reply with this block only:
 
