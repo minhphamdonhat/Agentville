@@ -12,7 +12,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 | Path | Holds |
 | --- | --- |
-| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md` (web research only), `validator.md` (independent checks with sealed evidence) and `reviewer.md` (read-only diff review). |
+| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md` (web research only), `validator.md` (independent checks with sealed evidence), `reviewer.md` (read-only diff review) and `pod-lead.md` (standalone orchestrator of a pod's agents, not a worker fork). |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
 | `plugins/agentville/rules/root-agent.md` | Standing policy for the root agent. |
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
@@ -36,16 +36,18 @@ The shipped skills are:
 * `skill-smith` creates, improves and converts skills.
 * `agent-smith` compiles agents as forks of the base worker.
 
-The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot, resolved in two steps) and `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering).
+The shipped agents are `worker` (the base, which also serves the worker, validator and reviewer roles until `dispatch` spawns the next two), `scout` (scout role, web search and fetch only), `validator` (validator role, writes hashed evidence to the resolved `workspace` and finds its tools through the `toolbelt` slot, resolved in two steps), `reviewer` (reviewer role, read-only, locates the evidence through the `workspace` slot and checks the validator's slot records against the steering) and `pod-lead` (the standalone orchestrator of a pod's agents, not a worker fork, which runs every request through `orchestrate`, which owns triage, the stages, delegation and the Report, delegates all work to its crew, keeps thinking and brainstorming as its only job and holds no edit, search or shell tool).
 
 ## Agent format
 
-Every agent is a fork of `plugins/agentville/agents/worker.md`, with its own personality, workflows and tool allow and deny lists. The format is fixed:
+Every agent except `pod-lead` is a fork of `plugins/agentville/agents/worker.md`, with its own personality, workflows and tool allow and deny lists. The format is fixed:
 
 1. **Role:** who the agent is, in a few lines.
 2. **Constraints:** the core blocks (`<!-- core:begin ... -->` to `<!-- core:end ... -->`) copied verbatim from the worker, then the agent's own rules numbered from 7.
 3. **Workflows:** as many as the agent needs. Each has Input, Process and Output.
 4. **Exception handler:** what the agent does when the brief is unclear, a check fails, another agent is needed, or the budget runs out.
+
+`pod-lead` is the standalone orchestrator of a pod's agents, not a worker fork: it holds no core blocks, numbers its own rules from 1 and may hold the `Agent` tool. `measure.py` exempts the agent named `pod-lead` from A3, A5, A6 and A16 only; every other check still runs.
 
 Do:
 
