@@ -25,7 +25,7 @@ Each skill is invoked as `/agentville:<name>`.
 
 | Skill | Purpose |
 | --- | --- |
-| `/agentville:orchestrate` | Triages every user request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. |
+| `/agentville:orchestrate` | Sample workflow, opt-in from your own `CLAUDE.md`. Triages every user request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, role choice, model and effort routing, brief, spawn, report reading and failure handling. |
 | `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
 | `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
@@ -75,7 +75,11 @@ The `draft`, `plan` and `report` slots say how a topic's documents are written, 
 
 ## How they fit
 
-`orchestrate` triages each request and runs the stages it needs. It sends every delegated piece of work through `dispatch`, one spawn at a time.
+`orchestrate` triages each request and runs the stages it needs. It sends every delegated piece of work through `dispatch`, one spawn at a time. It is a sample workflow and is opt-in: nothing loads it by default, and the root agent reads no files itself. To use it, add this line to your own `CLAUDE.md`:
+
+```markdown
+Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
+```
 
 `dispatch` writes each brief to the `relay` standard and picks the model and effort with `intelligence-routing-model`.
 
