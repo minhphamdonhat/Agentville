@@ -15,10 +15,9 @@ This skill is a sample workflow and is opt-in: nothing in Agentville loads it by
 * Send all stage work, every spawn, follow-up and message to a child, through `Skill(agentville:dispatch)`, and never restate its brief, model or report rules here, because two copies drift apart.
 * Pass the role on every dispatch as `role-hint` (`worker`, `validator`, `reviewer` or `scout`), because `agentville:dispatch` writes it into the brief's `<role>` tag and spawns the agent that serves it.
 * Every message to or from a child, brief and report alike, follows `Skill(agentville:relay)`, which `Skill(agentville:dispatch)` loads for each message; restate none of its rules here, because two copies drift apart.
-* Before you write the Report or any final output, triage who receives it. When you write straight to a person (the user), from the top of the session, load `Skill(agentville:voice)` and write to its standard. When the output goes back to the agent that started this run as a hand-back report, or to another agent through `SendMessage`, load `Skill(agentville:relay)` and write in its shape, never under voice, because a person and an agent read differently.
 * Never implement or read in your own thread: no reading, editing, searching or running of the work's files or commands, and no reading of steering files or skill files either. Load skills only with the `Skill` tool, treat the project rules already in your context as given, and delegate every read to a worker through `Skill(agentville:dispatch)`, because a controller that works also stops watching.
 * Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, at the top of that reply and followed by the reply text, in this exact shape: `- **Stage: <Discuss|Plan|Execute|Validate|Review|Report>**`, such as `- **Stage: Execute**`. The stage line sits above the line-1 answer that the root rules require; the answer follows it. Never echo it on any other reply, and write only the stage name in it, never the stage plan or a reason, because the user must see where the work stands without reading the same line on every turn.
-* Use the question tool (`AskUserQuestion`) by stage. In Discuss, use it freely to clarify. In Plan, use it only to clarify a fact the plan needs, never to ask for approval. In Execute, Validate and Review, never use it, and pass `questions: forbidden` on every dispatch. In Report, ask nothing through it and put each decision to the user as plain text. Write every question and every message to the user under `Skill(agentville:voice)`, and every message to an agent under `Skill(agentville:relay)`. When the tool is allowed and no person is reachable, return `status: needs-input` with `missing:` naming the decision, because a guess builds the wrong thing.
+* Use the question tool (`AskUserQuestion`) by stage. In Discuss, use it freely to clarify. In Plan, use it only to clarify a fact the plan needs, never to ask for approval. In Execute, Validate and Review, never use it, and pass `questions: forbidden` on every dispatch. In Report, ask nothing through it and put each decision to the user as plain text. When the tool is allowed and no person is reachable, return `status: needs-input` with `missing:` naming the decision, because a guess builds the wrong thing.
 * Never guess a human choice such as scope, target, environment or extra work: settle it in Discuss or Plan, and from Execute on carry it to Report as an open decision, because only the user can make it.
 * The `## Tasks` section of the topic's plan is the task ledger. Execute, Validate and Review each compile their own session task list with `TaskCreate` from the ledger on every entry, including after a loop-back: Execute one task per plan task, Validate one task per check named in the done criteria, Review one task per reviewer dispatch. Set each task `in_progress` before its dispatch and `completed` only when the child's report passes. A stage ends only when every task in its list is completed, because a stage that stops partway leaves work nobody tracks.
 * In Execute, Validate and Review, record every gap, blocker, missing decision, `needs-input` result from dispatch, exhausted dispatch ladder, out-of-scope finding and improvement idea, and carry it to Report; the stage never stops to ask. A task whose gap goes to Report is set `completed` only after the gap is recorded, with its subject marked `escalated`. Only a failed Validate check (step 6) or a `needs-changes` review (step 7) loops back; a `blocked` review goes to Report as a blocker, because the user decides on gaps once, at the end, with the whole picture.
@@ -80,7 +79,7 @@ Don't:
 
 ### 3. Discuss
 
-Talk with the user about the request and gather the details, and write every question and every reply to the user under `Skill(agentville:voice)`. Use the question tool (`AskUserQuestion`) freely to clarify the scope, the target, the desired outcome, the definition of done or any open choice; when no person is reachable, return `status: needs-input` with `missing:` naming the decision. Dispatch read-only workers for any context you need, and after each round dispatch a worker to record the round's notes, decisions and open points in the topic's draft, passing the topic-id and that content; never write the draft yourself, and make no change to the work itself in this stage. Settle here whether a scout may research the web in Plan, and whether any irreversible action is wanted, in the user's own words naming the action and its target. Never poll the user to move on. When nothing is left open, write exactly, under `Skill(agentville:voice)`, "All points are settled, do you have anything else to add?" as plain text and wait. Leave Discuss only when the user explicitly says so, such as "Let's go plan": to Plan by default, or to Execute when the user says to skip planning.
+Talk with the user about the request and gather the details. Use the question tool (`AskUserQuestion`) freely to clarify the scope, the target, the desired outcome, the definition of done or any open choice; when no person is reachable, return `status: needs-input` with `missing:` naming the decision. Dispatch read-only workers for any context you need, and after each round dispatch a worker to record the round's notes, decisions and open points in the topic's draft, passing the topic-id and that content; never write the draft yourself, and make no change to the work itself in this stage. Settle here whether a scout may research the web in Plan, and whether any irreversible action is wanted, in the user's own words naming the action and its target. Never poll the user to move on. When nothing is left open, write exactly "All points are settled, do you have anything else to add?" as plain text and wait. Leave Discuss only when the user explicitly says so, such as "Let's go plan": to Plan by default, or to Execute when the user says to skip planning.
 
 Do:
 * Ask `Which environment should this run against?` with the options the steering lists, and wait for the answer.
@@ -95,7 +94,7 @@ Don't:
 
 ### 4. Plan
 
-Dispatch workers to gather the context the plan needs into a plan artefact in the workspace: offline from the project, or through a scout (`role-hint: scout`) only when the user approved web research in Discuss. Then dispatch a worker to write the plan from the draft and that artefact through its `plan` slot: a Goal, and Tasks each with done criteria that name a check a fresh reader can run, with the approval recorded as `not-required`. The plan's Tasks section is the ledger the later stages compile from. Use the question tool (`AskUserQuestion`) only to clarify a fact the plan needs, never to ask for approval, and write each such question to the user under `Skill(agentville:voice)`; when no person is reachable, return `status: needs-input` with `missing:` naming the fact. There is no approval gate: once the worker reports the plan recorded, go to Execute.
+Dispatch workers to gather the context the plan needs into a plan artefact in the workspace: offline from the project, or through a scout (`role-hint: scout`) only when the user approved web research in Discuss. Then dispatch a worker to write the plan from the draft and that artefact through its `plan` slot: a Goal, and Tasks each with done criteria that name a check a fresh reader can run, with the approval recorded as `not-required`. The plan's Tasks section is the ledger the later stages compile from. Use the question tool (`AskUserQuestion`) only to clarify a fact the plan needs, never to ask for approval; when no person is reachable, return `status: needs-input` with `missing:` naming the fact. There is no approval gate: once the worker reports the plan recorded, go to Execute.
 
 Do:
 * Dispatch a worker to read the cases module and its tests and save the findings as a plan artefact, then dispatch a worker to write the plan from the draft and that artefact, with approval `not-required`.
@@ -160,16 +159,15 @@ Don't:
 
 ### 8. Report
 
-Triage who receives the Report first. When you write straight to a person (the user), from the top of the session, load `Skill(agentville:voice)` and write the Report to its standard: the answer first, plain sentences, no agent notation. When it goes back to the agent that started this run as a hand-back report, or to another agent through `SendMessage`, load `Skill(agentville:relay)` and write it in that shape instead, never under voice. When triage sent a question straight here with no spawn, write the answer yourself and record nothing. Otherwise dispatch a worker through `Skill(agentville:dispatch)` to draft the Report from the children's reports and evidence (the drafting worker records nothing), correct the draft to the standard, then dispatch a worker to record the corrected text in the topic's report through its `report` slot, so the record matches what the user reads. Cover what each ledger task delivered, the evidence from Validate (never dropped when you rewrite), the review verdict, each stage triage skipped with its reason, and every escalated gap, blocker, improvement and out-of-scope finding as plain text for the user to decide. A yes to any of them starts a new Plan (step 4) for that item. Ask nothing through the question tool. Keep each claim label as a plain qualifier, and say plainly when the outcome is partial, blocked or failed.
+Open the Report with the answer. When triage sent a question straight here with no spawn, write the answer yourself and record nothing. Otherwise dispatch a worker through `Skill(agentville:dispatch)` to draft the Report from the children's reports and evidence (the drafting worker records nothing), correct the draft, then dispatch a worker to record the corrected text in the topic's report through its `report` slot, so the record matches what the user reads. Cover what each ledger task delivered, the evidence from Validate (never dropped when you rewrite), the review verdict, each stage triage skipped with its reason, and every escalated gap, blocker, improvement and out-of-scope finding as plain text for the user to decide. A yes to any of them starts a new Plan (step 4) for that item. Ask nothing through the question tool. Keep each claim label as a plain qualifier, and say plainly when the outcome is partial, blocked or failed.
 
 Do:
 * Write `The pagination change is in, the validator's checks passed and the reviewer approved it. Two things are yours to decide: the reviewer found an unplanned helper in the list service, and the export endpoint has the same paging bug. Tell me which, if any, you want planned.`
 * Name a skipped stage plainly, such as `Review was skipped because the change was a one-line rename.`
 
 Don't:
-* Put a decision to the user through the question tool; write it as plain text under `Skill(agentville:voice)`, as the first Do item does.
+* Put a decision to the user through the question tool; write it as plain text, as the first Do item does.
 * Paste a child's report or start work on an escalated item without the user's yes.
-* Write the Report before triaging who receives it, or write a hand-back to the agent that started this run under voice instead of relay.
 * Dispatch the record before you have corrected the draft.
 
 # Output
@@ -181,11 +179,11 @@ The reply returns these fields:
 * **evidence:** when Validate ran - The validator's evidence as it reported it.
 * **review-result:** when Review ran - The reviewer's verdict and its decision, Approve, Reject or Blocker, for each round.
 * **escalated:** when any came up - The gaps, blockers, improvements and out-of-scope items carried to Report for the user to decide.
-* **user-message:** always - The Report message, written to the standard the audience triage picks (`Skill(agentville:voice)` for a person, `Skill(agentville:relay)` for an agent) and opening with the pinned stage line `- **Stage: Report**` when this reply enters Report.
+* **user-message:** always - The Report message, opening with the pinned stage line `- **Stage: Report**` when this reply enters Report.
 
 The top-level `status:` here (`completed`, `needs-input`, `blocked`, `failed`) is this skill's own return code. It is not a child's status, which orchestrate reads only through `Skill(agentville:dispatch)`'s `child-status`.
 
-When a person reads the output directly, reply with the pinned stage line `- **Stage: Report**` (when this reply enters Report) and then the Report alone, written under voice, with no field block and no agent notation; otherwise return the field block, shaped per `Skill(agentville:relay)`, which starts with `status:` and carries the Report text, stage line first, in `user-message`. Earlier replies carry a stage line only on entering the first stage and on each stage switch, as the Constraints say.
+When a person reads the output directly, reply with the pinned stage line `- **Stage: Report**` (when this reply enters Report) and then the Report alone, with no field block and no agent notation; otherwise return the field block, which starts with `status:` and carries the Report text, stage line first, in `user-message`. Earlier replies carry a stage line only on entering the first stage and on each stage switch, as the Constraints say.
 
 ```text
 status: completed
@@ -193,13 +191,13 @@ stages-run: Discuss, Plan, Execute, Validate, Review, Execute, Validate, Review,
 evidence: as the validator reported it
 review-result: needs-changes (Reject), then pass (Approve)
 escalated: unplanned helper in the list service; the export endpoint has the same paging bug
-user-message: <the Report, written to the standard the audience triage picks>
+user-message: <the Report for the user>
 ```
 
 Do:
 * Return `stages-run: Report` for a question answered from the conversation, and leave out `evidence` and `review-result`.
 * Return `stages-run: Execute, Validate, Report` for a small change whose Review triage skipped, with the reason in the Report.
-* When a person reads the output directly, open with `- **Stage: Report**` on its own line, then the Report alone, written under voice, such as the message in step 8.
+* When a person reads the output directly, open with `- **Stage: Report**` on its own line, then the Report alone, such as the message in step 8.
 
 Don't:
 * Add a greeting, preamble or closing offer to the field block; start with `status:` as the template does.
