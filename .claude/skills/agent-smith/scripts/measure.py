@@ -368,7 +368,7 @@ def measure(path, base_path, allow_agent):
     if len(lines) > MAX_LINES:
         fails.add("A11")
 
-    # The pod-lead is the one standalone main-session agent, not a worker fork: it skips the
+    # The pod-lead is the standalone orchestrator of a pod's agents, not a worker fork: it skips the
     # core-block checks (A5, A16), the spawning check (A3) and the workflow-role check (A6) only.
     if name in STANDALONE_AGENTS:
         out.append("standalone: yes (skips A3, A5, A6, A16)")
