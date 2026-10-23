@@ -116,7 +116,7 @@ Write the brief per relay §3. Low-effort cells need it most: they scope literal
 
 Do not add "verify your work again" to high-effort workers; high effort already verifies, so it is likely redundant spend.
 
-**Report format.** Every report, Haiku included, follows relay §4 and quotes its evidence. A `<status>` that is still missing or unknown after one reminder, or `completed` over an empty, truncated or contradictory tool result or a failed check, counts as `failed`: small models fabricate there.
+**Report format.** Every report, Haiku included, follows relay §4 and quotes its evidence. A `<status>` that is still missing or unknown after one reminder, or `completed` over an empty, truncated or contradictory tool result, counts as `failed` (a fabricated report): small models fabricate there. A check that ran and did not pass is `rejected`.
 
 **Haiku additions.** Keep thinking on when a Haiku worker must call tools and return structured output. Haiku rejects non-default sampling parameters, prefill and the old computer tool, so share no request template across tiers. A forced `tool_choice` yields no thinking, and with thinking disabled a per-message effort change returns 400.
 

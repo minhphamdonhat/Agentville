@@ -37,7 +37,7 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
 
    * Start one session with `claude --agent <name>`.
    * Name another agent in your own `agent` key in `~/.claude/settings.json`; it overrides the plugin's.
-   * Inferred, not documented: disable the plugin with `claude plugin disable agentville@minhphamdo`, which drops its defaults along with its skills. No documented value unsets `agent` back to the built-in agent.
+   * Disable the plugin with `claude plugin disable agentville@minhphamdo` (`claude plugin disable --help`: "Disable an enabled plugin"). Inferred, not documented: this drops its defaults along with its skills. No documented value unsets `agent` back to the built-in agent.
 
    To make that agent follow Agentville, add the line from way 1 to your project's `CLAUDE.md`. To have it delegate every task as `pod-lead` does, add a second line:
 

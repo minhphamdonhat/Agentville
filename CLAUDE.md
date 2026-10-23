@@ -68,7 +68,7 @@ The shipped pair lets users choose a scope and nothing else; its scripts refuse 
 * **Skills:** frontmatter holds `name`, `description` and `metadata.version` only (semver, such as `1.0.0`). Keep each `SKILL.md` at 500 lines or fewer and move long material to `references/`.
 * **Rules and steps:** write Do and Don't lists, with an example where a rule needs one.
 * **Paths:** write placeholders, never host paths: `{{ SKILL_ROOT }}`, `{{ PROJECT_ROOT }}` and `{{ USER_ROOT }}`.
-* **Skill references:** use the full namespace, such as `Skill(agentville:relay)`. A bare name is wrong, and the old `anthropic-skills:` namespace fails validation.
+* **Skill references:** use the full namespace, such as `Skill(agentville:relay)`. A bare name is wrong, and the old `anthropic-skills:` namespace fails validation. An external skill with no valid namespace in this repository, such as `/skill-creator`, keeps its bare name.
 * **Human-facing text:** follow `voice`. Text another agent reads follows `relay`.
 
 ## Working in this repository
