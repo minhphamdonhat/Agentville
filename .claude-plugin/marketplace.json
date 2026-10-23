@@ -8,7 +8,7 @@
       "description": "Agentville, release channel",
       "source": {
         "source": "git-subdir",
-        "url": "minhphamdonhat/agentville",
+        "url": "https://github.com/minhphamdonhat/Agentville.git",
         "path": "plugins/agentville",
         "ref": "release"
       }
@@ -18,7 +18,7 @@
       "description": "Agentville, beta channel",
       "source": {
         "source": "git-subdir",
-        "url": "minhphamdonhat/agentville",
+        "url": "https://github.com/minhphamdonhat/Agentville.git",
         "path": "plugins/agentville",
         "ref": "beta"
       }
@@ -28,7 +28,7 @@
       "description": "Agentville, development channel (main)",
       "source": {
         "source": "git-subdir",
-        "url": "minhphamdonhat/agentville",
+        "url": "https://github.com/minhphamdonhat/Agentville.git",
         "path": "plugins/agentville",
         "ref": "main"
       }
