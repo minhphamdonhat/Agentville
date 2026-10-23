@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "agentville": {
+      "command": "uvx",
+      "args": [
+        "--python", "3.15",
+        "--from", "git+https://github.com/minhphamdonhat/agentville@agentville--v0.5.0#subdirectory=agentville",
+        "agentville", "engine", "mcp"
+      ],
+      "env": {
+        "AGENTVILLE_ROOT": "${CLAUDE_PROJECT_DIR}",
+        "CLAUDE_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+      }
+    }
+  }
+}

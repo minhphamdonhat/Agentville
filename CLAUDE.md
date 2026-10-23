@@ -15,6 +15,9 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
 | `.claude-plugin/marketplace.json` | Marketplace entries `agentville`, `agentville-beta` and `agentville-dev`, each pointing at the plugin folder on one branch. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
+| `plugins/agentville/.mcp.json` | Launches the Townhall MCP server (server key `agentville`) from the `agentville` package at the version tag. |
+| `agentville/` | The `agentville` Python package (Townhall and the umbrella for later parts): `src/agentville/{core,cli,mcp,townhall,rag,memory}` and `tests/`. Python 3.15 or later, managed with `uv`. |
+| `.agentville/` | Townhall boards and tickets in a project, created by `agentville init` and tracked in git, unlike `tmp/`. It does not exist in this repository. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `tmp/` | Agents' workspace, git-ignored: `tmp/<topic-id>/<agent>/{artefacts,scratch}`. |
 
@@ -50,6 +53,27 @@ This repository binds the `workspace` slot to the default and names the folder t
 
 * `workspace: Skill(agentville:workspace)`
 * `workspace-folder: {{ PROJECT_ROOT }}/tmp/`
+
+## Townhall package
+
+Townhall is the board-and-ticket layer of the `agentville` package in `agentville/`. It is fully independent of `orchestrate` and of the `draft`, `plan` and `report` slots: it never backs them and they never read it. Its boards and tickets live in `.agentville/`, which is tracked in git. Temporal is required: `agentville engine worker` starts a local dev server on first use.
+
+The plugin starts the MCP server through `plugins/agentville/.mcp.json`:
+
+```bash
+uvx --python 3.15 --from git+https://github.com/minhphamdonhat/agentville@agentville--v<version>#subdirectory=agentville agentville engine mcp
+```
+
+Do:
+
+* On `main` and `beta`, keep `.mcp.json` pointing at the last released tag `agentville--vX.Y.Z`, so development and beta always start. Move the tag to the new version in the release-preparation commit on `main`, together with the `version` bump in `plugins/agentville/.claude-plugin/plugin.json`, then promote to beta and release.
+* Treat the `version` in `agentville/pyproject.toml` as separate; it does not have to match the plugin version.
+* Create the `agentville--vX.Y.Z` tag on `release` right after promotion (see Release flow), so the server is missing its tag only during that release. The first release (0.5.0) introduces the package, so `.mcp.json` already names `agentville--v0.5.0` and the server starts only once that tag exists.
+
+Don't:
+
+* Point `.mcp.json` at a tag that does not exist outside a release window.
+* Make `orchestrate` or a slot depend on Townhall.
 
 ## Two pairs of smiths
 
@@ -92,6 +116,7 @@ Settings `release-flow` reads:
 * `release-flow: release-branch: release`
 * `release-flow: version-file: plugins/agentville/.claude-plugin/plugin.json`
 * `release-flow: tag-format: agentville--vX.Y.Z`
+* `release-flow: checks: uv run --directory agentville pytest && uv run --directory agentville ruff check`
 
 ## Verify before you finish
 
@@ -104,6 +129,8 @@ python3 .claude/skills/agent-smith/scripts/test_scripts.py
 python3 .claude/skills/skill-smith/scripts/test_scripts.py
 cmp plugins/agentville/agents/worker.md plugins/agentville/skills/agent-smith/assets/base/worker.md
 cmp plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
+uv run --directory agentville pytest
+uv run --directory agentville ruff check
 ```
 
 After you edit a skill or an agent, validate the file you changed:
