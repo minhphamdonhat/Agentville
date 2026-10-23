@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+/tmp/
+.claude/settings.local.json
+CLAUDE.local.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.jsonl
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

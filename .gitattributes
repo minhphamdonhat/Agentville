@@ -1,0 +1,5 @@
+# Pin line endings so every checkout, on every OS, holds LF and the byte-for-byte checks hold.
+* text=auto eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf

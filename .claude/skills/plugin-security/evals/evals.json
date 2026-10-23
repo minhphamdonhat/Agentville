@@ -1,0 +1,11 @@
+{
+  "skill_name": "plugin-security",
+  "evals": [
+    {
+      "id": "standalone-1",
+      "prompt": "Scan this repository for plugin security risks before it goes public.",
+      "expected_output": "Starts with status: completed (or partial) and returns gate, repo, refs-scanned, history, tools, counts, findings and open-items; no secret value is printed and the repository is unchanged. A folder that is not a git repository returns status: blocked with reason and missing.",
+      "files": []
+    }
+  ]
+}
