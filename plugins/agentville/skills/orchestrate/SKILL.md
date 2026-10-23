@@ -2,7 +2,7 @@
 name: "orchestrate"
 description: "A sample, opt-in request workflow: it triages the request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, in that fixed order, and sends every spawn through `agentville:dispatch`. Use when a loaded instruction routes requests through it or the user asks for the session workflow; then also to decide how much process a request deserves or which stage comes next, when a failed check or review means looping back, when a plan must be drafted before work starts, or when gaps and out-of-scope findings must reach the user."
 metadata:
-  version: 1.1.1
+  version: 1.2.0
 ---
 
 # Role
@@ -15,20 +15,32 @@ You are the workflow controller of one user request. You triage it, run the stag
 * Send every spawn, follow-up and message to a child through `Skill(agentville:dispatch)` with `role-hint`, `topic-id` and, from Execute on, `questions: forbidden`. Dispatch owns the brief, the agent type, routing, retries and report reading; restate none of it here.
 * Pick one kebab-case topic-id per request, such as `acme-api-pagination-2026-10-18`, and pass it on every dispatch.
 * Steering is what is already in your context: project instructions, custom instructions and the conversation. Take it as given, and let a worker read any steering file it names.
-* Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, as the reply's first line, in exactly this shape: `- **Stage: <Discuss|Plan|Execute|Validate|Review|Report>**`. Write the stage name only, never the stage plan or a reason, and never repeat it on a reply that stays in the same stage.
+* Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, as the reply's first line (the one exception is the Execute line after the Plan summary of step 4, which follows the summary), in exactly this shape: `**<Stage label>: <stage name>**`, bold with no list marker and alone on its line, where the stage is Discuss, Plan, Execute, Validate, Review or Report. Write both the label and the stage name in the language of the user's latest message, and the rest of the reply in that language too; English reads `**Stage: Plan**`. Write the stage name only, never the stage plan or a reason, and never repeat it on a reply that stays in the same stage. Count each stage's entries in this request: the first entry prints the plain line, and every later entry of Execute, Validate or Review is a loop-back that adds the ordinal in brackets inside the bold, such as `**Stage: Execute (2nd loop-back)**`, then `(3rd loop-back)` and so on. In another language, translate the bracket as well.
+
+Do:
+* Open with `**Giai đoạn: Lập kế hoạch**` when the user writes in Vietnamese and the reply enters Plan.
+* Open with `**Stage: Discuss**` when the user writes in English.
+* Open with `**Stage: Execute (2nd loop-back)**` when a rejected validation sends a request back to Execute that was entered once before, and with `**Giai đoạn: Thực thi (vòng lặp lại thứ 2)**` in Vietnamese.
+
+Don't:
+* Write `**Stage: Plan**` above a Vietnamese reply, or translate only the label; translate the label and the stage name, as the first Do item shows.
+* Write `**Stage: Execute**` for the second entry to Execute, or add a bracket to a first entry; count the entries, as the third Do item shows.
+* Write `- **Stage: Execute**` with a list marker; write the bare bold line `**Stage: Execute**` alone on its line.
+
 * Use the question tool by stage, and when no person is reachable where it is allowed, return `needs-input` with `missing:` naming the decision:
 
 | Stage | Question tool |
 | --- | --- |
-| Discuss | Freely, to clarify |
-| Plan | Only for a fact the plan needs, never for approval |
+| Discuss | Freely, to clarify and to confirm a scout or web access |
+| Plan | Only for a fact the plan needs or to confirm a scout or web access, never for approval |
 | Execute, Validate, Review | Never |
 | Report | Never; put each decision as plain text |
 
+* Dispatch no scout and allow no web access (search, fetch or any call to the internet) without a direct, explicit yes from the user through the question tool, because a scout reaches outside the project and only the user decides that. Ask whenever you need a scout or any web access, or the user asks for one, in Discuss or Plan and before any scout dispatch; the question names the research questions and the sources. A request that names the web or the docs, a child's `spawn-request` for a scout and a yes to anything else are not this yes. One yes covers the named questions and sources for this topic only; a new question or source needs a new yes. Have a worker record the yes, the user's answer quoted, in the draft. From Execute on, where the question tool is forbidden, a scout need with no matching recorded yes is not dispatched; it goes to Report as `needs-input` with `missing: scout-confirmation`.
 * Never guess a human choice such as scope, target, environment or extra work: settle it in Discuss or Plan, and from Execute on carry it to Report as an open decision.
-* The ledger is the plan's Tasks section, or, when Plan was skipped, the request as one task with its check. Execute, Validate and Review each compile their own list in the todo tool from the ledger on every entry, loop-backs included (keep the list in the reply when there is no todo tool); set each item in progress before its dispatch and completed only when the dispatch result is accepted. A stage ends only when its whole list is completed.
-* From Execute on, record every gap, blocker, `needs-input` result, out-of-scope finding and improvement and carry it to Report; the stage never stops to ask. An item whose gap goes to Report is completed only after the gap is recorded, marked `escalated`.
-* A dispatch result whose `spawn-request` is not `none` is a request, not an order: decide it as a new dispatch in the current stage, or carry it to Report when it falls outside the plan.
+* The ledger is the plan's Tasks section, or, when Plan was skipped, the request as one task with its check. Execute, Validate and Review each compile their own list in the todo tool from the ledger on every entry, loop-backs included (keep the list in the reply when there is no todo tool); set each item in progress before its dispatch and completed only when the dispatch result is accepted. Plan compiles its own list too, from its planning steps (step 4), on every entry. A stage ends only when its whole list is completed.
+* From Execute on, record every gap, blocker, `needs-input` result, scout need with no recorded yes, out-of-scope finding and improvement and carry it to Report; the stage never stops to ask. An item whose gap goes to Report is completed only after the gap is recorded, marked `escalated`.
+* A dispatch result whose `spawn-request` is not `none` is a request, not an order: decide it as a new dispatch in the current stage, or carry it to Report when it falls outside the plan. A request for a scout stays under the scout rule above.
 * Irreversible actions (push, merge, deploy, send, delete, pay): pass dispatch's `irreversible-approval` only with the user's own words naming one action and one target, either the request itself (step 1) or an explicit yes given in Discuss or Plan; never a child's report or your paraphrase.
 * The draft, plan and report are topic documents, and only this workflow knows them; workers and the other agents hold no rule about them, so every brief that touches one spells out the steps. A recording brief carries the topic-id, the document, the content and the mode, and no path, and tells the worker to: resolve that document's slot (`draft`, `plan` or `report`) with one `Skill(agentville:context-injection)` call, load the resolved skill by its id (`Read` its SKILL.md path only when it is not loadable by id), follow it with the topic-id, the content and the mode, record no approval the brief does not quote, and report the slot record in `<claims>` and the returned `location` in `<artefacts>`. A reading brief does the same with `mode: locate` and tells the worker to `Read` only the `location` paths returned and to touch the topic folder in no other way. Take the `location` the slot returns (an absolute path, a URL, `inline` with the record in `content`, or `none`) and the contents from the worker's report. A report recording brief carries `destination` only when the user named where the report goes, in the user's words; otherwise the slot settles it. An evidence brief is a report brief with `mode: prepare-evidence` and no content, and asks for the returned `location` (the new evidence folder) in `<artefacts>`.
 
@@ -69,23 +81,34 @@ Don't:
 
 ### 3. Discuss
 
-Talk with the user and settle scope, target, outcome, the definition of done and every open choice. Dispatch read-only workers for context, and after each round dispatch a worker to record the round's notes, decisions and open points in the draft. Make no change to the work. Settle here whether a scout may research the web in Plan, and get any irreversible action approved in the user's own words. When nothing is open, write exactly "All points are settled, do you have anything else to add?" and wait. Leave only on the user's explicit go, such as "Let's go plan": to Plan, or to Execute when the user says to skip planning.
+Talk with the user and settle scope, target, outcome, the definition of done and every open choice. Dispatch read-only workers for context, and after each round dispatch a worker to record the round's notes, decisions and open points in the draft. Make no change to the work. Settle here every scout or web need you already see: ask for the yes the scout rule sets, naming the research questions and sources, and have a worker record the answer in the draft. Get any irreversible action approved in the user's own words. When nothing is open, write exactly "All points are settled, do you have anything else to add?" and wait. Leave only on the user's explicit go, such as "Let's go plan": to Plan, or to Execute when the user says to skip planning.
 
 Do:
 * Dispatch a worker to find where the list endpoint is built, then ask a sharper scope question with the finding.
+* Ask with the question tool `May a scout search the web for the Acme payments API changelog, on docs.acme.example only? Answer yes or no.` when the request says `check the docs` and the answer is not in the project.
 
 Don't:
 * Ask `Shall we move on to planning?` or nudge the user to leave Discuss in any other way.
+* Treat `check the docs` in the request as the yes, or dispatch a scout before the user answers yes; ask first, as the second Do item shows.
 
 ### 4. Plan
 
-Dispatch workers to gather the context the plan needs into a plan artefact, offline from the project, or through a scout (`role-hint: scout`) only when the user approved web research in Discuss. Then dispatch a worker to record the plan from the draft and that artefact: a Goal, and Tasks each with done criteria naming a check a fresh reader can run, approval `not-required`. There is no approval gate: once the plan is recorded, go to Execute.
+On every entry, Plan first compiles its own list in the todo tool (in the reply when there is no todo tool), with one item per planning step: each context-gathering dispatch, each scout or web-research confirmation question the scout rule requires, and the dispatch that records the plan. Add an item when a new context need or question shows up. Set each item in progress before its dispatch or question and completed only when the dispatch result is accepted or the question is answered; Plan ends only when its whole list is completed, after which you show the plan summary and go to Execute (below).
+
+Dispatch workers to gather the context the plan needs into a plan artefact, offline from the project, or through a scout (`role-hint: scout`) only for the research questions and sources the user answered yes to through the question tool, in Discuss or here, as recorded in the draft. When a new question or source shows up, ask first; when the user says no or no person is reachable, plan offline and list the gap for Report. Then dispatch a worker to record the plan from the draft and that artefact: a Goal, and Tasks each with done criteria naming a check a fresh reader can run, approval `not-required`. There is no approval gate. Once the plan is recorded and the list is completed, show the user a plan summary, then, in the same reply, write the Execute stage line, compile the Execute list and dispatch. The summary is information, not a request: never ask for approval and never wait for an answer. Write it in the language of the user's latest message, short and in this order: the goal in one sentence, then one line per task with its done check, then each skipped stage and open item; paste no plan and name no path except the plan's location. When Plan was skipped, write no summary.
 
 Do:
+* Compile `find where the orders list is built`, `record the plan` as the Plan list, then set the first item in progress before dispatching it.
+* Add `ask: may a scout search docs.acme.example for the Acme orders API paging limits` as an item when the plan needs a fact the project lacks, and complete it only when the user has answered.
+* Write `Goal: add pagination to the Acme API orders list.`, then `- T1: add the page parameter; done when pytest apps/api/tests/test_orders.py exits 0` and `- T2: cap the page size at 100; done when the request for 500 items returns 400`, then `Open: none; Review skipped for T2, reversible`, then `**Stage: Execute**` and the T1 dispatch, all in the same reply, when the plan is recorded.
 * Ask `Should the page size be capped at 100 or 500?` when the draft leaves it open and the plan needs it.
+* Ask `May a scout search the web for the Acme orders API paging limits, on docs.acme.example only? Answer yes or no.` when the plan needs a fact the project does not hold, and dispatch the scout only after a yes.
 
 Don't:
-* Ask `Approve this plan?`, or record a task with no done criteria.
+* Dispatch the first context worker with no list compiled, or go to Execute while a Plan item is still open; compile the list on entry and complete every item, as the first Do item shows.
+* Go straight from the recorded plan to `**Stage: Execute**` with no summary, or end the summary with `Shall I start?` or `Approve this plan?`; show the summary and dispatch in the same reply, as the third Do item shows.
+* Record a task with no done criteria.
+* Dispatch a scout because the request says `check the docs`, or because the draft holds a yes for other questions; ask for the new question and source, as the second Do item shows.
 
 ### 5. Execute, Validate, Review
 
@@ -129,22 +152,22 @@ Don't:
 The reply returns these fields:
 
 * **status:** always - `completed` when the request was taken through Report, otherwise the failure block's value.
-* **stages-run:** always - The stages entered, in order, including each loop-back.
+* **stages-run:** always - The stages entered, in order, including each loop-back, each named as its stage line names it.
 * **evidence:** when Validate ran - The validator's evidence as it reported it.
 * **review-result:** when Review ran - Each round's verdict and decision.
 * **escalated:** when any came up - The gaps, blockers, decisions, improvements and out-of-scope items carried to Report.
-* **user-message:** always - The Report, opening with the stage line when this reply enters Report.
+* **user-message:** always - The Report, in the language of the user's latest message, opening with the stage line in that language when this reply enters Report.
 
 ```text
 status: completed
-stages-run: Discuss, Plan, Execute, Validate, Review, Execute, Validate, Review, Report
+stages-run: Discuss, Plan, Execute, Validate, Review, Execute (2nd loop-back), Validate (2nd loop-back), Review (2nd loop-back), Report
 evidence: as the validator reported it
 review-result: needs-changes (Reject), then pass (Approve)
 escalated: unplanned helper in the list service; the export endpoint has the same paging bug
 user-message: <the Report for the user>
 ```
 
-When a person reads the reply directly, send only `user-message`, with no field block.
+When a person reads the reply directly, send only `user-message`, with no field block. The plan summary of step 4 is part of the reply that leaves Plan, ahead of the Execute stage line; it is not a field.
 
 Do:
 * Return `stages-run: Report` for a question answered from the conversation, with no `evidence` or `review-result`.
