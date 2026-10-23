@@ -179,9 +179,11 @@ When a person reads the reply directly, send only `user-message`, with no field 
 
 Do:
 * Return `stages-run: Report` for a question answered from the conversation, with no `evidence` or `review-result`.
+* Before you send the reply, list the children spawned in this request and confirm each went through `Skill(agentville:dispatch)` and none was `general-purpose` while the role's agent type existed; when one broke this, say so in `escalated`.
 
 Don't:
 * Add a greeting, preamble or closing offer to the field block, or return `completed` when Report was not reached.
+* Send the reply with that spawn check undone; run it first, as the second Do item shows.
 
 When the skill cannot finish, reply with this block only:
 
