@@ -28,7 +28,8 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
 1. **Chat.** Install the plugin through Customize, then put these lines at the top of your custom instructions:
 
    ```markdown
-   Load `Skill(agentville:root-agent)` and follow it in every reply. Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
+   - Load `Skill(agentville:root-agent)` and follow it in every reply.
+   - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
 
 2. **Claude Code with pod-lead as the main agent.** The plugin ships a `settings.json` with `{"agent": "pod-lead"}`, so an installed plugin makes `pod-lead` the main agent of every session. `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session only, start `claude --agent agentville:pod-lead`. Your own `agent` setting overrides the plugin's.
@@ -42,8 +43,11 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
    To make that agent follow Agentville, add these lines to your project's `CLAUDE.md`:
 
    ```markdown
-   Load `Skill(agentville:root-agent)` and follow it in every reply. Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
+   - Load `Skill(agentville:root-agent)` and follow it in every reply.
+   - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
+
+   To use your own workflow, fork `orchestrate` into a new skill and name it in the second line.
 
 ### What loads where
 
