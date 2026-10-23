@@ -37,7 +37,7 @@ Fix three Agentville regressions (no effort on spawn; no file delivery in Claude
 
 ### T7. Commit, push branch claude/practical-mccarthy-hbgryw and open one PR, on the user's words "Once resolved all points. Commit & push. Create PR."
 - done when: push succeeded and the PR URL exists; runs only after Validate and Review pass.
-- progress: todo - not started; after Validate round 3 and Review round 2.
+- progress: done - commit 55df33a pushed, PR https://github.com/minhphamdonhat/Agentville/pull/14 opened.
 
 ### T9. orchestrate: stage line in the language of the user's latest message, with a loop-back ordinal from a stage's second entry (e.g. `- **Stage: Execute (2nd loop-back)**`); Plan compiles and updates its own task list (user request, after Plan)
 - done when: skill-smith measure.py exits 0 on orchestrate/SKILL.md; evals new beat baseline.
