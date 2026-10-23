@@ -99,7 +99,7 @@ The shipped pair lets users choose a scope and nothing else; its scripts refuse 
 
 ## Working in this repository
 
-Topic documents and agents' artefacts go to the workspace under `{{ PROJECT_ROOT }}/.agentville/topics/`, and the workspace writes nowhere else in `.agentville/`; `Skill(agentville:orchestrate)` alone records topic documents, through the `draft`, `plan` and `report` slots, and no other skill or agent names them; todos stay in the session task list. Nothing else is written to the repository for plans or todos unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
+Topic documents and agents' artefacts go to the workspace under `{{ PROJECT_ROOT }}/.agentville/topics/`, and the workspace writes only under `.agentville/topics/`, while Townhall owns `.agentville/config.toml`, `.agentville/.gitignore` and `.agentville/townhall/`, created by `agentville init`, and neither reads the other's files; `Skill(agentville:orchestrate)` alone records topic documents, through the `draft`, `plan` and `report` slots, and no other skill or agent names them; todos stay in the session task list. Nothing else is written to the repository for plans or todos unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
 
 Commit subjects follow Conventional Commits: `type(scope): summary`, imperative, with `!` before the colon for a breaking change, as in `fix(agent-smith): drop the communication core block` or `feat(dispatch)!: rename the brief fields`. Commit, push and merge only when the user asks.
 
@@ -142,7 +142,6 @@ Settings `release-flow` reads:
 * `release-flow: release-branch: release`
 * `release-flow: version-file: plugins/agentville/.claude-plugin/plugin.json`
 * `release-flow: tag-format: agentville--vX.Y.Z`
-* `release-flow: checks: uv run --directory agentville pytest && uv run --directory agentville ruff check`
 * `release-flow: checks: uv run --directory agentville pytest && uv run --directory agentville ruff check`
 
 ## Verify before you finish

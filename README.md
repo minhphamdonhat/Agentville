@@ -160,7 +160,7 @@ In Chat, bindings in custom instructions do not count, and every slot uses the p
 
 ## Where agents write
 
-Agents write only under `.agentville/topics/` in the project root:
+The workspace (agents' topic documents, evidence and run folders) writes only under `.agentville/topics/` in the project root:
 
 ```text
 .agentville/topics/
@@ -171,7 +171,7 @@ Agents write only under `.agentville/topics/` in the project root:
     <agent>/scratch/         # throwaway files, deleted before the report: ignored
 ```
 
-The workspace writes its `.gitignore` on first use when it is missing, and writes nowhere else in `.agentville/`.
+The workspace writes its `.gitignore` on first use when it is missing. Townhall owns `.agentville/config.toml`, `.agentville/.gitignore` and `.agentville/townhall/`, created by `agentville init`; the workspace and Townhall never read each other's files.
 
 ## External dependencies
 
