@@ -2,7 +2,7 @@
 name: "plugin-security"
 description: "Read-only security scan of a Claude Code plugin repository before it is published: every local and remote branch, every tag, the full history including deleted files, and commit metadata, checked for personal or project-specific information, host-machine paths, credentials, and risky skills, agents, hooks, MCP servers, marketplace entries, settings and CLAUDE.md files. Returns findings with category, severity, ref or SHA plus path:line, on-tip or history-only, and a fix, and never prints a secret value. Use when asked to check a plugin repository before making it public, to scan branches, files and history for leaks or secrets, to audit commit trailers and author emails, or to review plugin components for security risks before a release."
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # Role
@@ -65,6 +65,8 @@ Run the bundled scanner once over every ref. In bash: `python3 "{{ SKILL_ROOT }}
 Do:
 * Run `python3 "{{ SKILL_ROOT }}/scripts/scan.py" --repo "{{ PROJECT_ROOT }}" --term "Jo Rivera" --accept "PII-01:*plugin.json"` for the Acme request in step 1.
 * Treat exit 1 as a result, not an error: the scan ran and found something at or above `fail-on`.
+* Scan a bare clone the same way: the script skips the stash list and the working-tree `.gitignore` probes (PS-45), prints a `note:` line for the skip and still exits 0 or 1.
+* Run `python3 "{{ SKILL_ROOT }}/scripts/test_scan.py"` (`py -3` on Windows) after any change to `scan.py`; it checks PS-22c pins and bare-clone scans in throwaway repositories.
 * Run `--format json --out "<report-file>"` when the findings feed another tool.
 
 Don't:

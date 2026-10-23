@@ -60,7 +60,7 @@ Category `component`, rules named by catalogue id: skills PS-01 to PS-06, agents
 
 ## 5. How the script covers history
 
-1. Lists every ref with `git for-each-ref` (branches, remote-tracking branches, tags) and every stash entry with `git stash list`.
+1. Lists every ref with `git for-each-ref` (branches, remote-tracking branches, tags) and every stash entry with `git stash list`; on a bare repository it skips the stash list and the working-tree probes, and prints a note.
 2. Reads each tip tree with `git ls-tree -r`, so it knows which blobs are on a tip and at which ref and path.
 3. Reads every blob ever added with `git log --all --raw --no-renames`, plus `git rev-list --objects --all` for blobs only a merge or stash introduced; deleted files are included.
 4. Reads blob contents through one `git cat-file --batch` process; binaries and files over `--max-bytes` are counted and skipped.

@@ -11,6 +11,9 @@ Usage:
           [--term WORD]... [--accept RULE:GLOB]... [--fail-on LEVEL] [--external auto|off]
           [--max-bytes N] [--list-rules]
 
+A bare repository is scanned too: the stash list and the working-tree .gitignore probes need a work tree,
+so they are skipped with a note.
+
 Exit codes: 0 no open finding at or above --fail-on, 1 at least one, 2 the scan could not run.
 A reviewed finding is suppressed only through `--accept RULE:GLOB`, which keeps it visible as accepted.
 """
@@ -102,6 +105,45 @@ def check_allowed_tools(m, line):
 
 def check_git_ref(m):
     return None if SHA40.match(m.group(1)) else "high"
+
+
+RUNNERS = ("npx", "uvx", "bunx", "pipx")
+RUNNER_CMD = re.compile(r"\"command\"\s*:\s*\"(?:npx|uvx|bunx|pipx)\"")
+# Exact-version pins: npm "pkg@1.2.3" (scoped too) and pip "pkg==1.2.3"; a git source needs a full commit SHA.
+PIN_NPM = re.compile(r"^(?:@[\w.~-]+/)?[\w.~-]+@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]+)?$")
+PIN_PIP = re.compile(r"^[A-Za-z0-9][\w.-]*(?:\[[\w,.-]+\])?==\d+(?:\.\d+)+(?:[.+-]?[0-9A-Za-z]+)*$")
+PIN_GIT = re.compile(r"^git\+https?://[^#\s]*@[0-9a-f]{40}(?:#\S*)?$")
+
+
+def arg_is_pinned(arg):
+    arg = arg.split("=", 1)[1] if arg.startswith("--from=") else arg
+    return bool(PIN_NPM.match(arg) or PIN_PIP.match(arg) or PIN_GIT.match(arg))
+
+
+def runner_verdicts(text):
+    """For each JSON object that launches a package runner, in document order: True when its args pin
+    nothing (the rule fires), False when they pin an exact version or a full commit SHA. None when the
+    text is not valid JSON, so the scan falls back to the single-line regex."""
+    try:
+        doc = json.loads(text)
+    except ValueError:
+        return None
+    verdicts = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("command") in RUNNERS:
+                args = node.get("args")
+                args = [a for a in args if isinstance(a, str)] if isinstance(args, list) else []
+                verdicts.append(not any(arg_is_pinned(a) for a in args))
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(doc)
+    return verdicts
 
 
 # id, category, severity, pattern, path filter (regex or None), message, fix, check(match, line, path) -> sev|None
@@ -201,7 +243,8 @@ RULES = [
     ("PS-22b", "component", "high", r"@latest\b", SETTINGS, "Unpinned @latest package in a launch command",
      "Pin an exact version or hash.", None),
     ("PS-22c", "component", "medium", r"\"(?:npx|uvx|bunx|pipx)\"", SETTINGS,
-     "Server launched through a package runner", "Pin an exact version or commit in its arguments.", None),
+     "Server launched through a package runner", "Pin an exact version (pkg@1.2.3 or pkg==1.2.3) or a full "
+     "40-character commit SHA in its arguments.", None),
     ("PS-25", "component", "medium", r"\"ref\"\s*:", r"(^|/)marketplace\.json$",
      "Marketplace entry tracks a branch or tag", "Pin a sha for the stable entry, or protect the branch.",
      None),
@@ -294,6 +337,17 @@ class Scan:
         self.findings = {}
         self.stats = {}
         self.tools = []
+        self.notes = []
+        self._bare = None
+
+    def note(self, text):
+        if text not in self.notes:
+            self.notes.append(text)
+
+    def is_bare(self):
+        if self._bare is None:
+            self._bare = git(self.repo, "rev-parse", "--is-bare-repository", check=False).strip() == "true"
+        return self._bare
 
     def add(self, rule, cat, sev, msg, fix, where, loc, fp, detail=""):
         key = (rule, fp)
@@ -322,7 +376,12 @@ class Scan:
                 self.add("PS-53", *META["PS-53"][:2], *META["PS-53"][2:], "refs", short_ref(name), name)
         if not refs:
             raise ScanError("no refs match --refs %s" % ",".join(self.args.refs))
-        stash = [] if self.args.refs != "all" else git(self.repo, "stash", "list", "--format=%H").split()
+        stash = []
+        if self.args.refs == "all":
+            if self.is_bare():
+                self.note("bare repository: skipped the stash list, which needs a work tree")
+            else:
+                stash = git(self.repo, "stash", "list", "--format=%H").split()
         for i, sha in enumerate(stash):
             self.add("PS-48b", *META["PS-48b"][:2], *META["PS-48b"][2:], "refs", "stash@{%d} %s" % (i, sha[:12]),
                      sha)
@@ -448,12 +507,17 @@ class Scan:
             any_path = sorted(p_set)[0]
             if re.search(r"\.(lock|min\.js|map|svg)$|(^|/)package-lock\.json$", any_path):
                 continue
+            verdicts = runner_verdicts(text) if any(re.search(SETTINGS, p) for p in p_set) else None
             for n, line in enumerate(text.splitlines(), 1):
                 for rid, cat, sev, rx, prx, msg, fix, chk in COMPILED:
                     if prx and not any(prx.search(p) for p in p_set):
                         continue
-                    for m in rx.finditer(line):
-                        s = chk(m, line, any_path) if chk else sev
+                    by_json = rid == "PS-22c" and verdicts is not None
+                    for m in (RUNNER_CMD if by_json else rx).finditer(line):
+                        if by_json:
+                            s = sev if (verdicts.pop(0) if verdicts else True) else None
+                        else:
+                            s = chk(m, line, any_path) if chk else sev
                         if s is None:
                             continue
                         where, locs = self.locate(sha, first, tip, n)
@@ -534,7 +598,8 @@ class Scan:
             self.add("PS-52b", cat, sev, msg, fix, "commits", "%d trailers" % coauth, "coauthor")
 
     def ignore_check(self):
-        if git(self.repo, "rev-parse", "--is-bare-repository", check=False).strip() == "true":
+        if self.is_bare():
+            self.note("bare repository: skipped the working-tree .gitignore probes (PS-45)")
             return
         for probe in (".claude/settings.local.json", "CLAUDE.local.md", ".env", ".agentville/topics/x/evidence/x",
                       ".agentville/topics/x/worker/artefacts/x", ".agentville/topics/x/worker/scratch/x", "x.pem", "x.key"):
@@ -625,6 +690,7 @@ def render_text(scan, findings, gate):
              "commits: %d, text blobs scanned: %d, skipped binary: %d, skipped large: %d" % (
                  s.get("commits", 0), s.get("blobs", 0), s.get("skipped-binary", 0), s.get("skipped-large", 0)),
              "external: %s" % "; ".join(scan.tools),
+             *["note: " + n for n in scan.notes],
              "findings: " + ", ".join("%s %d" % (k, counts[k]) for k in reversed(SEVERITIES)) +
              " (accepted %d)" % sum(f["accepted"] for f in findings),
              "gate: %s (fail-on %s)" % (gate, scan.args.fail_on), ""]
@@ -681,7 +747,7 @@ def main(argv=None):
     open_hits = [f for f in findings if not f["accepted"] and RANK[f["severity"]] >= RANK[args.fail_on]]
     gate = "fail" if open_hits else "pass"
     if args.format == "json":
-        text = json.dumps({"repo": str(scan.repo), "stats": scan.stats, "external": scan.tools, "gate": gate,
+        text = json.dumps({"repo": str(scan.repo), "stats": scan.stats, "external": scan.tools, "notes": scan.notes, "gate": gate,
                            "findings": findings}, indent=2) + "\n"
     else:
         text = render_text(scan, findings, gate)
