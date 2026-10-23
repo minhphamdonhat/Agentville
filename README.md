@@ -1,10 +1,10 @@
 # Agentville
 
-Agentville is a Claude Code plugin that packages fourteen skills for running work through agents: a workflow that triages each request into six stages, a procedure that delegates one task at a time, writing standards for what agents and people read, and five swappable slots, a workspace, a tool finder for verification checks and the draft, plan and report documents of a topic, that each agent resolves for itself. It installs as one versioned unit, and every skill is namespaced `agentville:<skill>`.
+Agentville is a plugin of skills and agents for running work through agents: a workflow that triages each request and runs the stages it needs, a procedure that delegates one task at a time, writing standards for what agents and people read, standing rules for a delegating agent, and five swappable slots that each agent resolves for itself. It installs as one versioned unit; skills are namespaced `agentville:<skill>` and agents `agentville:<agent>`.
 
 ## Install
 
-Add the marketplace once, then install one channel:
+In Claude Code, add the marketplace once, then install one channel:
 
 ```text
 /plugin marketplace add minhphamdonhat/agentville
@@ -17,7 +17,48 @@ Add the marketplace once, then install one channel:
 | Beta | `agentville-beta@minhphamdo` | `beta` |
 | Development | `agentville-dev@minhphamdo` | `main` |
 
-Install one channel at a time; all three load the same skills under `agentville:`. To switch, uninstall the one you have and install the other, for example `/plugin uninstall agentville@minhphamdo` then `/plugin install agentville-beta@minhphamdo`.
+Install one channel at a time: all three load the same names under `agentville:`, so two would clash. To switch, uninstall the one you have and install the other, for example `/plugin uninstall agentville@minhphamdo` then `/plugin install agentville-beta@minhphamdo`.
+
+In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/agentville` and install one channel.
+
+## Three ways to run it
+
+In Claude Code, installing Agentville makes `pod-lead` the main agent by default, so `orchestrate` runs on every request. Chat and Cowork ignore plugin settings, so there you opt in. Pick one way:
+
+1. **Chat.** Install the plugin through Customize, then put this line at the top of your custom instructions:
+
+   ```markdown
+   Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
+   ```
+
+2. **Claude Code with pod-lead as the main agent.** The plugin ships a `settings.json` with `{"agent": "pod-lead"}`, so an installed plugin makes `pod-lead` the main agent of every session. `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session only, start `claude --agent agentville:pod-lead`. Your own `agent` setting overrides the plugin's.
+
+3. **Claude Code with another agent.** The documented ways to use an agent other than `pod-lead`:
+
+   * Start one session with `claude --agent <name>`.
+   * Name another agent in your own `agent` key in `~/.claude/settings.json`; it overrides the plugin's.
+   * Disable the plugin with `claude plugin disable agentville@minhphamdo` (`claude plugin disable --help`: "Disable an enabled plugin"). Inferred, not documented: this drops its defaults along with its skills. No documented value unsets `agent` back to the built-in agent.
+
+   To make that agent follow Agentville, add the line from way 1 to your project's `CLAUDE.md`. To have it delegate every task as `pod-lead` does, add a second line:
+
+   ```markdown
+   Follow `Skill(agentville:root-agent)`.
+   ```
+
+### What loads where
+
+| Part | Claude Code | Cowork | Chat |
+| --- | --- | --- | --- |
+| Skills | Yes | Yes | Yes |
+| Agents | Yes | Yes | Ignored per the docs |
+| `settings.json` (`agent`) | Yes | Ignored | Ignored |
+| Hooks | Yes | Yes | Ignored |
+
+Chat now shares Cowork's Agent tool and file writing in some accounts, so `dispatch` can still spawn there; when an `agentville:` agent type is missing, it falls back to `general-purpose`.
+
+### Updates
+
+In Claude Code, auto-update is off by default for third-party marketplaces. Run `claude plugin marketplace update minhphamdo` to refresh the listings, which leaves installed plugins as they are. Then run `claude plugin update agentville@minhphamdo` (or the channel you installed, such as `agentville-beta@minhphamdo`), or choose Update now in the Installed tab. A running session keeps the old version until you restart it or run `/reload-plugins`. In Chat, turn on Sync automatically for a github.com marketplace, or use Check for updates.
 
 ## Skills
 
@@ -25,44 +66,39 @@ Each skill is invoked as `/agentville:<name>`.
 
 | Skill | Purpose |
 | --- | --- |
-| `/agentville:orchestrate` | Sample workflow, opt-in from your own `CLAUDE.md`. Triages each request and runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, sending all stage work through `dispatch`. |
-| `/agentville:dispatch` | Takes one delegated task through sharpening, role choice, model and effort routing, brief, spawn, report reading and failure handling. |
-| `/agentville:relay` | Sets the writing standard for text another agent reads, such as briefs, hand-backs and tool results. |
-| `/agentville:voice` | Sets the writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
-| `/agentville:intelligence-routing-model` | Triages a task to the cheapest Claude tier and effort level that still succeeds. |
-| `/agentville:context-injection` | Resolves a slot, such as `workspace` or `toolbelt`, to the skill that fills it in this project or for this user, and returns, for every slot in one call, the skill's id, the absolute path of its SKILL.md, the source of the binding and any fallback. It does not load or run those skills; the agent reads each one next. |
-| `/agentville:workspace` | Default for the `workspace` slot: returns a run's artefacts and scratch folders under `<workspace>/<topic-id>/<agent-name>/`, using the folder the steering names or `tmp/` in the project without asking. |
-| `/agentville:draft` | Default for the `draft` slot: records a topic's Discuss notes, decisions and open points in `<workspace>/<topic-id>/draft.md`, one round per section, appending without touching earlier rounds. |
-| `/agentville:plan` | Default for the `plan` slot: records a topic's plan in `<workspace>/<topic-id>/plan.md`, with each task and its done criteria (and its progress when given) as the topic's task ledger, and the approval status as a record only (default `not-required`). |
-| `/agentville:report` | Default for the `report` slot: records a topic's final report in `<workspace>/<topic-id>/report.md`, with what was delivered, the evidence pointers, the review result, an out-of-scope section for findings and gaps left for you to decide, and the open items. |
-| `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs, from the tools the steering or the request names first, and reports OS-provided tools for any check type (db, api, ui, office, docs, build, pipeline, infra) when nothing names one. Discovery only; it probes no network. |
-| `/agentville:release-flow` | Runs a one-way release flow in any repository: starts nested working branches (`<type>/<short-kebab-name>`) from the development branch, promotes development to beta and beta to release after the configured checks pass, and tags a release only when asked. Every merge, push, tag and branch deletion waits for your yes. |
-| `/agentville:skill-smith` | Creates, improves or converts a Claude skill from a template, then validates it and installs it to project or user scope. |
-| `/agentville:agent-smith` | Compiles a Claude Code agent as a fork of the base worker, then validates it, evals it against the worker and installs it to project or user scope. |
+| `/agentville:orchestrate` | Workflow that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
+| `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
+| `/agentville:root-agent` | Standing rules for an agent that delegates every task: voice on every reply, the answer first, a fixed tool list with no file reads, full skill names and a live task list. |
+| `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
+| `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
+| `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |
+| `/agentville:context-injection` | Resolves slots to the skills that fill them and owns the binding syntax and resolution order. |
+| `/agentville:workspace` | Default for the `workspace` slot: a run's topic, artefacts and scratch folders. |
+| `/agentville:draft` | Default for the `draft` slot: records a topic's notes, decisions and open points in rounds. |
+| `/agentville:plan` | Default for the `plan` slot: records a topic's goal, tasks with done criteria, and approval as a record only. |
+| `/agentville:report` | Default for the `report` slot: records a topic's outcome, evidence, review result, out-of-scope findings and open items. |
+| `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs. Discovery only; no network probes. |
+| `/agentville:release-flow` | Runs a one-way release flow in any repository; every merge, push, tag and branch deletion waits for your yes. |
+| `/agentville:skill-smith` | Creates, improves or converts a Claude skill, validates it and installs it to project or user scope. |
+| `/agentville:agent-smith` | Compiles an agent as a fork of the base worker, validates it, evals it against the worker and installs it to project or user scope. |
 
 ## Agents
 
-Each agent reads its role from a `<role>ROLE</role>` tag on the first line of the brief.
+Each agent reads its role from a `<role>ROLE</role>` tag on the first line of the brief. `dispatch` picks the agent for each role.
 
 | Agent | Purpose |
 | --- | --- |
-| `agentville:worker` | Serves the worker, validator and reviewer roles: implements, explores and drafts, runs independent checks, or reviews a diff. Its scout workflow is local-only; `dispatch` sends web research to `agentville:scout`. |
-| `agentville:scout` | Serves the scout role: researches external questions with web search and fetch only, and holds no file or shell tool. |
-| `agentville:pod-lead` | The standalone orchestrator of a pod's agents, not a worker fork: runs every request through `orchestrate`, which owns triage, the stages, delegation and the Report; its own file is the opt-in to `orchestrate`, and it delegates all work to its crew of worker, validator, reviewer, scout and other agents, keeping thinking and brainstorming as its only job; it and holds no edit, search or shell tool. Use it to lead a pod of worker, validator, reviewer, scout and other agents. |
-| `agentville:validator` | Serves the validator role: runs targeted independent checks against a running system or built artefact with the tools the project's steering names, finds its tools through the `toolbelt` slot for any check that needs a command-line tool, maps each requirement to its checks, writes hashed raw evidence to the artefacts folder of the `workspace` slot, and never edits product code. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
-| `agentville:reviewer` | Serves the reviewer role: reads a diff and the validator's sealed evidence (files listed in its `SHA256SUMS`) against the plan, checks that the validator recorded the slots the steering binds, and returns a pass, pass-with-notes, needs-changes or blocked verdict with file and line findings, read-only. `dispatch` does not spawn it yet and still sends this role to `agentville:worker`. |
-
-## Rules
-
-The standing rules for the root agent ship in `rules/root-agent.md`.
+| `agentville:worker` | The base agent: implements, explores and drafts. Its scout workflow is local-only. |
+| `agentville:scout` | Researches external questions with web search and fetch only; holds no file or shell tool. |
+| `agentville:validator` | Proves a behaviour with independent checks and writes hashed evidence; never edits product code. |
+| `agentville:reviewer` | Reviews a diff against a plan, read-only, and reads the validator's evidence when present. |
+| `agentville:pod-lead` | Standalone lead, not a worker fork: runs every request through `orchestrate`, delegates all work and holds no edit, search or shell tool. |
 
 ## Context injection
 
-The jobs agents share, a place to write their files, a set of check tools and the way a topic's draft, plan and report are written, are slots rather than fixed rules. Agentville refers to each slot by its contract, and each agent uses its slots for itself on every run in two steps. Step 1: it calls `context-injection` once with every slot the task needs, which returns where each resolved skill lives: its id, the absolute path of its SKILL.md, the source and any fallback. Step 2: it reads each resolved skill (by id, or by path when it cannot be loaded by id) and follows it to resolve the artefacts directory, the tools or the topic documents. An agent never calls a slot's default skill directly, and both smiths fail an agent or skill that does. The plugin ships a default skill for each slot, and a project or user swaps in their own by binding the slot in their steering.
+The jobs agents share, a place to write files, a set of check tools and the way a topic's draft, plan and report are recorded, are slots rather than fixed rules. The plugin ships a default skill for each slot, and you swap in your own by binding the slot in your steering. `context-injection` sets the binding syntax and the order in which bindings are found.
 
-A binding is one line, `<slot>: Skill(<namespace>:<name>)`, in a rules file or `CLAUDE.md`, optionally under a `## Context injection` heading. The first match wins, in this order: project rules, project `CLAUDE.md` (with the files it imports on an `@<path>` line, one level deep), a project skill named after the slot, user rules, user `CLAUDE.md` (with its one-level `@<path>` imports), a user skill named after the slot, then the plugin default `agentville:<slot>`. A bound skill that cannot be found falls back to the default, and the agent reports the fallback. Each agent records what it resolved as `<slot>: <skill> (<source>)`, so a reviewer can check it against the steering.
-
-For example, to have every Agentville agent use your own QA tools, put this line in your project's `CLAUDE.md`:
+For example, to have every Agentville agent use your own QA tools, put this in your project's `CLAUDE.md`:
 
 ```markdown
 ## Context injection
@@ -70,23 +106,7 @@ For example, to have every Agentville agent use your own QA tools, put this line
 toolbelt: Skill(acme:qa-tools)
 ```
 
-With no binding, the default `workspace` uses the folder your steering names, else `tmp/` in the project, and says so in its report. The default `toolbelt` only discovers the tools that are present, naming OS-provided tools for any check type when nothing names one; bind your own skill when your checks need a specific database, HTTP or browser automation tool.
-
-The `draft`, `plan` and `report` slots say how a topic's documents are written, and `workspace` says where: the defaults write `draft.md`, `plan.md` and `report.md` in the topic folder, `<workspace>/<topic-id>/`, shared by every agent on the topic. `orchestrate` never writes them itself; it dispatches a worker in Discuss, Plan and Report, and that worker resolves `workspace` and the stage's slot in one `context-injection` call. Questions come to you only in Discuss and Plan, and the Report still reaches you in chat. Bind your own skill, such as `draft: Skill(acme:notes)`, to keep the notes somewhere else or not at all.
-
-## How they fit
-
-`orchestrate` triages each request and runs the stages it needs. It sends every delegated piece of work through `dispatch`, one spawn at a time. It is a sample workflow and is opt-in: nothing loads it by default, and the root agent reads no files itself. To use it, add this line to your own `CLAUDE.md`:
-
-```markdown
-Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
-```
-
-`dispatch` writes each brief to the `relay` standard and picks the model and effort with `intelligence-routing-model`.
-
-`dispatch` spawns `agentville:worker` for the worker, validator and reviewer roles and `agentville:scout` for the scout role, naming the role in a `<role>` tag on the brief's first line. It falls back to the built-in `general-purpose` agent only when those agent types are unavailable, and records the fallback.
-
-`skill-smith` stands alone. `agent-smith` compiles new agents as forks of `worker`.
+In Chat, bindings in custom instructions do not count, and every slot uses the plugin default.
 
 ## External dependencies
 

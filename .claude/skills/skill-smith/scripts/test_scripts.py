@@ -47,6 +47,8 @@ def warns(out):
 GOOD = '''---
 name: "demo"
 description: "Ranks showtimes for one film. Use when asked for showtimes, or for which slot to book."
+metadata:
+  version: 1.0.0
 ---
 
 # Role
@@ -101,7 +103,7 @@ Don't:
 * A greeting; start with the first field.
 
 ```text
-status: partial | blocked | needs-input | failed
+status: partial | blocked | needs-input | rejected | failed
 reason: [ONE_SENTENCE]
 missing: [NAMES_OR_NONE]
 ```
@@ -110,6 +112,8 @@ missing: [NAMES_OR_NONE]
 STEERING = '''---
 name: naming
 description: 'Sets naming rules. Use when naming files, or naming branches.'
+metadata:
+  version: 1.0.0
 ---
 
 # naming
@@ -138,6 +142,8 @@ Wrong: "Fix_Stuff"
 KNOWLEDGE = '''---
 name: prices
 description: 'Ticket prices by chain. Use when pricing a ticket, or comparing chains.'
+metadata:
+  version: 1.0.0
 ---
 
 # prices
@@ -190,6 +196,13 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(lines[-1], "failures: none")
         self.assertIn("sections: Role, Constraints, Input, Process, Output", lines)
         self.assertIn("failure_template: yes", lines)
+
+    def test_01b_version_missing_or_malformed_fails(self):
+        for bad in (GOOD.replace("metadata:\n  version: 1.0.0\n", ""), GOOD.replace("version: 1.0.0", "version: v1")):
+            rc, out, _ = self.m(bad)
+            self.assertEqual(rc, 1, out)
+            self.assertIn(15, fails(out))
+            self.assertIn("version_error:", out)
 
     def test_02_inputs_parsed(self):
         out = self.m(GOOD)[1]
@@ -432,14 +445,19 @@ class MeasureTests(unittest.TestCase):
         self.assertIn(16, fails(self.m(no_block)[1]))
         partial = GOOD.replace("missing: [NAMES_OR_NONE]\n", "")
         self.assertIn(16, fails(self.m(partial)[1]))
-        wrong = GOOD.replace("status: partial | blocked | needs-input | failed", "status: completed | blocked")
+        wrong = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", "status: completed | blocked")
         self.assertIn(16, fails(self.m(wrong)[1]))
         for line in ("status: needs-input | blocked | failed", "status: blocked | needs-input | failed | extra",
                      "status: partial | partial | blocked | needs-input | failed", "status: blocked | failed"):
-            odd = GOOD.replace("status: partial | blocked | needs-input | failed", line)
+            odd = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", line)
             self.assertIn(16, fails(self.m(odd)[1]), line)
-        plain = GOOD.replace("status: partial | blocked | needs-input | failed", "status: blocked | needs-input | failed")
+        plain = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", "status: blocked | needs-input | failed")
         self.assertNotIn(16, fails(self.m(plain)[1]))
+        rej = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", "status: blocked | needs-input | rejected | failed")
+        self.assertNotIn(16, fails(self.m(rej)[1]))
+        for line in ("status: partial | blocked | needs-input | failed | rejected", "status: blocked | needs-input | rejected"):
+            odd = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", line)
+            self.assertIn(16, fails(self.m(odd)[1]), line)
 
     def test_31_asking_needs_needs_input_d2(self):
         bad = GOOD.replace("; otherwise return `status: needs-input` with `missing: film`", "").replace(

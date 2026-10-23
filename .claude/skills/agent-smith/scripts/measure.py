@@ -17,7 +17,7 @@ DEFAULT_BASE = os.path.join(os.path.dirname(HERE), "assets", "base", "worker.md"
 SECTIONS = ["Role", "Constraints", "Workflows", "Exception handler"]
 CORE_HOME = {"identity": "Role", "constraints": "Constraints"}
 ROLES = {"worker", "validator", "reviewer", "scout"}
-ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools"}
+ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools", "metadata"}
 FORBIDDEN_KEYS = {"model", "effort"}
 SPAWN_TOOLS = {"Agent", "Task"}
 MAX_LINES = 500
@@ -25,6 +25,8 @@ FOREIGN_NS = "anthropic-skills" + ":"
 HEAD_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
 STANDALONE_AGENTS = {"pod-lead"}
+# Core variant: an agent with no file or shell tool may omit these constraints-core items. Nothing else differs.
+CORE_VARIANTS = {"scout": (1, 2)}
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
 CORE_END_RE = re.compile(r"^<!-- core:end ([a-z-]+) -->\s*$")
 WF_TITLE_RE = re.compile(r"^[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$")
@@ -175,6 +177,18 @@ def core_blocks(lines):
     return out, errors
 
 
+def drop_core_items(text, items):
+    """Return a core block's text without the numbered items in `items` (each runs to the next item)."""
+    keep, skip = [], False
+    for line in text.split("\n"):
+        m = re.match(r"^(\d+)\. \S", line)
+        if m:
+            skip = int(m.group(1)) in items
+        if not skip:
+            keep.append(line)
+    return "\n".join(keep)
+
+
 def parse_agent(path):
     """Parse an agent file into a dict; raises ReadError on unreadable input."""
     lines = read_lines(path)
@@ -253,6 +267,12 @@ def measure(path, base_path, allow_agent):
     # A1 required frontmatter
     if not NAME_RE.match(name) or len(name) > 64 or not desc or len(desc) > 1024 or not tools:
         fails.add("A1")
+    vm = re.search(r"(?:^|\s)version:\s*(\S+)", fm.get("metadata", ""))
+    version = vm.group(1) if vm else ""
+    if not re.match(r"^\d+\.\d+\.\d+$", version):
+        fails.add("A1")
+        out.append("version_error: metadata.version is " + ("missing" if not version else f"malformed ({version!r})")
+                   + "; frontmatter needs 'metadata:' then an indented 'version: X.Y.Z' (semver, such as 1.0.0)")
     # A2 forbidden and unknown keys
     if FORBIDDEN_KEYS & set(keys):
         fails.add("A2")
@@ -287,6 +307,8 @@ def measure(path, base_path, allow_agent):
         out += ["core_error: " + e for e in a["core_errors"]]
     for cname in sorted(set(base["core"]) | set(CORE_HOME)):
         mine, theirs = a["core"].get(cname), base["core"].get(cname)
+        if theirs is not None and cname == "constraints" and name in CORE_VARIANTS:
+            theirs = (theirs[0], theirs[1], drop_core_items(theirs[2], CORE_VARIANTS[name]))
         if theirs is None:
             state = "missing in base"
         elif mine is None:
@@ -303,7 +325,7 @@ def measure(path, base_path, allow_agent):
     if "constraints" in a["core"] and "Constraints" in a["sections"]:
         lo, _ = a["sections"]["Constraints"]
         first = next((i for i, l, f in a["rows"] if i > lo and l.strip()), None)
-        if first != a["core"]["constraints"][0]:
+        if first != a["core"]["constraints"][0] and name not in CORE_VARIANTS:
             fails.add("A5")
             out.append("core_error: constraints core is not first in Constraints")
 
@@ -368,8 +390,8 @@ def measure(path, base_path, allow_agent):
     if len(lines) > MAX_LINES:
         fails.add("A11")
 
-    # The pod-lead is the standalone orchestrator of a pod's agents, not a worker fork: it skips the
-    # core-block checks (A5, A16), the spawning check (A3) and the workflow-role check (A6) only.
+    # The pod-lead is a standalone agent, not a worker fork: it skips the core-block checks (A5, A16),
+    # the spawning check (A3) and the workflow-role check (A6) only.
     if name in STANDALONE_AGENTS:
         out.append("standalone: yes (skips A3, A5, A6, A16)")
         fails -= {"A3", "A5", "A6", "A16"}

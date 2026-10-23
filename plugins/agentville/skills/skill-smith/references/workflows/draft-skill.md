@@ -37,9 +37,7 @@ Don't:
 
 ### 3. Fill the fill-ins
 
-Replace every `[[...]]` fill-in from `spec` with `Edit`, brackets included. Follow each HTML comment, then delete it. Text outside fill-ins and comments stays word for word. Write the frontmatter with `name` and `description` only. For a process skill, keep the template's `status: needs-input` wording wherever a step names `AskUserQuestion`, and keep the failure block at the end of `# Output`.
-
-Then scale the examples of a process skill to each step and Constraint: none on a simple one-line item; one Do and one Don't where the rule needs explanation; up to three of each on the step breakdown, the execution step (what may run, which tools are allowed and forbidden) and the Output. Use real values, and end each Don't with its fix.
+Replace every `[[...]]` fill-in from `spec` with `Edit`, brackets included. Follow each HTML comment, then delete it. Text outside fill-ins and comments stays word for word. Write the frontmatter with `name`, `description` and `metadata` holding `version` only. Stamp `version: 1.0.0` on a new skill; when improving or converting a skill that has a version, raise it by semver (major for a breaking contract change, minor for new behaviour, patch for a wording change). For a process skill, keep the template's `status: needs-input` wording wherever a step names `AskUserQuestion`, and keep the failure block at the end of `# Output`.
 
 Do:
 * Fill the first Input line as `* **diff:** required - default: none - The unified diff to review, such as the output of git diff main.`
@@ -48,7 +46,7 @@ Do:
 
 Don't:
 * Add a Do and a Don't under a one-line step such as the diff read; leave it bare, as the third Do item shows.
-* Add a `version`, `type`, `template` or `allowed-tools` key; keep `name` and `description` only.
+* Add a `version`, `type`, `template` or `allowed-tools` key; keep `name`, `description` and `metadata.version` only.
 * Leave a Don't item with no Do item that shows the right form.
 
 ### 4. Map the old format

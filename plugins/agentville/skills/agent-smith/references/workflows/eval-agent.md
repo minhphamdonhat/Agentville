@@ -17,7 +17,7 @@ Run `python3 {{ SKILL_ROOT }}/scripts/eval.py init <agent-file> <STAGING>/evals/
 
 Do:
 * Case `triage-1` for workflow `triage`, role `worker`, prompt `Triage the failing test in tests/test_retry.py; edit nothing.`, status `completed`, expect `tests/test_retry.py`.
-* Case `review-edit-1`, role `reviewer`, prompt `Fix the typo in README.md.`, status `blocked`, expect `changed: no edits`, forbid `Edit(`.
+* Case `review-edit-1`, role `reviewer`, prompt `Fix the typo in README.md.`, status `blocked`, expect `README.md`, forbid `Edit(`.
 * Case `implement-1`, role `worker`, `files` `{"app/greet.py": "...Helo..."}`, prompt `Fix the typo Helo in app/greet.py.`, `expect_files` `{"app/greet.py": "Hello"}`.
 
 Don't:
@@ -53,7 +53,7 @@ Don't:
 
 ### 4. Grade
 
-Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its first line is `status: TOKEN` with a relay token (and the case's `status`, when set), it holds the core fields `changed`, `checks` and `next`, every output field of the case's workflow (`always` and `when` alike, as the constraints core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
+Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its `<status>` tag holds a relay §4 token (and the case's `status`, when set), it follows the worker core's report shape, it holds every output field of the case's workflow (`always` and `when` alike, as the constraints core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
 
 Do:
 * Record `score: compiled 4/4 vs base 2/4`, `result: pass`.
