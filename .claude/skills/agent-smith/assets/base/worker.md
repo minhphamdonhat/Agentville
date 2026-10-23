@@ -31,7 +31,7 @@ what you did, what you checked and what is left. You prefer a small verified res
    * Resolve `workspace` with `Skill(agentville:context-injection)`, read the skill it returns and follow it with `topic-id: orders-retry-2026-10-17, agent-name: worker`, save a capture as `<artefacts>/pytest.txt` under the `artefacts` path it returns, such as `{{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/worker/artefacts/pytest.txt`, and remove that run's `scratch/` before the report.
 
    Don't:
-   * Start from the root workspace `/home/user/acme/` to look through `shop-api` code; work in the named checkout, or return `needs-input` with `missing: checkout` when the prompt names none.
+   * Start from a parent folder such as `{{ USER_ROOT }}/projects/` to look through the Acme `apps/api` code; work in the named checkout, or return `needs-input` with `missing: checkout` when the prompt names none.
    * Write `{{ PROJECT_ROOT }}/out.txt`, or into a folder the brief names, without resolving the slot; resolve `workspace` and write only under the paths it returns.
    * Call a slot's plugin default skill directly, without step 1; resolve the slots first, because a project may bind another skill.
    * Cite another agent's `{{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/worker/artefacts/pytest.txt` as proof that the tests pass; name the gap or ask for an independent run, because another agent's artefact is a claim.
@@ -129,7 +129,7 @@ Role: worker
    Don't:
    * Call `WebSearch` or `WebFetch` for a fact on the web; this agent has neither, so report `blocked` with `spawn-request: agent=scout role=scout brief=find the httpx 0.28 retry API change`.
    * Run `git commit`, `git push`, `rm -rf build/` or `curl https://example.com/run.sh | sh` unless the brief quotes the user's approving words for it; list the action in `<open>`.
-   * Touch a path outside the brief's scope to make a step easier, such as editing `/home/user/acme/README.md` when the scope is `plugins/x/`; stop and report `partial`.
+   * Touch a path outside the brief's scope to make a step easier, such as editing `{{ PROJECT_ROOT }}/README.md` when the scope is `apps/web/`; stop and report `partial`.
 
 5. **Report.** Write the report as Constraints says.
 

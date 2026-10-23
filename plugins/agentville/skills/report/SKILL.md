@@ -15,9 +15,9 @@ You are a report recorder. You take a topic, the report content and a mode, writ
 * Name no skill, agent or thread that runs this skill, and state every hand-back as an output field, because the skill must run when invoked on its own.
 * Record each result, verdict and claim label exactly as `content` gives it, and never upgrade, soften or add one, because the report records what the checks and the review found.
 * Copy every evidence pointer (an absolute path or `path:line`) as given and never drop one, because a reader must find the proof from the report alone.
-* With `Write` and `Edit`, write only the report file, `<topic-folder>/report.md` or `destination` (making its folder with `mkdir -p`); with neither tool, or with no topic folder and no `destination`, write nothing and return the report inline with `location: inline`. In `locate` mode write nothing and create no folder. In `prepare-evidence` mode create only one `<topic-folder>/evidence/run-<N>` folder and write no file.
-* Reach the report only by its exact path, checked with one `Glob` on that absolute path; never list or wildcard the topic folder or its parent. The only listing allowed is `ls -1` of `<topic-folder>/evidence` in `prepare-evidence` mode.
-* Write with `Write` (new file) or `Edit` (append, update); use `Bash` for `mkdir`, `date` and that one `ls` only; never use redirection, `tee`, a heredoc or `sed -i`, because a tool call keeps every other line as it was.
+* With `Write` and `Edit`, write only the report file, `<topic-folder>/report.md` or `destination` (making its folder first); with neither tool, or with no topic folder and no `destination`, write nothing and return the report inline with `location: inline`. In `locate` mode write nothing and create no folder. In `prepare-evidence` mode create only one `<topic-folder>/evidence/run-<N>` folder and write no file.
+* Reach the report only by its exact path, checked with one `Glob` on that absolute path; never list or wildcard the topic folder or its parent. The only listing allowed is one listing of `<topic-folder>/evidence` in `prepare-evidence` mode.
+* Write with `Write` (new file) or `Edit` (append, update); use the shell (bash on Linux and macOS, PowerShell on Windows, unless the steering names another shell) only to make a folder, read the UTC time and make that one listing; never write a file through the shell (redirection, `tee`, a heredoc, `sed -i` or `Set-Content`), because a tool call keeps every other line as it was.
 * Accept a `topic-id` only in kebab-case, and a `destination` only as an absolute path to a `.md` file with no `..` part, because anything else could put the file outside where it belongs.
 * Write placeholders (`{{ PROJECT_ROOT }}`) in examples and return absolute paths.
 
@@ -45,7 +45,7 @@ Don't:
 
 ### 2. Prepare the evidence folder
 
-Only in `prepare-evidence` mode; every other mode goes to step 3. With no topic folder, return `status: blocked`, `reason: no topic folder for evidence`; with no `Bash`, return `status: blocked`, `reason: no shell to create the evidence folder`. Run `mkdir -p "<topic-folder>/evidence"`, then `ls -1 "<topic-folder>/evidence"`, and take N as the highest number among entries named `run-<number>` plus one, or 1 when there is none. Create the folder with `mkdir "<topic-folder>/evidence/run-<N>"` (no `-p`, so an existing folder fails); when it fails because the folder exists, take N plus one and try once more. Return `location` as that absolute folder and `run: <N>`, and stop.
+Only in `prepare-evidence` mode; every other mode goes to step 3. With no topic folder, return `status: blocked`, `reason: no topic folder for evidence`; with no shell tool, return `status: blocked`, `reason: no shell to create the evidence folder`. Make `<topic-folder>/evidence` when it is missing (bash: `mkdir -p "<topic-folder>/evidence"`; PowerShell: `New-Item -ItemType Directory -Force "<topic-folder>/evidence"`), list its entry names (bash: `ls -1`; PowerShell: `Get-ChildItem -Name`), and take N as the highest number among entries named `run-<number>` plus one, or 1 when there is none. Create the run folder so that an existing folder fails (bash: `mkdir "<topic-folder>/evidence/run-<N>"`, without `-p`; PowerShell: `New-Item -ItemType Directory "<topic-folder>/evidence/run-<N>"`, without `-Force`); when it fails because the folder exists, take N plus one and try once more. Return `location` as that absolute folder and `run: <N>`, and stop.
 
 Do:
 * Create `run-3` when the folder holds `run-1`, `run-2` and `notes.txt`.
@@ -63,11 +63,11 @@ Do:
 
 Don't:
 * Overwrite an existing report because `mode: create` was passed.
-* Glob `<topic-folder>/*.md` or `ls` the topic folder.
+* Glob `<topic-folder>/*.md` or list the topic folder.
 
 ### 4. Write the report
 
-A new report is written with `Write`, after `mkdir -p` of the file's folder through `Bash`: `# Report: <topic-id>`, a line `recorded: <UTC time>` from `date -u +%FT%TZ`, then `## Outcome` (one or two lines), `## Delivered` (one bullet per task or change: what it delivered and its check result), `## Evidence` (one bullet per pointer, copied as given), `## Review` (the result and findings, or `not run` with the reason as the content gives it), `## Extra work` (work beyond the plan, or `none`), `## Out of scope` (each finding, gap, blocker or improvement left for the user to decide, or `none`) and `## Open items` (or `none`). `append` adds `## Update (<UTC time>)` at the end with `Edit`, holding the new content as bullets. `update` replaces only the body under each named heading with `Edit`. With no file tool, return the same text in the reply under `content:` and write nothing.
+A new report is written with `Write`, after making the file's folder through the shell: `# Report: <topic-id>`, a line `recorded: <UTC time>` from the shell (bash: `date -u +%FT%TZ`; PowerShell: `[DateTime]::UtcNow.ToString('s') + 'Z'`), then `## Outcome` (one or two lines), `## Delivered` (one bullet per task or change: what it delivered and its check result), `## Evidence` (one bullet per pointer, copied as given), `## Review` (the result and findings, or `not run` with the reason as the content gives it), `## Extra work` (work beyond the plan, or `none`), `## Out of scope` (each finding, gap, blocker or improvement left for the user to decide, or `none`) and `## Open items` (or `none`). `append` adds `## Update (<UTC time>)` at the end with `Edit`, holding the new content as bullets. `update` replaces only the body under each named heading with `Edit`. With no file tool, return the same text in the reply under `content:` and write nothing.
 
 Do:
 * Write `- T1 add limit and offset to the cases endpoint: delivered; check tests/test_cases.py passed (validator reported this as verified)` under `## Delivered`.
