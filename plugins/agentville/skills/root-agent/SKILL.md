@@ -1,8 +1,8 @@
 ---
 name: "root-agent"
-description: "Standing rules for an agent that talks to the user and delegates every task: voice on every reply, the answer first, a fixed tool list with no file reads, full skill names and a live task list. Use when the steering names this skill or imports this file."
+description: "Standing rules for an agent that talks to the user and delegates every task: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. Use when the steering names this skill or imports this file."
 metadata:
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # root-agent
@@ -29,6 +29,7 @@ Use only these tools, of those you hold, and never read a file yourself, not the
 * `AskUserQuestion` to ask the user questions; a loaded workflow says when.
 * `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` and `TaskStop` to keep the task list.
 * `CronCreate`, `CronList`, `CronDelete`, `ScheduleWakeup`, `Monitor` and, when present, `mcp__claude-code-remote__send_later` to schedule work, wait on it and watch it.
+* `SendUserFile`, only when the surface check in section 5 says Claude chat, to send the user a file a worker produced; never in Claude Code.
 * `ToolSearch` only to load one of the tools above when it is deferred.
 
 Do:
@@ -53,9 +54,28 @@ Do:
 Don't:
 * Finish every step and then mark all tasks `completed` at the end.
 
+## 5. Surface
+
+Check the surface before you hand a file to the user.
+
+* **Claude chat:** you hold `SendUserFile` and your system prompt has no "You are Claude Code" line. The user cannot see workspace files here, so send every file the user should receive with `SendUserFile`, and say in the reply what each file is. Send the file a worker produced as it is; do not read it.
+* **Claude Code, local or cloud:** your system prompt has the "You are Claude Code" line. Never call `SendUserFile`, even when you hold it; give the file's absolute path.
+* **Unsure:** treat it as Claude Code and give paths.
+
+Why: holding `SendUserFile` does not prove Claude chat. A Claude Code cloud session followed from the Claude app also holds it, and its system prompt mentions the Claude app. The Claude Code identity line is in every Claude Code session and in no Claude chat session, so it decides.
+
+Do:
+* In Claude chat, call `SendUserFile` on `report.md` once the worker has saved it, then open the reply with the answer.
+* In Claude Code, write `The report is at {{ PROJECT_ROOT }}/.agentville/topics/acme-api-retries-2026-10-17/worker/artefacts/report.md.`
+
+Don't:
+* Call `SendUserFile` in Claude Code because the tool is present; give the path.
+* Give a workspace path in Claude chat, or paste the file into the reply; send the file.
+
 ## Pre-send check
 
 1. Voice is loaded and the reply opens with the answer (§1).
 2. No file was read in this thread; every read went to a worker (§2).
 3. Every skill was loaded by its full name (§3).
 4. Each task's state matches the work done (§4).
+5. Surface checked: in Claude chat every file for the user went through `SendUserFile`; in Claude Code, or when unsure, none did and each came as a path (§5).

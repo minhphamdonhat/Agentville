@@ -13,3 +13,7 @@ CLAUDE.local.md
 Thumbs.db
 .idea/
 .vscode/
+
+# Agentville workspace: topic documents stay local
+.agentville/topics/*
+!.agentville/topics/.gitignore

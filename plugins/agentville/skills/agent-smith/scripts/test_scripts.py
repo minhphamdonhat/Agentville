@@ -5,6 +5,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import re
 import tempfile
 import unittest
 
@@ -152,6 +153,48 @@ class TestMeasure(Base):
         for key in ("model: sonnet", "effort: high"):
             _, out = self.measure(BASE_TEXT.replace("tools:", key + "\ntools:", 1))
             self.assertIn("A2", fails(out))
+
+    def variant_text(self, name, model="sonnet", effort="high"):
+        text = re.sub(r"^name:.*$", f"name: {name}", BASE_TEXT, count=1, flags=re.M)
+        extra = "".join(f"{k}: {v}\n" for k, v in (("model", model), ("effort", effort)) if v)
+        return text.replace("tools:", extra + "tools:", 1)
+
+    def measure_as(self, text, stem):
+        rc, out, err = run(MEASURE, self.write(text, stem + ".md"))
+        self.assertIn(rc, (0, 1), err)
+        return rc, out
+
+    def test_04b_variant_with_matching_keys_passes_a2(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high"), "worker-sonnet-high")
+        self.assertNotIn("A2", fails(out))
+
+    def test_04c_variant_with_mismatching_effort_fails(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high", effort="low"), "worker-sonnet-high")
+        self.assertIn("A2", fails(out))
+
+    def test_04d_variant_missing_a_key_fails(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high", effort=None), "worker-sonnet-high")
+        self.assertIn("A2", fails(out))
+
+    def test_04e_base_agent_with_model_fails(self):
+        _, out = self.measure_as(self.variant_text("worker", effort=None), "worker")
+        self.assertIn("A2", fails(out))
+
+    def test_04f_non_variant_name_with_model_fails(self):
+        _, out = self.measure_as(self.variant_text("worker-gpt-high", model="gpt"), "worker-gpt-high")
+        self.assertIn("A2", fails(out))
+
+    def test_04g_variant_name_must_equal_file_stem(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high"), "agent")
+        self.assertIn("A2", fails(out))
+
+    def test_04h_scout_variant_gets_the_scout_core_exemption(self):
+        path = os.path.join(os.path.dirname(PLUGIN_WORKER), "scout-haiku-low.md")
+        if not os.path.exists(path):
+            self.skipTest("no scout-haiku-low.md next to the plugin worker")
+        rc, out, err = run(MEASURE, path)
+        self.assertEqual(rc, 0, out + err)
+        self.assertNotIn("A5", fails(out))
 
     def test_05_unknown_key_warns(self):
         rc, out = self.measure(BASE_TEXT.replace("tools:", "color: blue\ntools:", 1))
