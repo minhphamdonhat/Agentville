@@ -19,6 +19,8 @@ CORE_HOME = {"identity": "Role", "constraints": "Constraints"}
 ROLES = {"worker", "validator", "reviewer", "scout"}
 ALLOWED_KEYS = {"name", "description", "tools", "disallowedTools", "metadata"}
 FORBIDDEN_KEYS = {"model", "effort"}
+# Generated variants (scripts/gen_agent_variants.py) are the only agents that set model and effort.
+VARIANT_RE = re.compile(r"^(worker|validator|reviewer|scout)-(haiku|sonnet|opus)-(low|medium|high)$")
 SPAWN_TOOLS = {"Agent", "Task"}
 MAX_LINES = 500
 FOREIGN_NS = "anthropic-skills" + ":"
@@ -274,7 +276,15 @@ def measure(path, base_path, allow_agent):
         out.append("version_error: metadata.version is " + ("missing" if not version else f"malformed ({version!r})")
                    + "; frontmatter needs 'metadata:' then an indented 'version: X.Y.Z' (semver, such as 1.0.0)")
     # A2 forbidden and unknown keys
-    if FORBIDDEN_KEYS & set(keys):
+    stem = os.path.splitext(os.path.basename(path))[0]
+    variant = VARIANT_RE.match(stem) if name == stem else None
+    if variant:
+        for key, want in (("model", variant.group(2)), ("effort", variant.group(3))):
+            got = fm.get(key, "").strip().strip("\"'")
+            if got != want:
+                fails.add("A2")
+                out.append(f"variant_key_mismatch: {key} is {got or 'missing'!r}, name {name} needs {want!r}")
+    elif FORBIDDEN_KEYS & set(keys):
         fails.add("A2")
         out.append("forbidden_keys: " + ", ".join(sorted(FORBIDDEN_KEYS & set(keys))))
     unknown = [k for k in keys if k not in ALLOWED_KEYS | FORBIDDEN_KEYS]
@@ -305,10 +315,11 @@ def measure(path, base_path, allow_agent):
     if a["core_errors"]:
         fails.add("A5")
         out += ["core_error: " + e for e in a["core_errors"]]
+    role = variant.group(1) if variant else name
     for cname in sorted(set(base["core"]) | set(CORE_HOME)):
         mine, theirs = a["core"].get(cname), base["core"].get(cname)
-        if theirs is not None and cname == "constraints" and name in CORE_VARIANTS:
-            theirs = (theirs[0], theirs[1], drop_core_items(theirs[2], CORE_VARIANTS[name]))
+        if theirs is not None and cname == "constraints" and role in CORE_VARIANTS:
+            theirs = (theirs[0], theirs[1], drop_core_items(theirs[2], CORE_VARIANTS[role]))
         if theirs is None:
             state = "missing in base"
         elif mine is None:
@@ -325,7 +336,7 @@ def measure(path, base_path, allow_agent):
     if "constraints" in a["core"] and "Constraints" in a["sections"]:
         lo, _ = a["sections"]["Constraints"]
         first = next((i for i, l, f in a["rows"] if i > lo and l.strip()), None)
-        if first != a["core"]["constraints"][0] and name not in CORE_VARIANTS:
+        if first != a["core"]["constraints"][0] and role not in CORE_VARIANTS:
             fails.add("A5")
             out.append("core_error: constraints core is not first in Constraints")
 

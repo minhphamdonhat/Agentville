@@ -9,6 +9,8 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | Path | Holds |
 | --- | --- |
 | `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md`, `validator.md`, `reviewer.md` and `pod-lead.md` (standalone, not a worker fork). |
+| `plugins/agentville/agents/<base>-<model>-<effort>.md` | Generated variants of `worker`, `validator`, `reviewer` and `scout` (for example `worker-sonnet-high.md`), 36 in all. The only agents that set `model` and `effort`. Never hand-edited; `scripts/gen_agent_variants.py` writes them from their base, and its `--check` flag reports drift. |
+| `scripts/gen_agent_variants.py` | Maintainer script that generates and checks the variants. Run `python3 scripts/gen_agent_variants.py` after any base agent edit. |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
 | `plugins/agentville/skills/root-agent/SKILL.md` | Standing rules for an agent that delegates every task; this repository imports it below. |
 | `plugins/agentville/settings.json` | Plugin default setting: `{"agent": "pod-lead"}`, read by Claude Code only. |
@@ -17,7 +19,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
-| `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the tracked topic documents, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits. |
+| `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
 
 ## Agent format
 
@@ -39,7 +41,10 @@ Do:
 Don't:
 
 * Give a child the `Agent` tool unless the user asked for it by name. Children hand back a `spawn-request:` instead.
-* Write `model` or `effort` in an agent's frontmatter. `dispatch` chooses both on every spawn.
+* Write `model` or `effort` in an agent's frontmatter, except in a generated variant. `dispatch` chooses both on every spawn for every other agent.
+* Hand-edit a variant or build one with `agent-smith`; `scripts/gen_agent_variants.py` writes them.
+
+A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `worker`, `validator`, `reviewer` or `scout`, `<model>` one of `haiku`, `sonnet` or `opus`, and `<effort>` one of `low`, `medium` or `high`. Its `name` equals the file stem, and it is the only agent that sets `model` and `effort`, both, equal to the parts of its name; `measure.py` fails rule A2 otherwise. After any edit to a base agent, regenerate the variants with `python3 scripts/gen_agent_variants.py`.
 
 `plugins/agentville/agents/worker.md`, `plugins/agentville/skills/agent-smith/assets/base/worker.md` and `.claude/skills/agent-smith/assets/base/worker.md` must stay byte-identical. Edit one, copy it to the others, then run the `git diff --no-index --quiet` check under Verify before you finish on each pair.
 
@@ -128,6 +133,7 @@ python3 .claude/skills/agent-smith/scripts/test_scripts.py
 python3 .claude/skills/skill-smith/scripts/test_scripts.py
 git diff --no-index --quiet plugins/agentville/agents/worker.md plugins/agentville/skills/agent-smith/assets/base/worker.md
 git diff --no-index --quiet plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
+python3 scripts/gen_agent_variants.py --check
 python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json'
 ```
 

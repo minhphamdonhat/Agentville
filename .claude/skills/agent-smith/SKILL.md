@@ -2,7 +2,7 @@
 name: "agent-smith"
 description: "Agentville maintainer copy of agent-smith, for building agents in this repository: compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (identity, base rules including relay and the report shape) verbatim, validates it, evals it against the base worker and installs it into the Agentville plugin or the project. Use when maintaining Agentville and asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
 metadata:
-  version: 1.2.0
+  version: 1.3.0
 ---
 
 # Role
@@ -15,7 +15,7 @@ You are an agent compiler. You take a request for a subagent, settle its contrac
 * Never compile before the contract is confirmed, except when a confirmed `spec` is supplied as input, because a draft built on a guess is rebuilt anyway.
 * Always start from `{{ SKILL_ROOT }}/assets/templates/agent.md` forked with `stage.py fork`, and never write an agent file from memory, because the fork pastes the core blocks that measure.py compares byte for byte.
 * Never edit text between `<!-- core:begin NAME -->` and `<!-- core:end NAME -->`, because the core (identity, base rules including relay, report shape) is what makes every fork answer the same way.
-* Write no `model` or `effort` key in the frontmatter, because the model and effort are chosen on every spawn, not fixed in the agent.
+* Write no `model` or `effort` key in the frontmatter, because the model and effort are chosen on every spawn, not fixed in the agent. The one exemption is a generated variant (`<base>-<model>-<effort>.md`, written by `scripts/gen_agent_variants.py`); never build, fork or hand-edit a variant with this skill, and regenerate it after a base agent edit.
 * Never put `Agent` in a compiled agent's `tools` unless the user asked for it by name, because a compiled agent holds no spawn tool by default; a step that needs another agent hands back a `spawn-request:` naming the agent type, role and brief.
 * Write every skill reference with the in-house namespace, such as `Skill(agentville:relay)`, because measure.py fails any reference to the old `anthropic-skills:` namespace and warns on a `Skill(...)` with no namespace (rule A9).
 * Write and Edit only under the staging folder, and under the install folder in step 9 after validation passed, because a half-built agent in an agents folder is loaded as if it were finished.
@@ -115,7 +115,7 @@ Don't:
 
 Read `<STAGING>/<agent-name>.md` with `Read` and fill every `[[...]]` fill-in from the confirmed contract with `Edit`, brackets included. Follow the drafting comment, then delete it; keep the core markers. Fill in this order:
 
-* Frontmatter: `name`, `description`, `tools` (the approved list), `disallowedTools` (the base worker's denied tools minus any the user granted) and `metadata` holding `version: 1.0.0` on a compile; on improve, raise the seeded version by semver (major for a breaking contract change, minor for new behaviour, patch for a wording change). No `model` or `effort` key.
+* Frontmatter: `name`, `description`, `tools` (the approved list), `disallowedTools` (the base worker's denied tools minus any the user granted) and `metadata` holding `version: 1.0.0` on a compile; on improve, raise the seeded version by semver (major for a breaking contract change, minor for new behaviour, patch for a wording change). No `model` or `effort` key (only a generated variant sets them, and this skill does not build variants).
 * `# Role`: the personality, after the core identity block.
 * `# Constraints`: the extending rules, numbered after the core rules, each with a one-clause reason.
 * `# Workflows`: one `## <Name>` per workflow, each with a `Role:` line and `### Input`, `### Process` and `### Output`. Input lines read `* **name:** required - default: none - description` or `* **name:** optional - default: X - description`. Steps are numbered `1.` to `n.`; each names its tool or loads a `Skill(namespace:name)`, or stops and hands back a spawn request. Output lines read `* **field:** always - what` or `* **field:** when <condition> - what`. End each process with a Report step.
@@ -227,7 +227,7 @@ Do:
 
 Don't:
 * Report `status: completed` before step 9 installed the file; use the failure block instead.
-* Add a `model` line; the model is chosen per spawn, so report the fields listed above only.
+* Add a `model` line; the model is chosen per spawn, so report the fields listed above only. Only a generated variant fixes `model` and `effort`, and `scripts/gen_agent_variants.py` writes it, not this skill.
 
 When agent-smith stops before install, reply with this block only, plus `eval-dispatch:` and `resume:` for a dispatch stop. Use `blocked` when an outside condition stops the run, `needs-input` when a required input or decision is missing, and `failed` when validation or evals did not pass.
 
