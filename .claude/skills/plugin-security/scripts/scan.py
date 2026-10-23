@@ -27,6 +27,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from json.decoder import scanstring
 from pathlib import Path
 
 SEVERITIES = ["info", "low", "medium", "high", "critical"]
@@ -108,41 +109,142 @@ def check_git_ref(m):
 
 
 RUNNERS = ("npx", "uvx", "bunx", "pipx")
-RUNNER_CMD = re.compile(r"\"command\"\s*:\s*\"(?:npx|uvx|bunx|pipx)\"")
 # Exact-version pins: npm "pkg@1.2.3" (scoped too) and pip "pkg==1.2.3"; a git source needs a full commit SHA.
 PIN_NPM = re.compile(r"^(?:@[\w.~-]+/)?[\w.~-]+@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]+)?$")
 PIN_PIP = re.compile(r"^[A-Za-z0-9][\w.-]*(?:\[[\w,.-]+\])?==\d+(?:\.\d+)+(?:[.+-]?[0-9A-Za-z]+)*$")
 PIN_GIT = re.compile(r"^git\+https?://[^#\s]*@[0-9a-f]{40}(?:#\S*)?$")
+# Options that name the launched package, and other options that take a value (the value is not the package).
+SPEC_OPTS = {"uvx": {"--from"}, "npx": {"-p", "--package"}, "bunx": {"-p", "--package"}, "pipx": {"--spec"}}
+VALUE_OPTS = {
+    "uvx": {"--with", "--with-requirements", "--with-editable", "--python", "-p", "--index", "--default-index",
+            "--index-url", "-i", "--extra-index-url", "--find-links", "-f", "--constraints", "-c", "--overrides",
+            "--build-constraints", "--env-file", "--directory", "--project", "--config-file", "--cache-dir",
+            "--upgrade-package", "-P", "--reinstall-package", "--refresh-package", "--no-binary-package",
+            "--no-build-package", "--resolution", "--prerelease", "--index-strategy", "--keyring-provider",
+            "--exclude-newer", "--link-mode", "--python-preference", "--color"},
+    "npx": {"--call", "-c", "--registry", "--cache", "--userconfig", "--prefix", "--loglevel"},
+    "bunx": {"--registry", "--cwd", "--config", "-c"},
+    "pipx": {"--python", "--pip-args", "--index-url", "--backend"},
+}
 
 
 def arg_is_pinned(arg):
-    arg = arg.split("=", 1)[1] if arg.startswith("--from=") else arg
     return bool(PIN_NPM.match(arg) or PIN_PIP.match(arg) or PIN_GIT.match(arg))
 
 
+def launched_specs(command, args):
+    """The package specs a runner installs and launches, read from its args: the package option's values
+    (uvx --from, npx -p/--package, pipx --spec) when given, else the first positional argument. Values of
+    other options (uvx --with) and everything after the launched package are not the launched package."""
+    spec_opts, value_opts = SPEC_OPTS[command], VALUE_OPTS[command]
+    specs, positional, run_seen, i = [], None, command != "pipx", 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--":
+            positional = args[i + 1] if i + 1 < len(args) else None
+            break
+        if arg.startswith("-") and arg != "-":
+            name, eq, value = arg.partition("=")
+            if name in spec_opts:
+                if eq:
+                    specs.append(value)
+                elif i + 1 < len(args):
+                    specs.append(args[i + 1])
+                    i += 1
+            elif name in value_opts and not eq:
+                i += 1
+        elif not run_seen and arg == "run":
+            run_seen = True
+        else:
+            positional = arg
+            break
+        i += 1
+    return specs or ([positional] if positional is not None else [])
+
+
+class JsonObject(dict):
+    """A parsed JSON object that remembers the text offset where each key's value starts."""
+
+    offsets = None
+
+
+def parse_with_offsets(text):
+    """Parse JSON text that json.loads already accepted, keeping the offset of every object value."""
+    blank = re.compile(r"[ \t\r\n]*")
+    scalar = re.compile(r"[^\s,\]}\[{\":]+")
+
+    def skip(i):
+        return blank.match(text, i).end()
+
+    def value(i):
+        i = skip(i)
+        c = text[i]
+        if c == "{":
+            obj, obj.offsets, i = JsonObject(), {}, skip(i + 1)
+            if text[i] == "}":
+                return obj, i + 1
+            while True:
+                key, i = scanstring(text, skip(i) + 1)
+                i = skip(skip(i) + 1)
+                obj.offsets[key] = i
+                obj[key], i = value(i)
+                i = skip(i)
+                if text[i] != ",":
+                    return obj, i + 1
+                i += 1
+        if c == "[":
+            items, i = [], skip(i + 1)
+            if text[i] == "]":
+                return items, i + 1
+            while True:
+                item, i = value(i)
+                items.append(item)
+                i = skip(i)
+                if text[i] != ",":
+                    return items, i + 1
+                i += 1
+        if c == '"':
+            return scanstring(text, i + 1)
+        m = scalar.match(text, i)
+        return json.loads(m.group(0)), m.end()
+
+    return value(0)[0]
+
+
+def line_of(text, offset):
+    """1-based line number of a text offset, counted the way str.splitlines counts lines."""
+    parts = text[:offset].splitlines(True)
+    return len(parts) + (1 if not parts or parts[-1].splitlines()[0] != parts[-1] else 0)
+
+
 def runner_verdicts(text):
-    """For each JSON object that launches a package runner, in document order: True when its args pin
-    nothing (the rule fires), False when they pin an exact version or a full commit SHA. None when the
-    text is not valid JSON, so the scan falls back to the single-line regex."""
+    """One verdict per JSON object that launches a package runner, found from the parsed entry: its server
+    key, the line of its "command" value, the runner, and whether the rule fires (True unless the launched
+    package's own spec pins an exact version or a full commit SHA). None when the text is not valid JSON,
+    so the scan falls back to the single-line regex."""
     try:
-        doc = json.loads(text)
-    except ValueError:
+        json.loads(text)
+        doc = parse_with_offsets(text)
+    except (ValueError, IndexError, RecursionError):
         return None
     verdicts = []
 
-    def walk(node):
-        if isinstance(node, dict):
-            if node.get("command") in RUNNERS:
+    def walk(node, name):
+        if isinstance(node, JsonObject):
+            command = node.get("command")
+            if command in RUNNERS:
                 args = node.get("args")
-                args = [a for a in args if isinstance(a, str)] if isinstance(args, list) else []
-                verdicts.append(not any(arg_is_pinned(a) for a in args))
-            for v in node.values():
-                walk(v)
+                specs = launched_specs(command, [a for a in args if isinstance(a, str)]
+                                       if isinstance(args, list) else [])
+                verdicts.append({"server": name, "line": line_of(text, node.offsets["command"]),
+                                 "command": command, "fires": not (specs and all(map(arg_is_pinned, specs)))})
+            for key, v in node.items():
+                walk(v, key)
         elif isinstance(node, list):
             for v in node:
-                walk(v)
+                walk(v, name)
 
-    walk(doc)
+    walk(doc, None)
     return verdicts
 
 
@@ -512,18 +614,18 @@ class Scan:
                 for rid, cat, sev, rx, prx, msg, fix, chk in COMPILED:
                     if prx and not any(prx.search(p) for p in p_set):
                         continue
-                    by_json = rid == "PS-22c" and verdicts is not None
-                    for m in (RUNNER_CMD if by_json else rx).finditer(line):
-                        if by_json:
-                            s = sev if (verdicts.pop(0) if verdicts else True) else None
-                        else:
-                            s = chk(m, line, any_path) if chk else sev
+                    if rid == "PS-22c" and verdicts is not None:
+                        found = [('"command": "%s"' % v["command"], sev) for v in verdicts
+                                 if v["line"] == n and v["fires"]]
+                    else:
+                        found = [(m.group(0), chk(m, line, any_path) if chk else sev) for m in rx.finditer(line)]
+                    for matched, s in found:
                         if s is None:
                             continue
                         where, locs = self.locate(sha, first, tip, n)
-                        detail = ("redacted, %d chars, sha256 %s" % (len(m.group(0)), fingerprint(m.group(0)))
+                        detail = ("redacted, %d chars, sha256 %s" % (len(matched), fingerprint(matched))
                                   if cat == "secret" else line.strip()[:120])
-                        fp = fingerprint(m.group(0))
+                        fp = fingerprint(matched)
                         for loc in locs:
                             self.add(rid, cat, s, msg, fix, where, loc, fp, detail)
                 for t in terms:

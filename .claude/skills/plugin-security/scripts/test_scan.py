@@ -164,22 +164,81 @@ class PackageRunnerPins(unittest.TestCase):
         self.assertEqual(lines, [loose_command])
 
 
+    def test_escaped_command_key_cannot_shift_verdicts(self):
+        text = (
+            '{\n'
+            '  "mcpServers": {\n'
+            '    "pinned": {"comm\\u0061nd": "npx", "args": ["-y", "acme-server@1.2.3"]},\n'
+            '    "docs": {"note": "see \\"command\\": \\"npx\\" in the readme"},\n'
+            '    "loose": {\n'
+            '      "command": "npx",\n'
+            '      "args": ["-y", "acme-other"]\n'
+            '    }\n'
+            '  }\n'
+            '}\n')
+        json.loads(text)
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo(Path(tmp) / "escaped", {"plugins/acme/.mcp.json": text})
+            code, report, err = run_scan(repo)
+        self.assertIn(code, (0, 1), err)
+        lines = [int(loc.split(":")[1].split(" ")[0]) for loc in hit_locations(report, "PS-22c")]
+        self.assertEqual(lines, [6])
+
+
 class RunnerVerdicts(unittest.TestCase):
-    def verdicts(self, command, args):
-        return scan_mod.runner_verdicts(mcp(command, args))
+    def fires(self, command, args):
+        return [v["fires"] for v in scan_mod.runner_verdicts(mcp(command, args))]
 
     def test_pins(self):
-        self.assertEqual(self.verdicts("uvx", ["acme==1.2.3"]), [False])
-        self.assertEqual(self.verdicts("uvx", ["--from=git+https://github.com/acme/s.git@%s" % SHA, "s"]), [False])
-        self.assertEqual(self.verdicts("npx", ["@acme/server@1.2.3-rc.1"]), [False])
+        self.assertEqual(self.fires("uvx", ["acme==1.2.3"]), [False])
+        self.assertEqual(self.fires("uvx", ["--from=git+https://github.com/acme/s.git@%s" % SHA, "s"]), [False])
+        self.assertEqual(self.fires("npx", ["@acme/server@1.2.3-rc.1"]), [False])
 
     def test_unpinned(self):
         for args in (["acme"], ["acme@latest"], ["acme@^1.2.3"], ["acme@~1.2.3"], ["acme@1.2"], ["acme==1.*"],
                      ["git+https://github.com/acme/s.git@" + SHA[:7]], ["git+https://github.com/acme/s.git@v1.0.0"]):
-            self.assertEqual(self.verdicts("npx", args), [True], args)
+            self.assertEqual(self.fires("npx", args), [True], args)
+
+    def test_only_the_launched_package_may_clear_uvx(self):
+        for args in (["--with", "dep==1.0.0", "some-tool"], ["--with-requirements", "dep==1.0.0", "some-tool"],
+                     ["--from", "some-tool", "--with", "dep==1.0.0", "some-tool"],
+                     ["--python", "3.12.1", "some-tool"], ["some-tool", "other==1.2.3"],
+                     ["--with=dep==1.0.0", "some-tool"]):
+            self.assertEqual(self.fires("uvx", args), [True], args)
+        for args in (["--with", "dep", "some-tool==1.0.0"], ["--from", "some-tool==1.0.0", "--with", "dep", "x"],
+                     ["--python", "3.12", "some-tool@1.0.0"], ["--from=some-tool@1.0.0", "other"]):
+            self.assertEqual(self.fires("uvx", args), [False], args)
+
+    def test_only_the_launched_package_may_clear_npx_and_bunx(self):
+        for command in ("npx", "bunx"):
+            for args in (["some-tool", "other@1.2.3"], ["-y", "some-tool", "other@1.2.3"],
+                         ["-p", "some-tool", "some-cmd@1.2.3"], ["-p", "a@1.2.3", "-p", "b", "cmd"],
+                         ["--yes", "--", "some-tool", "other@1.2.3"], ["-y"]):
+                self.assertEqual(self.fires(command, args), [True], (command, args))
+            for args in (["-y", "some-tool@1.2.3", "other"], ["--yes", "some-tool@1.2.3"],
+                         ["-p", "some-tool@1.2.3", "some-cmd"], ["--package=some-tool@1.2.3", "cmd"],
+                         ["--package", "a@1.2.3", "-p", "b@2.0.0", "cmd"], ["--", "some-tool@1.2.3"]):
+                self.assertEqual(self.fires(command, args), [False], (command, args))
+
+    def test_only_the_launched_package_may_clear_pipx(self):
+        for args in (["run", "some-tool", "other==1.2.3"], ["run", "--spec", "some-tool", "cmd==1.2.3"],
+                     ["run", "--pip-args", "dep==1.0.0", "some-tool"], ["run"]):
+            self.assertEqual(self.fires("pipx", args), [True], args)
+        for args in (["run", "some-tool==1.2.3", "other"], ["run", "--spec", "some-tool==1.2.3", "cmd"],
+                     ["run", "--python", "python3.12", "some-tool==1.2.3"], ["run", "--spec=some-tool==1.2.3", "cmd"]):
+            self.assertEqual(self.fires("pipx", args), [False], args)
+
+    def test_verdict_carries_server_key_and_line(self):
+        text = mcp("npx", ["-y", "acme-server"], name="web")
+        self.assertEqual(scan_mod.runner_verdicts(text),
+                         [{"server": "web", "line": 4, "command": "npx", "fires": True}])
 
     def test_not_json(self):
         self.assertIsNone(scan_mod.runner_verdicts("{ not json"))
+
+    def test_parser_matches_json_loads(self):
+        text = '{"a": [1, 2.5e3, true, null, "x\\"y", {"b": {}}], "c": [], "d": "\u00e9"}\n'
+        self.assertEqual(scan_mod.parse_with_offsets(text), json.loads(text))
 
 
 class BareRepository(unittest.TestCase):
