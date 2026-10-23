@@ -1,6 +1,9 @@
 __pycache__/
 *.pyc
 /tmp/
+agentville/.venv/
+agentville/.pytest_cache/
+agentville/.ruff_cache/
 .claude/settings.local.json
 CLAUDE.local.md
 .env
