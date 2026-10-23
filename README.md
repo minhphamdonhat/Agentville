@@ -83,7 +83,7 @@ Each skill is invoked as `/agentville:<name>`.
 | --- | --- |
 | `/agentville:orchestrate` | Workflow that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
-| `/agentville:root-agent` | Standing rules for an agent that delegates every task: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. |
+| `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. |
 | `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
 | `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |

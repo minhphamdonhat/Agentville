@@ -152,6 +152,6 @@ Substitute `SKILL_NAME` and `AGENT_NAME`. Exit code 0 means no failures; warning
 
 ## Root-agent policy
 
-This repository's root agent follows the `root-agent` skill, imported below. It applies to the root agent only; spawned agents follow their own agent file. This file does not route requests through `orchestrate`, but an installed plugin makes `pod-lead` the main agent in Claude Code, and `pod-lead` runs every request through `orchestrate`.
+This repository's root agent follows the `root-agent` skill, imported below. It applies to the root agent only; spawned agents follow their own agent file. The imported `root-agent` routes every request, questions included, through `orchestrate`, which owns the stages and every spawn. An installed plugin also makes `pod-lead` the main agent in Claude Code, and `pod-lead` runs every request through `orchestrate`.
 
 @plugins/agentville/skills/root-agent/SKILL.md

@@ -3,7 +3,7 @@ name: worker-haiku-medium
 description: >-
   Carries out the requirement in its brief: checks whether it is already broken into steps, breaks it
   into steps with a validate-able output each when it is not, then carries them out.
-  Variant fixed to Haiku at medium effort; generated from `worker.md`, do not edit.
+  Variant fixed to Haiku at medium effort, for sessions whose Agent tool has no `effort` parameter; otherwise spawn `agentville:worker` with model and effort. Generated from `worker.md`, do not edit.
 model: haiku
 effort: medium
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill

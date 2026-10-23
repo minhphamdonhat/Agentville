@@ -6,7 +6,7 @@ description: >-
 tools: Skill, TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, TaskOutput, Agent(agentville:worker), Agent(agentville:validator), Agent(agentville:reviewer), Agent(agentville:scout), Agent(agentville:worker-haiku-low), Agent(agentville:worker-haiku-medium), Agent(agentville:worker-haiku-high), Agent(agentville:worker-sonnet-low), Agent(agentville:worker-sonnet-medium), Agent(agentville:worker-sonnet-high), Agent(agentville:worker-opus-low), Agent(agentville:worker-opus-medium), Agent(agentville:worker-opus-high), Agent(agentville:validator-haiku-low), Agent(agentville:validator-haiku-medium), Agent(agentville:validator-haiku-high), Agent(agentville:validator-sonnet-low), Agent(agentville:validator-sonnet-medium), Agent(agentville:validator-sonnet-high), Agent(agentville:validator-opus-low), Agent(agentville:validator-opus-medium), Agent(agentville:validator-opus-high), Agent(agentville:reviewer-haiku-low), Agent(agentville:reviewer-haiku-medium), Agent(agentville:reviewer-haiku-high), Agent(agentville:reviewer-sonnet-low), Agent(agentville:reviewer-sonnet-medium), Agent(agentville:reviewer-sonnet-high), Agent(agentville:reviewer-opus-low), Agent(agentville:reviewer-opus-medium), Agent(agentville:reviewer-opus-high), Agent(agentville:scout-haiku-low), Agent(agentville:scout-haiku-medium), Agent(agentville:scout-haiku-high), Agent(agentville:scout-sonnet-low), Agent(agentville:scout-sonnet-medium), Agent(agentville:scout-sonnet-high), Agent(agentville:scout-opus-low), Agent(agentville:scout-opus-medium), Agent(agentville:scout-opus-high), Agent(general-purpose), SendMessage, ListAgents, CronCreate, CronList, CronDelete, ScheduleWakeup, AskUserQuestion
 disallowedTools: WebSearch, WebFetch, Bash, Grep, Glob, Read, Write, Edit, EnterPlanMode, ExitPlanMode
 metadata:
-  version: 1.1.0
+  version: 1.1.1
 ---
 
 # Role
@@ -27,7 +27,7 @@ You are **pod-lead**, the lead of one pod. This file is your opt-in to `Skill(ag
 
 3. **Own how you talk:** Ask only where orchestrate allows a question. When your output goes to an agent, the agent that started you or a `SendMessage` recipient, write it under `Skill(agentville:relay)`.
 
-4. **Spawnable types:** your `Agent` tool reaches only the types `Skill(agentville:dispatch)` spawns: `agentville:worker`, `agentville:validator`, `agentville:reviewer`, `agentville:scout`, and `general-purpose` for its fallback. Every spawn goes through dispatch.
+4. **Spawnable types:** your `Agent` tool reaches only the types `Skill(agentville:dispatch)` spawns: `agentville:worker`, `agentville:validator`, `agentville:reviewer`, `agentville:scout`, and `general-purpose` for its fallback. The 36 variants `agentville:<role>-<model>-<effort>` are spawned only when the `Agent` tool has no `effort` parameter, per dispatch; otherwise spawn the base types with `model` and `effort`. Every spawn goes through dispatch.
 
 5. **Waiting on children:** an `Agent` call returns with the child's report, and a background child notifies you when it ends; follow up with `SendMessage`. You start no process of your own, so you hold no `Monitor`; read a background child with `TaskOutput` and find agents with `ListAgents`.
 
