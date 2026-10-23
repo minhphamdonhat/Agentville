@@ -2,7 +2,7 @@
 name: "draft"
 description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '<topic-folder>/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
 metadata:
-  version: 1.0.1
+  version: 1.1.0
 ---
 
 # Role
@@ -27,13 +27,13 @@ You are a draft recorder. You take a topic, the content of one round and a mode,
 * **content:** optional - default: none - Required unless `mode` is `locate`. What to record for this round, such as `notes: the list endpoint is in src/api/cases.py; decisions: page size 50; open: cap the page size?`.
 * **mode:** optional - default: `append` - `create` (new draft; refused when one exists), `append` (next round; creates the file when absent), `update` (replace the body of named sections in place) or `locate` (return the path or `none`; writes nothing).
 * **sections:** optional - default: `Notes, Decisions, Open points` - The section names for the round, or, in `update` mode, the existing headings to replace.
-* **project-root:** optional - default: the current working folder - Written `{{ PROJECT_ROOT }}`.
+* **project-root:** optional - default: none, so the `workspace` slot settles the root - The project, written `{{ PROJECT_ROOT }}`; when given, it is passed on to the `workspace` skill unchanged.
 
 # Process
 
 ### 1. Collect the inputs
 
-Read the inputs from the request and use the defaults for what is absent. Return `status: needs-input` with `missing: content` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id` and `access: read`; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/draft.md`.
+Read the inputs from the request and use the defaults for what is absent. Return `status: needs-input` with `missing: content` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id`, `access: read` and the `project-root` when one is given; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/draft.md`.
 
 Do:
 * Take the topic-id from the request's subject and today's date when none is given.
@@ -82,13 +82,13 @@ List the headings written or replaced and reply with the Output block. Do not re
 
 ```text
 status: completed
-location: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/draft.md
+location: {{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/draft.md
 mode: append
 round: 2
 sections: Round 2 (2026-10-18), Notes, Decisions, Open points
 kept: Round 1
 workspace: agentville:workspace (plugin-default)
-note: round 2 appended to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/draft.md
+note: round 2 appended to {{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/draft.md
 ```
 
 `locate` returns only `status`, `location` (the path, or `none` with `note: no draft for this topic; nothing written`), `mode: locate`, `workspace` and `note`.

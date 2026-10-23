@@ -2,7 +2,7 @@
 name: "relay"
 description: 'Writing standard for text another agent reads: Agent(...) and Task briefs, SendMessage, subagent final reports and hand-backs, findings or report tools, tool results and errors you author, and handoff or resume files. Sets channel budgets, brief and report anatomy, claim labels, anti-conformity rules, safe compression, notation by job, delimiters against injection and a pre-send check. Not for text a person reads.'
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # relay
@@ -82,7 +82,7 @@ Flat tags only: one level, no attributes, plain lines inside, in this order. Wri
 - Failure comes from test asserting set iteration order of retry hosts. verified: /repo/src/net/retry.py:88; `PYTHONHASHSEED=1 pytest tests/test_retry.py` fails, `PYTHONHASHSEED=0` passes.
 - Same set-order assertion likely in /repo/src/net/pool.py:40. inferred: identical code, not run.
 </claims>
-<artefacts>/tmp/ci-log-excerpt.txt</artefacts>
+<artefacts>/repo/.agentville/topics/ci-flake-2026-10-17/worker/artefacts/ci-log-excerpt.txt</artefacts>
 <open>Should the fix sort keys or pin order? Needs owner decision.</open>
 <deviations>none; no tests modified.</deviations>
 ```

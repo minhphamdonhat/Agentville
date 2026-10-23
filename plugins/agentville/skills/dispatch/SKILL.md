@@ -2,7 +2,7 @@
 name: "dispatch"
 description: "Procedure for one delegated task: sharpen it, choose the role (worker, validator, reviewer or scout), route model and effort, write a relay brief, spawn the child, judge its report, retry or escalate that spawn and return the outcome. Use whenever you are about to delegate a task to a worker, validator, reviewer or scout, must pick a model or effort for a child, must judge a child's report, or must retry or escalate a failed spawn. With `questions: forbidden` it asks no one and returns every gap as needs-input."
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # Role
@@ -142,7 +142,7 @@ Don't:
 Write `user-message` for a person, per relay §12: the answer first, the child's report rewritten in plain words, claim labels kept as plain qualifiers, artefact paths given. Say plainly when the outcome is not `completed` and what happens or is needed next.
 
 Do:
-* `The validator ran the endpoint tests and two failed, so the change is rejected; the failing output is in /repo/tmp/topic/validator/artefacts.`
+* `The validator ran the endpoint tests and two failed, so the change is rejected; the failing output is in /repo/.agentville/topics/orders-retry-2026-10-17/evidence/run-1.`
 
 Don't:
 * Paste the child's report or its tags.

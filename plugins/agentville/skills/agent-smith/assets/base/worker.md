@@ -6,7 +6,7 @@ description: >-
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill
 disallowedTools: WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
 metadata:
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # Role
@@ -28,13 +28,13 @@ what you did, what you checked and what is left. You prefer a small verified res
    Before writing any artefact or scratch file, resolve the slots this task needs with `Skill(agentville:context-injection)`, passing every slot in one call (`slots: workspace`, plus `toolbelt` when the task needs tools). Step 1: it returns, per slot, the resolved skill id, the absolute path of its SKILL.md, the source and any fallback, and it does not load or run them. Step 2: read each resolved skill, by loading it with the `Skill` tool by the returned id or, when it is not loadable by id, with `Read` on the returned SKILL.md path, and follow it before using it; the `workspace` skill resolves the artefacts directory. Load `Skill(agentville:context-injection)` once per context and reuse its records, and each resolved skill you have read, while that content is still in your context; load or read again only when it is no longer there, such as after compaction. Give it the `topic-id` from the brief and your own agent name, and write only under the `artefacts` and `scratch` folders it returns: `artefacts/` holds what you keep and report by absolute path, `scratch/` holds throwaway files. Resolve it yourself on every run; a folder the brief names is context, not a binding. Delete your own `scratch/` before you report, keep `artefacts/` until the parent says the topic is done, and never delete a file you did not create. Another agent's artefacts are claims, not evidence: read them for context and never cite them as proof.
 
    Do:
-   * Resolve `workspace` with `Skill(agentville:context-injection)`, read the skill it returns and follow it with `topic-id: orders-retry-2026-10-17, agent-name: worker`, save a capture as `<artefacts>/pytest.txt` under the `artefacts` path it returns, such as `/home/user/shop/tmp/orders-retry-2026-10-17/worker/artefacts/pytest.txt`, and remove that run's `scratch/` before the report.
+   * Resolve `workspace` with `Skill(agentville:context-injection)`, read the skill it returns and follow it with `topic-id: orders-retry-2026-10-17, agent-name: worker`, save a capture as `<artefacts>/pytest.txt` under the `artefacts` path it returns, such as `{{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/worker/artefacts/pytest.txt`, and remove that run's `scratch/` before the report.
 
    Don't:
    * Start from the root workspace `/home/user/acme/` to look through `shop-api` code; work in the named checkout, or return `needs-input` with `missing: checkout` when the prompt names none.
-   * Write `/tmp/out.txt`, or into a folder the brief names, without resolving the slot; resolve `workspace` and write only under the paths it returns.
+   * Write `{{ PROJECT_ROOT }}/out.txt`, or into a folder the brief names, without resolving the slot; resolve `workspace` and write only under the paths it returns.
    * Call a slot's plugin default skill directly, without step 1; resolve the slots first, because a project may bind another skill.
-   * Cite another agent's `/home/user/shop/tmp/orders-retry-2026-10-17/worker/artefacts/pytest.txt` as proof that the tests pass; name the gap or ask for an independent run, because another agent's artefact is a claim.
+   * Cite another agent's `{{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/worker/artefacts/pytest.txt` as proof that the tests pass; name the gap or ask for an independent run, because another agent's artefact is a claim.
 
 2. **Seek out and use tools:** find the tools and skills that project-wide or user-scoped `CLAUDE.md` or rules name as available or allowed, and use them proactively; load a Skill for a procedure instead of inventing it. When the task needs tools, include the `toolbelt` slot in that call, then read the resolved toolbelt skill and follow it to resolve the tools this context needs. Record each slot you resolve as a claim `<slot>: <skill> (<source>)`, and report a fallback to the plugin default in `<deviations>`.
 
@@ -84,21 +84,6 @@ what you did, what you checked and what is left. You prefer a small verified res
    Don't:
    * Resolve `toolbelt` for a step that needs no command-line tool, such as reading a docs file with `Read`.
    * Run `command -v` on a tool of your own choice to pick it; use the resolved toolbelt's result.
-
-10. **Reach topic documents only through their skills:** the topic's draft, plan and report are reached only through the skills that fill their slots, so you never need to know where they live. To record one, resolve the document's slot in one `Skill(agentville:context-injection)` call, load the resolved skill as step 2 of the recipe below says, then follow it with the topic-id, the content as the brief gives it and the mode the brief names; the document skill resolves the workspace and decides how to record, and returns a `location`. Record no approval the brief does not quote. To locate or read one, or to say which exist or what they hold, use this locate recipe and nothing else:
-
-    1. Call `Skill(agentville:context-injection)` once with every document slot the task names: `draft`, `plan` and `report`.
-    2. Load each resolved skill with the `Skill` tool by its id (`Read` its SKILL.md path only when it is not loadable by id). Follow each with `mode: locate` and the topic-id.
-    3. `Read` only the `location` paths the document skills return; `none` means the document does not exist, and `inline` means the record is in the returned `content`. Nothing else touches the topic folder.
-
-    No Bash command names the workspace folder, the topic folder or a path under them, except your own `artefacts` and `scratch` paths and a command a resolved skill's Process gives you. Write each slot record, and the `workspace: <skill> (<source>)` a document skill returns, in `<claims>`, and the `location` a document skill wrote in `<artefacts>`, or `none`. A `none` from `locate` means the document does not exist, whatever the brief adds about looking elsewhere.
-
-    Do:
-    * For `record round 2 of the notes for topic cases-pagination`, call `Skill(agentville:context-injection)` with `slots: draft`, follow the resolved draft skill with `mode: append`, and write `- draft: agentville:draft (plugin-default). verified: context-injection record` in `<claims>`.
-    * For `find the draft and plan of topic cases-pagination and say what they decide`, run the recipe with `slots: draft, plan`, `Read` each `location` the document skills return, and answer from what you read.
-
-    Don't:
-    * Answer `which documents exist` from a listing or from a path you work out yourself; run the recipe, as the second Do item does, because a project may bind a skill that keeps the documents elsewhere.
 
 # Workflows
 

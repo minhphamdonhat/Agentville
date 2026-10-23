@@ -16,7 +16,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude-plugin/marketplace.json` | Marketplace entries `agentville`, `agentville-beta` and `agentville-dev`, each pointing at the plugin folder on one branch. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
-| `tmp/` | Agents' workspace, git-ignored: `tmp/<topic-id>/<agent>/{artefacts,scratch}`. |
+| `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the tracked topic documents, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits. |
 
 ## Agent format
 
@@ -46,10 +46,9 @@ Don't:
 
 Slots (`workspace`, `toolbelt`, `draft`, `plan`, `report`) work like dependency injection. `Skill(agentville:context-injection)` owns the two-step use, the binding syntax and the resolution order, and each slot's default skill owns its contract. Both pairs of smiths enforce the two-step use (agent rule A18, skill rule 22); `measure.py` holds the slots in one `SLOTS` constant and owns the exemption grammar. Add a future slot to `SLOTS` in all four `measure.py` files.
 
-This repository binds the `workspace` slot to the default and names the folder the default reads:
+This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`:
 
 * `workspace: Skill(agentville:workspace)`
-* `workspace-folder: {{ PROJECT_ROOT }}/tmp/`
 
 ## Two pairs of smiths
 
@@ -73,7 +72,7 @@ The shipped pair lets users choose a scope and nothing else; its scripts refuse 
 
 ## Working in this repository
 
-Topic documents and agents' artefacts go to the workspace under `{{ PROJECT_ROOT }}/tmp/`, written by a worker through the `draft`, `plan` and `report` slots; todos stay in the session task list. Nothing else is written to the repository for plans or todos unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
+Topic documents and agents' artefacts go to the workspace under `{{ PROJECT_ROOT }}/.agentville/topics/`, and the workspace writes nowhere else in `.agentville/`; `Skill(agentville:orchestrate)` alone records topic documents, through the `draft`, `plan` and `report` slots, and no other skill or agent names them; todos stay in the session task list. Nothing else is written to the repository for plans or todos unless the user asks. Work in the repository root, on the branch the user names; do not create or switch branches on your own.
 
 Commit subjects follow Conventional Commits: `type(scope): summary`, imperative, with `!` before the colon for a breaking change, as in `fix(agent-smith): drop the communication core block` or `feat(dispatch)!: rename the brief fields`. Commit, push and merge only when the user asks.
 

@@ -74,9 +74,9 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |
 | `/agentville:context-injection` | Resolves slots to the skills that fill them and owns the binding syntax and resolution order. |
 | `/agentville:workspace` | Default for the `workspace` slot: a run's topic, artefacts and scratch folders. |
-| `/agentville:draft` | Default for the `draft` slot: records a topic's notes, decisions and open points in rounds. |
-| `/agentville:plan` | Default for the `plan` slot: records a topic's goal, tasks with done criteria, and approval as a record only. |
-| `/agentville:report` | Default for the `report` slot: records a topic's outcome, evidence, review result, out-of-scope findings and open items. |
+| `/agentville:draft` | Used by `orchestrate` only. Default for the `draft` slot: records a topic's notes, decisions and open points in rounds. |
+| `/agentville:plan` | Used by `orchestrate` only. Default for the `plan` slot: records a topic's goal, tasks with done criteria, and approval as a record only. |
+| `/agentville:report` | Used by `orchestrate` only. Default for the `report` slot: records a topic's outcome, evidence, review result, out-of-scope findings and open items. |
 | `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs. Discovery only; no network probes. |
 | `/agentville:release-flow` | Runs a one-way release flow in any repository; every merge, push, tag and branch deletion waits for your yes. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill, validates it and installs it to project or user scope. |
@@ -107,6 +107,21 @@ toolbelt: Skill(acme:qa-tools)
 ```
 
 In Chat, bindings in custom instructions do not count, and every slot uses the plugin default.
+
+## Where agents write
+
+Agents write only under `.agentville/topics/` in the project root:
+
+```text
+.agentville/topics/
+  .gitignore                 # */evidence/, */*/artefacts/, */*/scratch/
+  <topic-id>/                # topic documents: tracked
+    evidence/run-<N>/        # validator evidence with SHA256SUMS: ignored
+    <agent>/artefacts/       # what an agent keeps: ignored
+    <agent>/scratch/         # throwaway files, deleted before the report: ignored
+```
+
+The workspace writes its `.gitignore` on first use when it is missing, and writes nowhere else in `.agentville/`.
 
 ## External dependencies
 

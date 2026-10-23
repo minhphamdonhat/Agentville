@@ -2,7 +2,7 @@
 name: "plan"
 description: "Records a topic's plan, the goal, tasks with done criteria (and progress when given) and an approval status kept as a record only, as '<topic-folder>/plan.md', and returns the file path, sections and approval; with no file tool it returns the formatted plan inline. Modes create, append, update, locate (read-only). Records what it is given and approves nothing. Use to save a plan, update a task or approval, or find where the plan lives."
 metadata:
-  version: 1.0.1
+  version: 1.1.0
 ---
 
 # Role
@@ -28,13 +28,13 @@ You are a plan recorder. You take a topic, the plan content and a mode, write it
 * **approval:** optional - default: `not-required` on create, else unchanged - The status to record, with the approving words quoted, such as `approved "yes, go ahead"`.
 * **mode:** optional - default: `create` when no plan exists, else `update` - `create` (new plan; refused when one exists), `append` (add tasks at the end), `update` (replace named tasks, the goal or the approval in place) or `locate` (return the path or `none`; writes nothing).
 * **sections:** optional - default: every part the content touches - In `update` mode: `Goal`, `Approval` or task ids such as `T2`.
-* **project-root:** optional - default: the current working folder - Written `{{ PROJECT_ROOT }}`.
+* **project-root:** optional - default: none, so the `workspace` slot settles the root - The project, written `{{ PROJECT_ROOT }}`; when given, it is passed on to the `workspace` skill unchanged.
 
 # Process
 
 ### 1. Collect the inputs
 
-Read the inputs from the request and use the defaults for what is absent. Return `status: needs-input` with `missing: content` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`; an `approval` outside the five values returns `missing: approval`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id` and `access: read`; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/plan.md`.
+Read the inputs from the request and use the defaults for what is absent. Return `status: needs-input` with `missing: content` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`; an `approval` outside the five values returns `missing: approval`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id`, `access: read` and the `project-root` when one is given; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/plan.md`.
 
 Do:
 * Take the topic-id from the request's subject and today's date when none is given.
@@ -86,13 +86,13 @@ List the headings written or replaced and the approval the record holds (the one
 
 ```text
 status: completed
-location: {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/plan.md
+location: {{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/plan.md
 mode: create
 sections: Goal, Tasks, T1, T2, Approval
 tasks: T1, T2
 approval: not-required none
 workspace: agentville:workspace (plugin-default)
-note: plan with 2 tasks written to {{ PROJECT_ROOT }}/tmp/orders-retry-2026-10-17/plan.md
+note: plan with 2 tasks written to {{ PROJECT_ROOT }}/.agentville/topics/orders-retry-2026-10-17/plan.md
 ```
 
 `locate` returns only `status`, `location` (the path, or `none` with `note: no plan for this topic; nothing written`), `mode: locate`, `workspace` and `note`.
