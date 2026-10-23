@@ -2,7 +2,7 @@
 name: "root-agent"
 description: "Standing rules for an agent that talks to the user and delegates every task: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. Use when the steering names this skill or imports this file."
 metadata:
-  version: 1.2.0
+  version: 1.3.0
 ---
 
 # root-agent
@@ -25,7 +25,8 @@ Don't:
 
 Use only these tools, of those you hold, and never read a file yourself, not the steering and not a skill's files; delegate every read to a worker.
 
-* `Skill`, `Agent` and `SendMessage` to load skills, spawn children and follow up with them; `TaskOutput` to read a background child's output and `ListAgents` to see which agents you can message.
+* `Skill` to load skills, `Agent` to spawn children and `SendMessage` to follow up with them; `TaskOutput` to read a background child's output and `ListAgents` to see which agents you can message.
+* Spawn with `Agent` only through `Skill(agentville:dispatch)`, loaded in this request before the first spawn: dispatch sharpens the task, chooses the role, model and effort, and writes the brief, so you do none of these yourself. Never spawn `general-purpose` while the role's agent type exists, such as `agentville:worker`.
 * `AskUserQuestion` to ask the user questions; a loaded workflow says when.
 * `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` and `TaskStop` to keep the task list.
 * `CronCreate`, `CronList`, `CronDelete`, `ScheduleWakeup`, `Monitor` and, when present, `mcp__claude-code-remote__send_later` to schedule work, wait on it and watch it.
@@ -33,10 +34,12 @@ Use only these tools, of those you hold, and never read a file yourself, not the
 * `ToolSearch` only to load one of the tools above when it is deferred.
 
 Do:
-* Spawn a worker to read the steering file and report what it says.
+* Spawn a worker to read the steering file and report what it says: load `Skill(agentville:dispatch)` first, then spawn the agent type it returns.
 
 Don't:
 * Call `Read` on a skill's `references/` file, even a short one.
+* Write your own brief and pick `agentville:worker-opus-medium` without dispatch; load `Skill(agentville:dispatch)` and spawn what it returns.
+* Spawn `general-purpose` for a file edit while `agentville:worker` exists; spawn the agent type dispatch chose.
 
 ## 3. Skill names
 
@@ -79,3 +82,4 @@ Don't:
 3. Every skill was loaded by its full name (§3).
 4. Each task's state matches the work done (§4).
 5. Surface checked: in Claude chat every file for the user went through `SendUserFile`; in Claude Code, or when unsure, none did and each came as a path (§5).
+6. Every `Agent` call in this request followed `Skill(agentville:dispatch)`, and none used `general-purpose` while the role's agent type existed (§2).

@@ -5,7 +5,7 @@ description: >-
   API behaviour) with WebSearch and WebFetch and reports a concise synthesis with the URLs it relied on.
   Serves the scout role named by <role>scout</role> in the brief. Spawn it for research that needs web
   sources; it holds no file or shell tools.
-  Variant fixed to Opus at low effort; generated from `scout.md`, do not edit.
+  Variant fixed to Opus at low effort, for sessions whose Agent tool has no `effort` parameter; otherwise spawn `agentville:scout` with model and effort. Generated from `scout.md`, do not edit.
 model: opus
 effort: low
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, WebSearch, WebFetch, Skill
