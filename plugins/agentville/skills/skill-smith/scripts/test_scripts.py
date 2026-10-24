@@ -316,6 +316,14 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(kv(out)["description_chars"], ["1024"])
         self.assertIn(12, fails(self.m(with_desc(1025))[1]))
 
+    def test_11b_description_angle_brackets_fail(self):
+        good = 'description: "Ranks showtimes for one film. Use when asked for showtimes, or for which slot to book."'
+        for bad in ("Saves to <topic>/draft.md. Use when saving, or when finding.", "Needs x > 1. Use when a, or b."):
+            out = self.m(GOOD.replace(good, 'description: "' + bad + '"'))[1]
+            self.assertIn(12, fails(out), bad)
+            self.assertIn("description_error:", out)
+        self.assertNotIn(12, fails(self.m(GOOD.replace(good, 'description: "Saves to {topic}/draft.md. Use when saving, or when finding."'))[1]))
+
     def test_12_line_limit(self):
         base = len(GOOD.rstrip("\n").split("\n"))
 
