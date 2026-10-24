@@ -38,12 +38,12 @@ Role: [[worker | validator | reviewer | scout]]
 ### Process
 
 1. **[[Step title].]** [[What to do, the tool by name, the literal command; or load `Skill(namespace:name)`; or stop and hand back a spawn request.]]
-2. **Report.** Write the report as Constraints says, with this workflow's Output fields.
+2. **Report.** Write the report as Constraints says: the six relay §4 tags, with this workflow's Output fields inside the tags named there; a failure uses the same tags.
 
 ### Output
 
-* **[[field-name]]:** always - [[What the field holds.]]
-* **[[field-name]]:** when [[condition]] - [[What the field holds.]]
+* **[[field-name]]:** always - `<[[tag]]>`: [[What the field holds.]]
+* **[[field-name]]:** when [[condition]] - `<[[tag]]>`: [[What the field holds.]]
 
 # Exception handler
 

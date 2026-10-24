@@ -12,11 +12,11 @@ Used by SKILL.md step 4.
 
 ### 1. Choose the scope
 
-There are two scopes and no other choice. For improve and convert, use `path` as the target, set `replace` to yes and go to step 3; when `path` is in neither `{{ PROJECT_ROOT }}/plugins/agentville/skills/` nor `{{ PROJECT_ROOT }}/.claude/skills/`, return `status: blocked` with `reason: improve and convert work only on a skill in the Agentville plugin or the project skills folder`. For compile, when `scope` is missing, ask "Is the skill for the plugin or the project?" with `AskUserQuestion` and exactly two options, `plugin` and `project`, when a person is reachable; otherwise return `status: needs-input` with `missing: scope`. The recommended option is `plugin` when the request is about the Agentville plugin itself and `project` otherwise. For `plugin`, run `Glob` on `{{ PROJECT_ROOT }}/plugins/agentville/.claude-plugin/plugin.json`; when it does not match, return `status: blocked` with `reason: no Agentville plugin at {{ PROJECT_ROOT }}/plugins/agentville`. Any other value, such as `user`, another plugin or a typed folder, returns `status: blocked` with `reason: scope must be plugin or project`.
+There are two scopes and no other choice. For improve and convert, use `path` as the target, set `replace` to yes and go to step 3; when `path` is in neither `{{ PROJECT_ROOT }}/plugins/agentville/skills/` nor `{{ PROJECT_ROOT }}/.claude/skills/`, return `<status>blocked</status>` with `<outcome>improve and convert work only on a skill in the Agentville plugin or the project skills folder</outcome>`. For compile, when `scope` is missing, ask "Is the skill for the plugin or the project?" with `AskUserQuestion` and exactly two options, `plugin` and `project`, when a person is reachable; otherwise return `<status>needs-input</status>` with `<open>` beginning `missing: scope`. The recommended option is `plugin` when the request is about the Agentville plugin itself and `project` otherwise. For `plugin`, run `Glob` on `{{ PROJECT_ROOT }}/plugins/agentville/.claude-plugin/plugin.json`; when it does not match, return `<status>blocked</status>` with `<outcome>no Agentville plugin at {{ PROJECT_ROOT }}/plugins/agentville</outcome>`. Any other value, such as `user`, another plugin or a typed folder, returns `<status>blocked</status>` with `<outcome>scope must be plugin or project</outcome>`.
 
 Do:
 * No `scope`, a request not about the Agentville plugin and a person reachable: ask with `project (Recommended)` and `plugin`.
-* No person reachable and no `scope`: return `status: needs-input` and `missing: scope`.
+* No person reachable and no `scope`: return `<status>needs-input</status>` with `<open>` beginning `missing: scope`.
 
 Don't:
 * Offer `user`, another plugin or a typed directory; offer the two scopes only, as the first Do item shows.
@@ -36,7 +36,7 @@ Don't:
 
 ### 3. Check for an existing skill
 
-Run `Glob` on `<path>/SKILL.md`; a match means the target exists. When it exists and `replace` is no, ask "New name, overwrite or cancel?" with `AskUserQuestion` when a person is reachable; otherwise return `status: needs-input` with `missing: replace`. A new name repeats steps 1 to 3 and, once drafted, also updates `name:` in `<STAGING>/SKILL.md`. Overwrite sets `replace` to yes. Cancel returns `status: blocked` so SKILL.md cleans up and stops. This workflow only reads; it writes nothing under the target.
+Run `Glob` on `<path>/SKILL.md`; a match means the target exists. When it exists and `replace` is no, ask "New name, overwrite or cancel?" with `AskUserQuestion` when a person is reachable; otherwise return `<status>needs-input</status>` with `<open>` beginning `missing: replace`. A new name repeats steps 1 to 3 and, once drafted, also updates `name:` in `<STAGING>/SKILL.md`. Overwrite sets `replace` to yes. Cancel returns `<status>blocked</status>` so SKILL.md cleans up and stops. This workflow only reads; it writes nothing under the target.
 
 Do:
 * Return `exists: yes` and `replace: yes` after the user picks overwrite.
@@ -48,13 +48,21 @@ Don't:
 
 # Output
 
-Reply with this block, or with the failure block when the target is not settled.
+Reply with the six report tags below, or with the failure template when the target is not settled.
 
 ```text
+<status>completed</status>
+<outcome>The install target is settled.</outcome>
+<claims>
+- scope: plugin | project. verified: the request or the answer to the scope question
+- exists: yes | no. verified: Glob of <path>/SKILL.md
+- replace: yes | no. verified: the request or the answer to the existing-target question
+</claims>
+<artefacts>
 path: {{ PROJECT_ROOT }}/plugins/agentville/skills/<skill-name> | {{ PROJECT_ROOT }}/.claude/skills/<skill-name>
-scope: plugin | project
-exists: yes | no
-replace: yes | no
+</artefacts>
+<open>none</open>
+<deviations>none</deviations>
 ```
 
 Do:
@@ -63,10 +71,15 @@ Do:
 
 Don't:
 * Print `exists: yes` with `replace: no`; settle the conflict first, as step 3 says.
-* Add a line the template lacks; return the four fields only.
+* Add a line the template lacks; return the four fields only, inside the six tags.
+
+Reply with this template when the target is not settled:
 
 ```text
-status: blocked | needs-input
-reason: <one sentence>
-missing: <scope or replace, for needs-input; otherwise none>
+<status>blocked | needs-input | failed</status>
+<outcome><one sentence></outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: <scope or replace, for needs-input; otherwise none></open>
+<deviations>none</deviations>
 ```

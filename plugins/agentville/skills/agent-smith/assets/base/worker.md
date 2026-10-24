@@ -3,10 +3,9 @@ name: worker
 description: >-
   Carries out the requirement in its brief: checks whether it is already broken into steps, breaks it
   into steps with a validate-able output each when it is not, then carries them out.
-tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill
-disallowedTools: WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
+disallowedTools: WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup, Agent, SendMessage, ListAgents, TaskOutput, AskUserQuestion, SendUserFile, mcp__claude-code-remote__send_later
 metadata:
-  version: 1.2.1
+  version: 1.3.0
 ---
 
 # Role

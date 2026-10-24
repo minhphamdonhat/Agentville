@@ -45,6 +45,12 @@ def warns(out):
     return set() if v == "none" else {int(x) for x in v.split(", ")}
 
 
+SIX = ("<status>completed</status>\n<outcome>Done.</outcome>\n<claims>\n- x: 1. verified: Read x\n</claims>\n"
+       "<artefacts>none</artefacts>\n<open>none</open>\n<deviations>none</deviations>\n")
+FAIL = ("<status>blocked | needs-input | failed</status>\n<outcome>Stopped.</outcome>\n<claims>none</claims>\n"
+        "<artefacts>none</artefacts>\n<open>missing: none</open>\n<deviations>none</deviations>\n")
+FAIL_LINE = "<status>partial | blocked | needs-input | rejected | failed</status>"
+
 GOOD = '''---
 name: "demo"
 description: "Ranks showtimes for one film. Use when asked for showtimes, or for which slot to book."
@@ -69,7 +75,7 @@ You are a showtime ranker. You take a film and an area, rank the screenings and 
 
 ### 1. Collect the inputs
 
-Read `film` and `area` from the request. If `film` is missing and a person runs the skill, ask with `AskUserQuestion`; otherwise return `status: needs-input` with `missing: film`.
+Read `film` and `area` from the request. If `film` is missing and a person runs the skill, ask with `AskUserQuestion`; otherwise return `<status>needs-input</status>` with `<open>` beginning `missing: film`.
 
 Do:
 * "Dune in Quận 7" gives film `Dune`, area `Quận 7`.
@@ -89,24 +95,33 @@ Don't:
 
 # Output
 
-* **ranked-list:** always - The numbered screenings.
-* **note:** when a page failed - Which page failed.
+* **ranked-list:** always - In `<claims>`: the numbered screenings.
+* **note:** when a page failed - In `<open>`: which page failed.
 
 ```text
-status: completed
-ranked-list: [LIST]
+<status>completed</status>
+<outcome>Screenings ranked.</outcome>
+<claims>
+- ranked-list: [LIST]. verified: [SOURCE]
+</claims>
+<artefacts>none</artefacts>
+<open>none</open>
+<deviations>none</deviations>
 ```
 
 Do:
-* `ranked-list: 1. CGV 21:40`
+* `ranked-list: 1. CGV 21:40` in `<claims>`
 
 Don't:
-* A greeting; start with the first field.
+* A greeting; start with `<status>`.
 
 ```text
-status: partial | blocked | needs-input | rejected | failed
-reason: [ONE_SENTENCE]
-missing: [NAMES_OR_NONE]
+<status>partial | blocked | needs-input | rejected | failed</status>
+<outcome>[ONE_SENTENCE]</outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: [NAMES_OR_NONE]</open>
+<deviations>none</deviations>
 ```
 '''
 
@@ -245,7 +260,7 @@ class MeasureTests(unittest.TestCase):
         self.assertIn(5, fails(out))
 
     def test_05_output_without_fence(self):
-        text = GOOD.split("```text\nstatus: completed\n")[0] + "Do:\n* a\n\nDon't:\n* b\n"
+        text = GOOD.split("```text\n<status>completed</status>\n")[0] + "Do:\n* a\n\nDon't:\n* b\n"
         out = self.m(text)[1]
         self.assertIn(7, fails(out))
         self.assertIn(16, fails(out))
@@ -403,7 +418,7 @@ class MeasureTests(unittest.TestCase):
         os.makedirs(wf)
         part = ("Used by SKILL.md step 2.\n\n# Input\n\n* **x:** required - default: none - X.\n\n"
                 "# Process\n\n### 1. Do it\n\nUse `x` with `Read`.\n\nDo:\n* a\n* b\n\n"
-                "# Output\n\n```text\nx: 1\n```\n\nDo:\n* a\n\nDon't:\n* b\n")
+                "# Output\n\n```text\n" + SIX + "```\n\nDo:\n* a\n\nDon't:\n* b\n\n```text\n" + FAIL + "```\n")
         with open(os.path.join(wf, "x.md"), "w", encoding="utf-8", newline="\n") as f:
             f.write(part)
         rc, out, _ = self.m(GOOD)
@@ -442,36 +457,36 @@ class MeasureTests(unittest.TestCase):
         self.assertEqual(d["failure_template"], ["yes"])
 
     def test_30_failure_template_required_d1(self):
-        no_block = GOOD.split("```text\nstatus: partial | blocked | needs-input")[0]
+        no_block = GOOD.split("```text\n" + FAIL_LINE)[0]
         self.assertIn(16, fails(self.m(no_block)[1]))
-        partial = GOOD.replace("missing: [NAMES_OR_NONE]\n", "")
+        partial = GOOD.replace("<open>missing: [NAMES_OR_NONE]</open>", "<open>[NAMES_OR_NONE]</open>")
         self.assertIn(16, fails(self.m(partial)[1]))
-        wrong = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", "status: completed | blocked")
+        wrong = GOOD.replace(FAIL_LINE, "<status>completed | blocked</status>")
         self.assertIn(16, fails(self.m(wrong)[1]))
-        for line in ("status: needs-input | blocked | failed", "status: blocked | needs-input | failed | extra",
-                     "status: partial | partial | blocked | needs-input | failed", "status: blocked | failed"):
-            odd = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", line)
+        for line in ("needs-input | blocked | failed", "blocked | needs-input | failed | extra",
+                     "partial | partial | blocked | needs-input | failed", "blocked | failed"):
+            odd = GOOD.replace(FAIL_LINE, "<status>" + line + "</status>")
             self.assertIn(16, fails(self.m(odd)[1]), line)
-        plain = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", "status: blocked | needs-input | failed")
+        plain = GOOD.replace(FAIL_LINE, "<status>blocked | needs-input | failed</status>")
         self.assertNotIn(16, fails(self.m(plain)[1]))
-        rej = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", "status: blocked | needs-input | rejected | failed")
+        rej = GOOD.replace(FAIL_LINE, "<status>blocked | needs-input | rejected | failed</status>")
         self.assertNotIn(16, fails(self.m(rej)[1]))
-        for line in ("status: partial | blocked | needs-input | failed | rejected", "status: blocked | needs-input | rejected"):
-            odd = GOOD.replace("status: partial | blocked | needs-input | rejected | failed", line)
+        for line in ("partial | blocked | needs-input | failed | rejected", "blocked | needs-input | rejected"):
+            odd = GOOD.replace(FAIL_LINE, "<status>" + line + "</status>")
             self.assertIn(16, fails(self.m(odd)[1]), line)
 
     def test_31_asking_needs_needs_input_d2(self):
-        bad = GOOD.replace("; otherwise return `status: needs-input` with `missing: film`", "").replace(
+        bad = GOOD.replace("; otherwise return `<status>needs-input</status>` with `<open>` beginning `missing: film`", "").replace(
             "ask or return needs-input", "ask")
         self.assertIn(17, fails(self.m(bad)[1]))
-        blocked = bad.replace("ask with `AskUserQuestion`", "ask with `AskUserQuestion`; otherwise return `status: blocked`")
+        blocked = bad.replace("ask with `AskUserQuestion`", "ask with `AskUserQuestion`; otherwise return `<status>blocked</status>`")
         self.assertIn(17, fails(self.m(blocked)[1]))
 
     def test_32_returned_fields(self):
         out = self.m(GOOD)[1]
         self.assertIn("returns: ranked-list | always", out.splitlines())
         self.assertIn("output_field: ranked-list", out.splitlines())
-        bad = GOOD.replace("* **ranked-list:** always - The numbered screenings.\n* **note:** when a page failed - Which page failed.\n", "")
+        bad = GOOD.replace("* **ranked-list:** always - In `<claims>`: the numbered screenings.\n* **note:** when a page failed - In `<open>`: which page failed.\n", "")
         self.assertIn(18, fails(self.m(bad)[1]))
 
     def test_33_dead_input_warns(self):
@@ -528,6 +543,92 @@ class MeasureTests(unittest.TestCase):
     def test_40_real_skill_smith_independent(self):
         out = run(MEASURE, REAL)[1]
         self.assertNotIn(20, fails(out), out)
+
+    # ---- relay section 4 output: rules 7, 16, 18 and 23
+    def swap_first_fence(self, new_body):
+        """GOOD with the success template replaced by new_body."""
+        old = GOOD[GOOD.index("```text\n<status>completed"):GOOD.index("```\n\nDo:\n* `ranked-list")]
+        return GOOD.replace(old, "```text\n" + new_body)
+
+    def test_41_six_tags_pass(self):
+        rc, out, err = self.m(GOOD)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn("output_tags: yes", out.splitlines())
+        self.assertIn("failure_template: yes", out.splitlines())
+        self.assertEqual(warns(out) & {18}, set())
+
+    def test_42_old_key_value_template_fails(self):
+        out = self.m(self.swap_first_fence("status: completed\nranked-list: [LIST]\n"))[1]
+        self.assertIn(7, fails(out))
+        self.assertIn(23, fails(out))
+        self.assertIn("output_tags: no", out.splitlines())
+        old = GOOD.replace(FAIL_LINE + "\n<outcome>[ONE_SENTENCE]</outcome>\n<claims>none</claims>\n<artefacts>none</artefacts>\n"
+                           "<open>missing: [NAMES_OR_NONE]</open>\n<deviations>none</deviations>\n",
+                           "status: partial | blocked | needs-input | rejected | failed\nreason: [ONE_SENTENCE]\nmissing: [NAMES_OR_NONE]\n")
+        self.assertNotEqual(old, GOOD)
+        out = self.m(old)[1]
+        self.assertIn(16, fails(out))
+        self.assertIn(23, fails(out))
+
+    def test_43_tags_out_of_order_fail(self):
+        swapped = ("<status>completed</status>\n<outcome>Done.</outcome>\n<artefacts>none</artefacts>\n"
+                   "<claims>\n- x: 1. verified: Read x\n</claims>\n<open>none</open>\n<deviations>none</deviations>\n")
+        self.assertIn(7, fails(self.m(self.swap_first_fence(swapped))[1]))
+
+    def test_44_nested_tag_or_attribute_or_missing_tag_fails(self):
+        nested = SIX.replace("</claims>\n", "<open>none</open>\n</claims>\n")
+        self.assertIn(7, fails(self.m(self.swap_first_fence(nested))[1]))
+        attr = SIX.replace("<status>", '<status kind="done">')
+        self.assertIn(7, fails(self.m(self.swap_first_fence(attr))[1]))
+        short = SIX.replace("<deviations>none</deviations>\n", "")
+        self.assertIn(7, fails(self.m(self.swap_first_fence(short))[1]))
+        twice = SIX + "<open>none</open>\n"
+        self.assertIn(7, fails(self.m(self.swap_first_fence(twice))[1]))
+        self.assertEqual(fails(self.m(self.swap_first_fence(SIX))[1]), set())
+
+    def test_45_failure_template_shape(self):
+        self.assertEqual(fails(self.m(GOOD)[1]), set())
+        tail = GOOD[GOOD.rindex("```text\n" + FAIL_LINE):]
+        no_missing = GOOD.replace(tail, tail.replace("<open>missing: [NAMES_OR_NONE]</open>", "<open>none</open>"))
+        self.assertIn(16, fails(self.m(no_missing)[1]))
+        no_status = GOOD.replace(tail, tail.replace(FAIL_LINE + "\n", ""))
+        self.assertIn(16, fails(self.m(no_status)[1]))
+        no_outcome = GOOD.replace(tail, tail.replace("<outcome>[ONE_SENTENCE]</outcome>\n", ""))
+        self.assertIn(16, fails(self.m(no_outcome)[1]))
+        trailing = GOOD + "\nOne more line.\n"
+        self.assertIn(16, fails(self.m(trailing)[1]))
+        success_last = GOOD.replace(tail, "```text\n" + SIX + "```\n")
+        self.assertIn(16, fails(self.m(success_last)[1]))
+
+    def test_46_user_message_field_fails(self):
+        bad = GOOD.replace("* **note:**", "* **user-message:** always - In `<outcome>`: the text for the reader.\n* **note:**")
+        self.assertIn(23, fails(self.m(bad)[1]))
+        fenced = self.swap_first_fence(SIX + "```\n\n```text\nuser-message: Done.\n")
+        self.assertIn(23, fails(self.m(fenced)[1]))
+
+    def test_47_field_bullet_without_tag_warns(self):
+        bad = GOOD.replace("always - In `<claims>`: the numbered screenings.", "always - The numbered screenings.")
+        rc, out, _ = self.m(bad)
+        self.assertEqual(rc, 0, out)
+        self.assertIn(18, warns(out))
+
+    def test_48_part_output_follows_the_same_shape(self):
+        wf = os.path.join(self.tmp, "references", "workflows")
+        os.makedirs(wf)
+        head = ("Used by SKILL.md step 2.\n\n# Input\n\n* **x:** required - default: none - X.\n\n"
+                "# Process\n\n### 1. Do it\n\nUse `x` with `Read`.\n\nDo:\n* a\n\nDon't:\n* b\n\n# Output\n\n")
+        tail = "Do:\n* a\n\nDon't:\n* b\n\n"
+        good = head + "```text\n" + SIX + "```\n\n" + tail + "```text\n" + FAIL + "```\n"
+        old = head + "```text\nx: 1\n```\n\n" + tail + "```text\nstatus: blocked | needs-input | failed\nreason: r\nmissing: none\n```\n"
+        for text, ok in ((good, True), (old, False)):
+            with open(os.path.join(wf, "x.md"), "w", encoding="utf-8", newline="\n") as f:
+                f.write(text)
+            rc, out, _ = self.m(GOOD)
+            self.assertEqual(rc == 0, ok, out)
+            if not ok:
+                part = [l for l in out.splitlines() if l.startswith("part: ")][0]
+                self.assertIn("7", part.split("failures=")[1])
+                self.assertIn("16", part.split("failures=")[1])
 
     def test_22_slot_direct_call_fails(self):
         out = self.m(GOOD.replace("Search with", "Resolve with Skill(agentville:workspace), then search with"))[1]

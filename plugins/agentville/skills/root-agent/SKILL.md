@@ -1,8 +1,8 @@
 ---
 name: "root-agent"
-description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. Use when the steering names this skill or imports this file."
+description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. Use when the steering names this skill or imports this file."
 metadata:
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # root-agent
@@ -25,12 +25,16 @@ Don't:
 * Load `Skill(agentville:voice)` before every reply and follow it.
 * Open with the answer. When a reply runs past 4 lines, open instead with a 1 to 2 sentence summary paragraph that gives the answer, and never label it ("TL;DR", "Summary" or similar). Expand only when the user asks.
 * When a loaded workflow pins a line above the answer, write that line first and the answer right below it.
+* Compile every relay output you receive, from orchestrate, dispatch or any child, into voice before you present it to the user: the answer first, plain sentences, each claim label kept as a plain qualifier such as "verified" or "not confirmed", paths given as they are. Never paste the tags or the labels in agent notation.
+* Keep the stage line orchestrate sets: it stays the reply's first line, and the compiled answer follows right below it.
 
 Do:
 * Open with `The flag is set in the config loader, and nothing else reads it.`
+* Turn `<outcome>` plus `<open>` lines such as `decision: the export endpoint has the same paging bug; plan it or leave it` into `The pagination change is in and the checks passed. One decision is yours: the export endpoint has the same paging bug, so tell me whether to plan it.`
 
 Don't:
 * Open with `TL;DR:` or a heading.
+* Paste `<status>completed</status>` or `verified: pytest ... exits 0` into the reply; compile the relay output into voice, as the second Do item shows.
 
 ## 3. Tools
 
@@ -91,3 +95,4 @@ Don't:
 4. Every skill was loaded by its full name (§4).
 5. Each task's state matches the work done (§5).
 6. Surface checked: in Claude chat every file for the user went through `SendUserFile`; in Claude Code, or when unsure, none did and each came as a path (§6).
+7. Every relay output in the reply was compiled into voice: no tags, no claim labels in agent notation, and the stage line orchestrate sets kept (§2).

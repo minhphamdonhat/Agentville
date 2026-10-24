@@ -6,10 +6,9 @@ description: >-
   Variant fixed to Opus at high effort, for sessions whose Agent tool has no `effort` parameter; otherwise spawn `agentville:worker` with model and effort. Generated from `worker.md`, do not edit.
 model: opus
 effort: high
-tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill
-disallowedTools: WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
+disallowedTools: WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup, Agent, SendMessage, ListAgents, TaskOutput, AskUserQuestion, SendUserFile, mcp__claude-code-remote__send_later
 metadata:
-  version: 1.2.1
+  version: 1.3.0
 ---
 
 # Role

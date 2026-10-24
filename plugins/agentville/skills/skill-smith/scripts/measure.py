@@ -3,6 +3,7 @@
 
 Usage: measure.py <path-to-SKILL.md>
 Prints key: value lines; the last is failures: <rule numbers or none>.
+Output rules follow relay section 4: the first Output fence holds the six report tags, the last is the failure template.
 For a process skill it also checks every references/workflows/*.md file as a part.
 Exit: 0 no failures (warnings allowed), 1 rule failures, 2 usage or read error.
 Stdlib only; runs under python3 -I.
@@ -20,7 +21,13 @@ NAME = r"(?:[a-z0-9][a-z0-9-]*|" + SLOT + r")"
 INPUT_RE = re.compile(r"^\* \*\*(" + NAME + r"):\*\* (required|optional) - default: (.+?) - (.+)$")
 RETURN_RE = re.compile(r"^\* \*\*(" + NAME + r"):\*\* (always|when .+?) - (.+)$")
 STEP_RE = re.compile(r"^(\d+)\.\s+(.+)$")
-STATUS_LINE_RE = re.compile(r"^status:\s*(?:partial \| )?blocked \| needs-input \| (?:rejected \| )?failed\s*$")
+# Relay section 4 output: six flat tags, in this order, each opened and closed, no attributes.
+TAGS = ("status", "outcome", "claims", "artefacts", "open", "deviations")
+TAG_TOKEN_RE = re.compile(r"<(/?)(" + "|".join(TAGS) + r")(\s[^>]*)?>")
+FIELD_TAG_RE = re.compile(r"<(?:" + "|".join(TAGS) + r")>")
+STATUS_LINE_RE = re.compile(r"^<status>\s*(?:partial \| )?blocked \| needs-input \| (?:rejected \| )?failed\s*</status>$")
+MISSING_RE = re.compile(r"<open>\s*missing:")
+LEGACY_OUT_RE = re.compile(r"^(?:status|user-message):")
 LEGACY_RE = re.compile(
     r"^\s*(?:[*-]\s+)?\**\s*(Start\s+here:|@(?:Tool|Skill|Process|Return|ThrowError|MCP|Import)\b)")
 XML_SCOPE_RE = re.compile(r"^\s*<[a-z][\w-]*\s+scope=")
@@ -403,50 +410,60 @@ def check_inputs(doc, bounds, fails, warns, out, emit, process_text):
     return inputs
 
 
-def check_output(doc, bounds, fails, out, emit, full):
+def six_tags(body):
+    """True when body holds the six relay tags once each, in order, each opened and closed, flat, no attributes."""
+    found = [(m.group(1) == "/", m.group(2), bool(m.group(3))) for m in TAG_TOKEN_RE.finditer("\n".join(body))]
+    return found == [(close, tag, False) for tag in TAGS for close in (False, True)]
+
+
+def check_output(doc, bounds, fails, warns, out, emit, full):
+    """Rules 5, 7, 16, 18 and 23 for the Output section [lo, hi). Rule 7: the first fence holds the six relay tags.
+    Rule 16: the last fence is the failure template. Rule 18: field bullets (full only), each naming its tag
+    (a warning). Rule 23: no key: value status line and no user-message field."""
     lo, hi = bounds
     fences = doc.fences_in(lo, hi)
-    if not fences:
-        fails.add(7)
     do, dont, ok = do_dont(doc, lo, hi)
     if not ok:
         fails.add(5)
+    first_ok = bool(fences) and fences[0][1] is not None and six_tags(doc.lines[fences[0][0] + 1:fences[0][1]])
+    if not first_ok:
+        fails.add(7)
+    for o, c, _ in fences:
+        if c is not None and any(LEGACY_OUT_RE.match(l) for l in doc.lines[o + 1:c]):
+            fails.add(23)
     if emit:
         out.append(f"output_templates: {len(fences)}")
         out.append(f"output: do={do} dont={dont}")
-    if not full:
-        return
-    first = fences[0][0] if fences else hi
-    returns = 0
-    for i, line, kind in doc.plain(lo + 1, first):
-        if re.match(r"^\* \*\*", line):
-            m = RETURN_RE.match(line.rstrip())
-            if not m:
-                fails.add(18)
-                continue
-            returns += 1
-            out.append(f"returns: {m.group(1)} | {m.group(2)}")
-    if not returns:
-        fails.add(18)
-    fields = []
-    for o, c, tag in fences:
-        if tag == "text" and c is not None:
-            for j in range(o + 1, c):
-                m = re.match(r"^([A-Za-z][\w-]*):", doc.lines[j])
-                if m and m.group(1) not in fields:
-                    fields.append(m.group(1))
-                    out.append(f"output_field: {m.group(1)}")
+        out.append(f"output_tags: {'yes' if first_ok else 'no'}")
     status = False
     if fences and fences[-1][1] is not None:
         o, c, _ = fences[-1]
         body = doc.lines[o + 1:c]
-        status = (any(STATUS_LINE_RE.match(l) for l in body)
-                  and any(l.startswith("reason:") for l in body)
-                  and any(l.startswith("missing:") for l in body)
+        status = (six_tags(body)
+                  and any(STATUS_LINE_RE.match(l.strip()) for l in body)
+                  and bool(MISSING_RE.search("\n".join(body)))
                   and all(not l.strip() for l in doc.lines[c + 1:hi]))
     if not status:
         fails.add(16)
-    out.append(f"failure_template: {'yes' if status else 'no'}")
+    if full:
+        first = fences[0][0] if fences else hi
+        returns = 0
+        for i, line, kind in doc.plain(lo + 1, first):
+            if re.match(r"^\* \*\*", line):
+                m = RETURN_RE.match(line.rstrip())
+                if not m:
+                    fails.add(18)
+                    continue
+                returns += 1
+                if m.group(1) == "user-message":
+                    fails.add(23)
+                if not FIELD_TAG_RE.search(line):
+                    warns.add(18)
+                out.append(f"returns: {m.group(1)} | {m.group(2)}")
+                out.append(f"output_field: {m.group(1)}")
+        if not returns:
+            fails.add(18)
+        out.append(f"failure_template: {'yes' if status else 'no'}")
 
 
 def measure_part(path, folder):
@@ -468,7 +485,7 @@ def measure_part(path, folder):
         fails.add(8)
     step_refs(doc, len(steps), fails)
     if "Output" in b:
-        check_output(doc, b["Output"], fails, out, False, False)
+        check_output(doc, b["Output"], fails, warns, out, False, False)
     else:
         fails.add(7)
     common_checks(doc, folder, False, fails, warns, unresolved, mentions, os.path.dirname(path))
@@ -549,7 +566,7 @@ def main(argv):
         out += step_lines
         step_refs(doc, len(steps), fails)
         if "Output" in b:
-            check_output(doc, b["Output"], fails, out, True, True)
+            check_output(doc, b["Output"], fails, warns, out, True, True)
         else:
             fails.update({7, 16, 18})
         wf = os.path.join(folder, "references", "workflows")
