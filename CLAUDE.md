@@ -38,6 +38,7 @@ Do:
 * Keep the core blocks byte-for-byte as the worker has them. `measure.py` compares them.
 * End every report with a status tag as `Skill(agentville:relay)` section 4 sets it.
 * Send agent-to-agent text, including `SendMessage` follow-ups, in the shape `relay` sets.
+* Return every skill and agent output, failures included, as relay section 4 XML: the six flat tags `<status>`, `<outcome>`, `<claims>`, `<artefacts>`, `<open>`, `<deviations>`, in that order, with each field inside the tag that fits it and `none` in an empty tag. Never return a bare field block or a `user-message` field.
 
 Don't:
 
@@ -75,7 +76,7 @@ The shipped pair lets users choose a scope and nothing else; its scripts refuse 
 * **Rules and steps:** write Do and Don't lists, with an example where a rule needs one.
 * **Paths:** write placeholders, never host paths: `{{ SKILL_ROOT }}`, `{{ PROJECT_ROOT }}` and `{{ USER_ROOT }}`.
 * **Skill references:** use the full namespace, such as `Skill(agentville:relay)`. A bare name is wrong, and the old `anthropic-skills:` namespace fails validation. An external skill with no valid namespace in this repository, such as `/skill-creator`, keeps its bare name.
-* **Human-facing text:** follow `voice`. Text another agent reads follows `relay`.
+* **Human-facing text:** follow `voice`. Text another agent reads follows `relay`. Every skill and agent returns relay §4 XML output (the six tags, fields inside them, failure in the same tags); only the root agent writes for a person, compiling relay into `voice`. skill-smith enforces this by script, and agent-smith by its judged rules.
 
 ## Working in this repository
 
@@ -97,9 +98,9 @@ Do:
 * Write paths as `{{ PROJECT_ROOT }}`, `{{ SKILL_ROOT }}` and `{{ USER_ROOT }}`, and use `localhost` or `127.0.0.1` for a local address.
 * Use Acme in every few-shot example: one project with applications under it (`apps/web`, `apps/api`) or documentation work (`docs/`).
 * Keep exactly one `Co-Authored-By:` trailer per commit, and write Conventional Commits as set under Working in this repository.
-* Keep the plugin's components least-privilege: a tool list names only what the agent needs, MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control).
+* Keep the plugin's components least-privilege: a tool list names only what the agent needs (the one exception is `worker`, with its generated variants: it omits `tools` and inherits every tool, MCP included, with its `disallowedTools` list as the control; PS-09, accepted by design for worker files only), MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control).
 * Write for any OS, Claude Code first: shell steps default to bash on Linux and macOS and to PowerShell on Windows unless the user's project `CLAUDE.md` or steering says otherwise; run `python3` on Linux and macOS and `py -3` on Windows; in Python use `pathlib`, `tempfile` and `encoding="utf-8"`; keep LF line endings, which `.gitattributes` pins.
-* Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --fail-on medium`. It covers all refs and fixes every finding at medium or above. Until the history squash it fails on PII-02 and PS-52 in history; the squash removes both. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
+* Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`. It covers all refs and fixes every finding at medium or above. Until the history squash it fails on PII-02 and PS-52 in history; the squash removes both. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
 
 Don't:
 
@@ -135,7 +136,7 @@ python3 .claude/skills/skill-smith/scripts/test_scripts.py
 git diff --no-index --quiet plugins/agentville/agents/worker.md plugins/agentville/skills/agent-smith/assets/base/worker.md
 git diff --no-index --quiet plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
 python3 scripts/gen_agent_variants.py --check
-python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json'
+python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
 ```
 
 On Windows run `py -3` for `python3`; the commands are otherwise the same in PowerShell. `git diff --no-index --quiet` exits 0 when the two files are identical, so it replaces `cmp` everywhere in this file. The scan is read-only and must show no critical or high finding. The everyday run keeps the default gate; the pre-publish gate is the `--fail-on medium` command under Security and publishing.

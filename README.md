@@ -102,7 +102,7 @@ Each agent reads its role from a `<role>ROLE</role>` tag on the first line of th
 
 | Agent | Purpose |
 | --- | --- |
-| `agentville:worker` | The base agent: implements, explores and drafts. Its scout workflow is local-only. |
+| `agentville:worker` | The base agent: implements, explores and drafts. Its scout workflow is local-only. It inherits every tool, MCP included (MCP web tools too), except those its `disallowedTools` list denies, such as built-in web search and fetch and root-only tools (planning, scheduling, messaging and spawn). |
 | `agentville:scout` | Researches external questions with web search and fetch only; holds no file or shell tool. |
 | `agentville:validator` | Proves a behaviour with independent checks and writes hashed evidence; never edits product code. |
 | `agentville:reviewer` | Reviews a diff against a plan, read-only, and reads the validator's evidence when present. |
