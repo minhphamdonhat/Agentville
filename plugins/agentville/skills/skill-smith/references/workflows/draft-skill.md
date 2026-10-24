@@ -37,7 +37,7 @@ Don't:
 
 ### 3. Fill the fill-ins
 
-Replace every `[[...]]` fill-in from `spec` with `Edit`, brackets included. Follow each HTML comment, then delete it. Text outside fill-ins and comments stays word for word. Write the frontmatter with `name`, `description` and `metadata` holding `version` only. Stamp `version: 1.0.0` on a new skill; when improving or converting a skill that has a version, raise it by semver (major for a breaking contract change, minor for new behaviour, patch for a wording change). For a process skill, keep the template's `status: needs-input` wording wherever a step names `AskUserQuestion`, and keep the failure block at the end of `# Output`.
+Replace every `[[...]]` fill-in from `spec` with `Edit`, brackets included. Follow each HTML comment, then delete it. Text outside fill-ins and comments stays word for word. Write the frontmatter with `name`, `description` and `metadata` holding `version` only. Stamp `version: 1.0.0` on a new skill; when improving or converting a skill that has a version, raise it by semver (major for a breaking contract change, minor for new behaviour, patch for a wording change). For a process skill, keep the template's `<status>needs-input</status>` wording wherever a step names `AskUserQuestion`, keep the six report tags in the first fence of `# Output` and the failure template at the end.
 
 Do:
 * Fill the first Input line as `* **diff:** required - default: none - The unified diff to review, such as the output of git diff main.`
@@ -89,13 +89,21 @@ Don't:
 
 # Output
 
-Reply with this block, or with the failure block when the draft cannot be finished.
+Reply with the six report tags below, or with the failure template when the draft cannot be finished.
 
 ```text
+<status>completed</status>
+<outcome>The draft in <STAGING> is filled from the template.</outcome>
+<claims>
+- unfilled-placeholders: 0. verified: Grep for the fill-in brackets in <STAGING> found none
+</claims>
+<artefacts>
 draft: <STAGING>/SKILL.md
 template: {{ SKILL_ROOT }}/assets/templates/<type>.md
 files: <every path written under STAGING, comma-separated>
-unfilled-placeholders: 0
+</artefacts>
+<open>none</open>
+<deviations>none</deviations>
 ```
 
 Do:
@@ -104,10 +112,15 @@ Do:
 
 Don't:
 * List a file written outside `<STAGING>`; write only under it, as the Do items show.
-* Add a `version` line or any field the template lacks; report the four fields only.
+* Add a `version` line or any field the template lacks; report only the fields the template holds.
+
+Reply with this template when the draft cannot be finished:
 
 ```text
-status: blocked | needs-input | failed
-reason: <one sentence>
-missing: <input names, for needs-input; otherwise none>
+<status>blocked | needs-input | failed</status>
+<outcome><one sentence></outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: <input names, for needs-input; otherwise none></open>
+<deviations>none</deviations>
 ```

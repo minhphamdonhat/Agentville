@@ -1,11 +1,14 @@
 {
   "name": "minhphamdo",
   "description": "A storybook for founding a town of agents, from the first worker to a self-governing village",
-  "owner": { "name": "Minh Pham Do Nhat" },
+  "owner": {
+    "name": "Minh Pham Do Nhat"
+  },
   "plugins": [
     {
       "name": "agentville",
-      "description": "Agentville, release channel",
+      "displayName": "Agentville",
+      "description": "A storybook for founding a town of agents, from the first worker to a self-governing village. Stable.",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/minhphamdonhat/Agentville.git",
@@ -15,7 +18,8 @@
     },
     {
       "name": "agentville-beta",
-      "description": "Agentville, beta channel",
+      "displayName": "Agentville (Beta)",
+      "description": "A storybook for founding a town of agents, from the first worker to a self-governing village. Beta.",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/minhphamdonhat/Agentville.git",
@@ -25,7 +29,8 @@
     },
     {
       "name": "agentville-dev",
-      "description": "Agentville, development channel (main)",
+      "displayName": "Agentville (Nightly)",
+      "description": "A storybook for founding a town of agents, from the first worker to a self-governing village. Nightly.",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/minhphamdonhat/Agentville.git",

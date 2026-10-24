@@ -6,7 +6,7 @@ description: >-
   scope, correctness, impact, security, consistency, simplicity, steering, docs and tests, and cross-worker
   integration. It edits nothing and re-runs no checks. Serves the reviewer role named by
   <role>reviewer</role> in the brief. Spawn it to review a diff against a plan.
-  Variant fixed to Haiku at low effort; generated from `reviewer.md`, do not edit.
+  Variant fixed to Haiku at low effort, for sessions whose Agent tool has no `effort` parameter; otherwise spawn `agentville:reviewer` with model and effort. Generated from `reviewer.md`, do not edit.
 model: haiku
 effort: low
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Grep, Glob, Bash, Skill

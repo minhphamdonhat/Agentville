@@ -41,7 +41,7 @@ Don't:
 
 ### 3. Run the cases
 
-For `headless`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py run <agent-file> <baseline> <STAGING>/evals/evals.json <STAGING>/evals/out --execute` with Bash, adding `--model <models>` and `--workdir <workdir>` when given. It passes each agent's own `tools` as `--allowedTools` and the plugin folder that holds this skill as `--plugin-dir` (override with `--plugin-dir <dir>`), so the agent's tools and `Skill(agentville:relay)` resolve; with `baseline` `none` the base run drops `--agent` and gets the compiled agent's tools. Each run gets its own sandbox `<STAGING>/evals/out/sandbox/<case>.<label>/`, rebuilt before the run with the agents under `.claude/agents/` and the case's `files`, and its report is saved as `<case>.<label>.out.md`, where the label is `compiled` or `base`. Run it once without `--execute` first and read the printed `command:` lines and the `runs:` count.
+For `headless`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py run <agent-file> <baseline> <STAGING>/evals/evals.json <STAGING>/evals/out --execute` with Bash, adding `--model <models>` and `--workdir <workdir>` when given. It passes each agent's own `tools` as `--allowedTools` (an agent with no `tools` line, the worker and its variants, gets the built-in set `INHERIT_TOOLS` instead: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor and Skill, because `--permission-mode dontAsk` denies any tool that is not pre-approved) and the plugin folder that holds this skill as `--plugin-dir` (override with `--plugin-dir <dir>`), so the agent's tools and `Skill(agentville:relay)` resolve; with `baseline` `none` the base run drops `--agent` and gets the compiled agent's tools. Each run gets its own sandbox `<STAGING>/evals/out/sandbox/<case>.<label>/`, rebuilt before the run with the agents under `.claude/agents/` and the case's `files`, and its report is saved as `<case>.<label>.out.md`, where the label is `compiled` or `base`. Run it once without `--execute` first and read the printed `command:` lines and the `runs:` count.
 
 For `dispatch`, run `python3 {{ SKILL_ROOT }}/scripts/eval.py prompts <agent-file> <baseline> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. It keeps the sandbox of a case and label whose report is already saved, so rerunning it never erases a child's file effects before grade. It prints one `dispatch:` line per case and label with the prompt file, the sandbox `cwd=` the child must work in and the report path. Return those lines as `eval-dispatch` so each prompt runs in a fresh child and its report is saved to the named path; grade only after every report is saved.
 
@@ -67,26 +67,48 @@ Don't:
 
 # Output
 
-Reply with this block, or with the failure block when the evals cannot run.
+Reply with the six relay §4 tags, in order, flat, plain lines, with `none` in a tag that has nothing, or with the failure template when the evals cannot run:
+
+* **status:** always - in `<status>`: `completed` when the evals ran, `partial` when some did not.
+* **outcome:** always - in `<outcome>`: the result in one or two sentences.
+* **score:** always - in `<claims>` as `- score: <value>. <label>: <evidence>`: `compiled <n>/<N> vs base <m>/<N>` or `not run`.
+* **result:** always - in `<claims>` as `- result: <pass|fail|not run>. <label>: <evidence>`.
+* **run-mode:** always - in `<claims>` as `- run-mode: <headless|dispatch>. <label>: <evidence>`.
+* **cases:** always - in `<artefacts>` as `cases: <STAGING>/evals/evals.json`.
+* **eval-dispatch:** when `run-mode` is dispatch, in `<artefacts>` as `eval-dispatch:` then the dispatch lines, before grading.
+* **failing-grades:** when a case failed, in `<open>`: each failing `grade:` line for the revise loop, or `none`.
 
 ```text
-run-mode: headless | dispatch
+<status>completed</status>
+<outcome>The compiled agent scored 3/3 against 1/3 for the base worker.</outcome>
+<claims>
+- run-mode: headless. verified: eval.py run output
+- score: compiled 3/3 vs base 1/3. verified: eval.py grade output
+- result: pass. verified: eval.py grade output
+</claims>
+<artefacts>
 cases: <STAGING>/evals/evals.json
-score: compiled <n>/<N> vs base <m>/<N> | not run
-result: pass | fail | not run
-eval-dispatch: <the dispatch lines, for dispatch mode before grading; otherwise none>
+eval-dispatch: none
+</artefacts>
+<open>none</open>
+<deviations>none</deviations>
 ```
 
 Do:
-* `run-mode: headless`, `score: compiled 3/3 vs base 1/3`, `result: pass`.
-* `run-mode: dispatch`, `score: not run`, `eval-dispatch:` with six lines for three cases.
+* Record `- score: compiled 3/3 vs base 1/3. verified: eval.py grade output` and `- result: pass. verified: eval.py grade output`.
+* Record `- run-mode: dispatch. verified: the run-mode input`, `- score: not run. verified: no report graded` and `eval-dispatch:` with six lines for three cases.
 
 Don't:
 * Report `result: pass` with a `not run` score; the Do items show the two honest forms.
-* Add a field the template lacks; return the five fields only.
+* Add a tag the template lacks; return the six tags only.
+
+When the evals cannot run, reply with this block only:
 
 ```text
-status: blocked | needs-input | failed
-reason: <one sentence>
-missing: <run-mode, for needs-input; otherwise none>
+<status>blocked | needs-input | failed</status>
+<outcome>one sentence naming what stopped the run</outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: run-mode, for needs-input; otherwise what would unblock the run</open>
+<deviations>none</deviations>
 ```

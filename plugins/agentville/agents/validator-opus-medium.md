@@ -6,7 +6,7 @@ description: >-
   verification tools the project's steering names, and writes hashed, replayable evidence per requirement into the `evidence-location` folder its caller names;
   it never edits product code and does not review code. Serves the validator role named by
   <role>validator</role> in the brief. Spawn it to prove a behaviour with evidence in a folder you name.
-  Variant fixed to Opus at medium effort; generated from `validator.md`, do not edit.
+  Variant fixed to Opus at medium effort, for sessions whose Agent tool has no `effort` parameter; otherwise spawn `agentville:validator` with model and effort. Generated from `validator.md`, do not edit.
 model: opus
 effort: medium
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Bash, Skill

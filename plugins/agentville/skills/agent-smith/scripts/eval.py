@@ -267,6 +267,17 @@ def plugin_root(start=HERE):
         d = parent
 
 
+# An agent that omits `tools` inherits every tool, but `--permission-mode dontAsk` auto-denies any tool that is
+# not pre-approved, so an inheriting agent is given this session-safe built-in set as --allowedTools.
+INHERIT_TOOLS = ["TaskCreate", "TaskUpdate", "TaskGet", "TaskList", "TaskStop", "Read", "Write", "Edit", "Glob",
+                 "Grep", "Bash", "NotebookEdit", "Monitor", "Skill"]
+
+
+def allowed_tools(listed):
+    """The agent's own tools, or INHERIT_TOOLS when it lists none."""
+    return list(listed) if listed else list(INHERIT_TOOLS)
+
+
 def build_command(cli, agent_name, tools, prompt, workdir=None, model=None, plugin_dir=None, denied=None):
     """Headless command for one case; agent_name None runs plain `claude -p` with no agent. Variadic flags
     (--allowedTools, --disallowedTools, --add-dir) come before a single-value flag so they never swallow
@@ -315,12 +326,12 @@ def run(args):
     pdir = os.path.abspath(opts["--plugin-dir"]) if opts["--plugin-dir"] else plugin_root()
     print("plugin_dir: " + (pdir or "none (no .claude-plugin/plugin.json above this skill)"))
     print("model: " + (opts["--model"] or "session default"))
-    atools = measure.split_list(agent["fm"].get("tools", ""))
+    atools = allowed_tools(measure.split_list(agent["fm"].get("tools", "")))
     adenied = measure.split_list(agent["fm"].get("disallowedTools", ""))
     # The no-agent baseline gets the compiled agent's tools, allowed and denied; an agent applies its own denials.
     tools = {"compiled": (name, atools, None),
              "base": (None, atools, adenied) if base is None
-             else (bname, measure.split_list(base["fm"].get("tools", "")), None)}
+             else (bname, allowed_tools(measure.split_list(base["fm"].get("tools", ""))), None)}
     print("baseline: " + ("none (plain claude -p, the compiled agent's tools)" if base is None else bname))
     print("mode: " + ("execute" if execute else "dry-run"))
     failed = 0

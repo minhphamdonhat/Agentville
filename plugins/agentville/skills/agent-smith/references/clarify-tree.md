@@ -14,7 +14,7 @@ A slot is one decision of the contract. A slot is settled when the user has answ
 | workflows | description | Workflow names, each with its `Role:` (worker, validator, reviewer or scout) and when it applies |
 | workflow-inputs | workflows | Per workflow, each input as `name: required or optional - default - description` |
 | workflow-steps | workflow-inputs | Per workflow, numbered steps; each names its tool or `Skill(namespace:name)`, or hands back a spawn request |
-| workflow-outputs | workflow-steps | Per workflow, the returned fields as `name: always or when <condition> - what it holds` |
+| workflow-outputs | workflow-steps | Per workflow, the returned fields as `name: always or when <condition> - <tag>: what it holds`, each in one of the six relay §4 tags |
 | rules | workflows | Extending rules, each with a one-clause reason; they follow the core constraints and never contradict them |
 | exceptions | workflow-steps | Each condition the agent can hit and the relay §4 status token it reports |
 | tools | workflow-steps | Every tool a step names, and nothing else; asked as its own explicit question, always last |

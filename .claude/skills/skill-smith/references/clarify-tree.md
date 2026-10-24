@@ -15,8 +15,8 @@ A slot is one decision of the contract. A slot is settled when the user has answ
 | constraints | process | role | Global hard rules, each with a one-clause reason |
 | inputs | process | role | Each as `name: required or optional - default - description` |
 | steps | process | inputs | Numbered step titles, the tool each names, and one Do and one Don't example each |
-| output | process | steps | The returned fields, the literal template and the failure block with `status`, `reason` and `missing` |
-| interaction | process | steps | Which steps may ask a person with `AskUserQuestion`; each such step returns `status: needs-input` with `missing:` when no person is reachable |
+| output | process | steps | The returned fields with the tag each goes in, the literal six-tag template and the failure template with `<status>`, `<outcome>` and `missing:` in `<open>` |
+| interaction | process | steps | Which steps may ask a person with `AskUserQuestion`; each such step returns `<status>needs-input</status>` with `<open>` beginning `missing:` when no person is reachable |
 | sections | steering | type | One numbered section per decision the reader makes, then the Pre-send check |
 | topics | knowledge | type | One topic per section, each titled as a reader would ask for it |
 | sources | knowledge | topics | Relative links to files the skill ships, or external URLs, or none |
@@ -51,4 +51,4 @@ A slot that a settled answer unlocks joins the next round. A slot whose answer s
 - Make option 1 the recommended answer, labelled "(Recommended)", and quote its value in full so the user can accept it unchanged, such as `inputs: diff (required), strictness (optional, default normal)`. Follow it with one to three alternatives.
 - Look a fact up with `Glob` or `Read` before asking; ask only decisions.
 - After the last round, show the whole contract and ask "Build it?" with the options "Yes, build it (Recommended)" and "Change something". Ask nothing further after a yes.
-- When no person is reachable, do not ask: return `status: needs-input` with the unsettled slots on `missing:` and the questions in `reason:`.
+- When no person is reachable, do not ask: return `<status>needs-input</status>` with the unsettled slots after `missing:` in `<open>` and the questions in `<outcome>`.
