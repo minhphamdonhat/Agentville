@@ -1,0 +1,38 @@
+# Template: fill every placeholder in double braces, then delete these three comment lines.
+# The [project.scripts] command equals the project name, so `uvx {{ PACKAGE_NAME }}` and
+# `uv tool install {{ PACKAGE_NAME }}` both find it.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{ PACKAGE_NAME }}"
+version = "{{ VERSION }}"
+description = "{{ SUMMARY }}"
+readme = "README.md"
+requires-python = ">={{ PYTHON_VERSION }}"
+license = "{{ LICENSE }}"
+authors = [{ name = "{{ AUTHOR }}" }]
+keywords = ["cli"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+# Standard library first: add a dependency only for a need the standard library cannot meet.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/{{ REPOSITORY }}"
+Issues = "https://github.com/{{ REPOSITORY }}/issues"
+
+[project.scripts]
+{{ PACKAGE_NAME }} = "{{ MODULE_NAME }}.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{{ MODULE_NAME }}"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "install.sh", "install.ps1", "install.cmd"]
