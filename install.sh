@@ -6,14 +6,16 @@
 #   ... | bash -s -- --from-source # the GitHub repository instead of PyPI
 #
 # It installs for the current user only and never uses sudo. The only remote
-# script it runs is Astral's official uv installer, when uv is missing.
+# script it runs is Astral's official uv installer, pinned to UV_VERSION, when
+# uv is missing; it is downloaded to a temporary file first, then run.
 # Running it again upgrades the install.
 set -euo pipefail
 
 PYTHON_VERSION="3.15"
 PACKAGE="agentville"
 REPO_URL="https://github.com/minhphamdonhat/agentville"
-UV_INSTALLER_URL="https://astral.sh/uv/install.sh"
+UV_VERSION="0.13.5"
+UV_INSTALLER_URL="https://astral.sh/uv/${UV_VERSION}/install.sh"
 CURL_FLAGS=(--proto '=https' --tlsv1.2 -LsSf)
 
 usage() {
@@ -51,8 +53,12 @@ done
 
 case "$version" in
   latest|stable) version="latest" ;;
-  [0-9]*.[0-9]*.[0-9]*) ;;
-  *) echo "error: VERSION must be latest or X.Y.Z, not '$version'" >&2; exit 2 ;;
+  *)
+    if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "error: VERSION must be latest or X.Y.Z, not '$version'" >&2
+      exit 2
+    fi
+    ;;
 esac
 
 say() { printf '%s\n' "$*"; }
@@ -72,8 +78,8 @@ ensure_uv() {
     return 0
   fi
   say "uv is not installed. Agentville installs with uv (https://docs.astral.sh/uv/)."
-  say "Running Astral's official installer, which puts uv in your home folder (no sudo):"
-  say "  curl --proto '=https' --tlsv1.2 -LsSf ${UV_INSTALLER_URL} | sh"
+  say "Running Astral's official installer for uv ${UV_VERSION}, which puts uv in your home folder (no sudo):"
+  say "  ${UV_INSTALLER_URL}"
   if interactive; then
     local answer=""
     printf 'Install uv now? [y/N] '
@@ -87,10 +93,14 @@ ensure_uv() {
     say "error: curl is needed to download uv." >&2
     exit 1
   fi
+  # Download to a temporary file first, so a cut-off transfer never runs half a script.
+  uv_installer="$(mktemp)"
+  trap 'rm -f "${uv_installer:-}"' EXIT
+  curl "${CURL_FLAGS[@]}" --output "$uv_installer" "$UV_INSTALLER_URL"
   if [ "$no_modify_path" = "1" ]; then
-    curl "${CURL_FLAGS[@]}" "$UV_INSTALLER_URL" | env UV_NO_MODIFY_PATH=1 sh
+    env UV_NO_MODIFY_PATH=1 sh "$uv_installer"
   else
-    curl "${CURL_FLAGS[@]}" "$UV_INSTALLER_URL" | sh
+    sh "$uv_installer"
   fi
   # The uv installer puts uv in ~/.local/bin by default; make it visible to this shell.
   export PATH="$HOME/.local/bin:$PATH"

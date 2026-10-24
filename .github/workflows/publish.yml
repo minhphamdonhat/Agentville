@@ -1,5 +1,7 @@
 # Tests, builds and publishes the `agentville` CLI to PyPI when a tag
 # `agentville-cli--vX.Y.Z` is pushed. PyPI trusted publishing: no token is stored.
+# A manual run (workflow_dispatch) runs the OS test matrix and the build only;
+# the tag check and the publish job run on a tag push and never otherwise.
 # Every action is pinned to a full commit SHA; the comment names its release tag.
 name: Publish CLI to PyPI
 
@@ -7,6 +9,7 @@ on:
   push:
     tags:
       - "agentville-cli--v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -37,6 +40,7 @@ jobs:
       - name: Build the sdist and wheel
         run: uv build --no-sources --python 3.15
       - name: Check the tag matches the package version
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/agentville-cli--v')
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -54,6 +58,7 @@ jobs:
 
   publish:
     needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/agentville-cli--v')
     runs-on: ubuntu-latest
     environment:
       name: pypi

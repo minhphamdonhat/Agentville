@@ -1,7 +1,7 @@
 @echo off
 rem Puts a persistent agentville command on PATH with uv, from the Windows Command Prompt.
 rem
-rem   curl -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
+rem   curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
 rem
 rem It downloads install.ps1 next to your temporary files, runs it with PowerShell
 rem and passes its arguments on, such as a VERSION (0.1.0) or -FromSource.

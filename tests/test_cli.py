@@ -155,3 +155,31 @@ def test_dry_run_without_claude_writes_nothing(home: Path, no_claude: None, caps
     assert main(["install", "--dry-run"]) == 0
     assert list(home.iterdir()) == []
     assert "[dry-run] would update" in capsys.readouterr().out
+
+
+def test_cli_path_warns_when_other_channel_enabled(
+    home: Path, with_claude: FakeRun, capsys: pytest.CaptureFixture[str]
+) -> None:
+    settings = home / ".claude" / "settings.json"
+    settings.parent.mkdir()
+    settings.write_text(json.dumps({"enabledPlugins": {"agentville@minhphamdo": True}}), encoding="utf-8")
+    assert main(["install", "--channel", "beta"]) == 0
+    assert "agentville@minhphamdo is also enabled" in capsys.readouterr().err
+
+
+def test_cli_path_ignores_invalid_settings_for_warning(home: Path, with_claude: FakeRun) -> None:
+    settings = home / ".claude" / "settings.json"
+    settings.parent.mkdir()
+    settings.write_text("{oops", encoding="utf-8")
+    assert main(["install"]) == 0
+    assert settings.read_text(encoding="utf-8") == "{oops"
+
+
+def test_fallback_warns_when_other_channel_enabled(
+    home: Path, no_claude: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    settings = home / ".claude" / "settings.json"
+    settings.parent.mkdir()
+    settings.write_text(json.dumps({"enabledPlugins": {"agentville-dev@minhphamdo": True}}), encoding="utf-8")
+    assert main(["install"]) == 0
+    assert "agentville-dev@minhphamdo is also enabled" in capsys.readouterr().err

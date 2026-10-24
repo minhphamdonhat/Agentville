@@ -32,23 +32,21 @@ Install one channel at a time: all three load the same names under `agentville:`
 
 In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/agentville` and install one channel.
 
-From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/), which downloads Python 3.15 when you do not have it. There are two ways to run it, and both take the same options.
+From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/) and Python 3.15; given `--python 3.15`, uv downloads that Python when you do not have it. There are two ways to run it, and both take the same options.
 
 ### Install with uvx
 
-`uvx` runs the latest published `agentville` without keeping it installed:
+`uvx` runs the latest published `agentville` without keeping it installed. `--python 3.15` picks the Python it needs, downloading it when it is missing:
 
 ```bash
-uvx agentville install
-uvx agentville install --scope project
-uvx agentville install --channel beta
+uvx --python 3.15 agentville install
+uvx --python 3.15 agentville install --scope project
+uvx --python 3.15 agentville install --channel beta
 ```
-
-If uv reports that no interpreter for Python 3.15 was found, add `--python 3.15` after `uvx`.
 
 ### Install the agentville command
 
-The install script puts a persistent `agentville` command on your `PATH` with `uv tool install`, for your user only. When uv is missing, it prints the official Astral installer command and runs it; it asks first only when you run it at a terminal. It never uses `sudo` or administrator rights, and running it again upgrades the command.
+The install script puts a persistent `agentville` command on your `PATH` with `uv tool install`, for your user only. When uv is missing, it downloads Astral's official uv installer, pinned to one uv version, to a temporary file and runs it; it asks first only when you run it at a terminal. It never uses `sudo` or administrator rights, and running it again upgrades the command.
 
 On Linux and macOS:
 
@@ -65,7 +63,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/min
 On Windows, in the Command Prompt:
 
 ```bat
-curl -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
+curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
 ```
 
 Then open a new terminal, so that `PATH` includes the new command, and run `agentville install` with the options below.

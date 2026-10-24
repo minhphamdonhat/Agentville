@@ -1,4 +1,4 @@
-"""Idempotent edits of steering and settings files: UTF-8, LF, nothing else touched."""
+"""Idempotent edits of steering and settings files: UTF-8, the file's own line endings, nothing else touched."""
 
 from __future__ import annotations
 
@@ -12,15 +12,26 @@ class FileEditError(Exception):
 
 
 def _read_text(path: Path) -> str:
+    """Read UTF-8 text exactly as stored: newline="" keeps CRLF and LF untranslated."""
     try:
-        return path.read_text(encoding="utf-8")
+        with path.open(encoding="utf-8", newline="") as handle:
+            return handle.read()
     except UnicodeDecodeError as exc:
         raise FileEditError(f"{path} is not UTF-8 text; left unchanged") from exc
 
 
+def _line_separator(text: str) -> str:
+    """Return the separator the text already uses: CRLF when its first line ends so, else LF."""
+    first = text.find("\n")
+    if first > 0 and text[first - 1] == "\r":
+        return "\r\n"
+    return "\n"
+
+
 def _write_text(path: Path, text: str) -> None:
+    """Write the text as given; callers have already chosen the line separator."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="\n") as handle:
+    with path.open("w", encoding="utf-8", newline="") as handle:
         handle.write(text)
 
 
@@ -35,18 +46,20 @@ def missing_lines(path: Path, lines: list[str] | tuple[str, ...]) -> list[str]:
 def append_lines(path: Path, lines: list[str] | tuple[str, ...], dry_run: bool = False) -> list[str]:
     """Append each line the file lacks, creating the file if needed; return the lines added.
 
-    An existing file keeps its content; the new lines follow a blank line so a
-    Markdown list never runs into the paragraph before it.
+    An existing file keeps its content and its line endings (CRLF or LF); the new
+    lines follow a blank line so a Markdown list never runs into the paragraph
+    before it. A new file gets LF.
     """
     to_add = missing_lines(path, lines)
     if not to_add or dry_run:
         return to_add
     existing = _read_text(path) if path.exists() else ""
+    sep = _line_separator(existing)
     if existing and not existing.endswith("\n"):
-        existing += "\n"
-    if existing.strip() and not existing.endswith("\n\n"):
-        existing += "\n"
-    _write_text(path, existing + "\n".join(to_add) + "\n")
+        existing += sep
+    if existing.strip() and not existing.endswith(sep + sep):
+        existing += sep
+    _write_text(path, existing + sep.join(to_add) + sep)
     return to_add
 
 
@@ -72,6 +85,7 @@ def merge_json_object(path: Path, patch: dict[str, dict[str, Any]], dry_run: boo
     Return the changed entries as `section.key`. Refuse, writing nothing, when the
     file or a section is not a JSON object.
     """
+    sep = _line_separator(_read_text(path)) if path.exists() else "\n"
     data = read_json_object(path)
     changed: list[str] = []
     for section, entries in patch.items():
@@ -86,5 +100,6 @@ def merge_json_object(path: Path, patch: dict[str, dict[str, Any]], dry_run: boo
                 changed.append(f"{section}.{key}")
         data[section] = current
     if changed and not dry_run:
-        _write_text(path, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+        # json.dumps escapes newlines inside strings, so every "\n" here is a line break.
+        _write_text(path, json.dumps(data, indent=2, ensure_ascii=False).replace("\n", sep) + sep)
     return changed

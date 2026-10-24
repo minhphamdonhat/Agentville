@@ -63,6 +63,19 @@ def _display(command: list[str]) -> str:
     return shlex.join([Path(command[0]).name, *command[1:]])
 
 
+def _warn_other_channels(path: Path, current: dict[str, object], channel: str, console: Console) -> None:
+    """Warn when settings already enable another Agentville channel."""
+    enabled = current.get("enabledPlugins")
+    if not isinstance(enabled, dict):
+        return
+    others = [pid for pid in PLUGIN_IDS.values() if pid != plugin_id(channel) and enabled.get(pid)]
+    if others:
+        console.warn(
+            f"{', '.join(others)} is also enabled in {path}; install one channel at a time, "
+            "because all channels load the same names."
+        )
+
+
 class ClaudeCodeTarget:
     name = "claude-code"
     description = "Claude Code (plugin through the claude CLI, else settings.json)"
@@ -81,6 +94,10 @@ class ClaudeCodeTarget:
 
     def _install_with_cli(self, claude: str, options: InstallOptions, console: Console, cwd: Path | None) -> int:
         where = f" (in {cwd})" if cwd else ""
+        try:
+            _warn_other_channels(settings_path(options), read_json_object(settings_path(options)), options.channel, console)
+        except (FileEditError, OSError):
+            pass  # The claude CLI reports a broken settings file itself; the warning is only a hint.
         for command in cli_commands(claude, options):
             console.action(f"run: {_display(command)}{where}")
             if options.dry_run:
@@ -112,14 +129,7 @@ class ClaudeCodeTarget:
         except FileEditError as exc:
             console.error(str(exc))
             return EXIT_FAILED
-        enabled = current.get("enabledPlugins")
-        if isinstance(enabled, dict):
-            others = [pid for pid in PLUGIN_IDS.values() if pid != plugin_id(options.channel) and enabled.get(pid)]
-            if others:
-                console.warn(
-                    f"{', '.join(others)} is also enabled in {path}; install one channel at a time, "
-                    "because all channels load the same names."
-                )
+        _warn_other_channels(path, current, options.channel, console)
         if changed:
             console.action(f"update {path}: set {', '.join(changed)}")
         else:

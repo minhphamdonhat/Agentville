@@ -90,3 +90,42 @@ def test_merge_dry_run_writes_nothing(tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     assert merge_json_object(path, {"enabledPlugins": {"a@b": True}}, dry_run=True) == ["enabledPlugins.a@b"]
     assert not path.exists()
+
+
+def test_append_keeps_crlf_in_claude_md(tmp_path: Path) -> None:
+    path = tmp_path / "CLAUDE.md"
+    path.write_bytes(b"# Project\r\nSome text\r\n")
+    assert append_lines(path, LINES) == list(LINES)
+    assert path.read_bytes() == b"# Project\r\nSome text\r\n\r\n- first line\r\n- second line\r\n"
+    assert append_lines(path, LINES) == []
+
+
+def test_append_keeps_crlf_without_final_newline(tmp_path: Path) -> None:
+    path = tmp_path / "CLAUDE.md"
+    path.write_bytes(b"# Project\r\nSome text")
+    append_lines(path, LINES)
+    assert path.read_bytes() == b"# Project\r\nSome text\r\n\r\n- first line\r\n- second line\r\n"
+
+
+def test_append_keeps_lf_in_lf_file(tmp_path: Path) -> None:
+    path = tmp_path / "CLAUDE.md"
+    path.write_bytes(b"# Project\n")
+    append_lines(path, LINES)
+    assert path.read_bytes() == b"# Project\n\n- first line\n- second line\n"
+
+
+def test_merge_keeps_crlf_in_settings_json(tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    path.write_bytes(b'{\r\n  "model": "opus"\r\n}\r\n')
+    assert merge_json_object(path, {"enabledPlugins": {"a@b": True}}) == ["enabledPlugins.a@b"]
+    raw = path.read_bytes()
+    assert raw.count(b"\r\n") == raw.count(b"\n")
+    assert raw.endswith(b"}\r\n")
+    assert json.loads(raw.decode("utf-8")) == {"model": "opus", "enabledPlugins": {"a@b": True}}
+
+
+def test_merge_keeps_lf_in_settings_json(tmp_path: Path) -> None:
+    path = tmp_path / "settings.json"
+    path.write_bytes(b'{\n  "model": "opus"\n}\n')
+    merge_json_object(path, {"enabledPlugins": {"a@b": True}})
+    assert b"\r" not in path.read_bytes()
