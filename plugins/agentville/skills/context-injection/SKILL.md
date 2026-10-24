@@ -1,8 +1,8 @@
 ---
 name: "context-injection"
-description: "Resolves injectable slots, such as 'workspace' and 'toolbelt', each to the one skill that fills it: the id, the absolute SKILL.md path, the binding's source and any fallback. Reads bindings ('slot: Skill(namespace:name)') from project and user steering files, else the plugin default 'agentville:<slot>'; with no readable files it returns the defaults. Use before a slot's skill, or when asked which skill fills a slot."
+description: "Resolves injectable slots, such as 'workspace' and 'toolbelt', each to the one skill that fills it: the id, the absolute SKILL.md path, the binding's source and any fallback. Reads bindings ('slot: Skill(namespace:name)') from project and user steering files, else the plugin default 'agentville:{slot}'; with no readable files it returns the defaults. Use before a slot's skill, or when asked which skill fills a slot."
 metadata:
-  version: 2.0.0
+  version: 2.0.1
 ---
 
 # Role

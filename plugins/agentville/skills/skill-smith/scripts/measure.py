@@ -531,6 +531,10 @@ def main(argv):
     if not template:
         if not desc or len(desc) > 1024:
             fails.add(12)
+        if re.search(r"[<>]", desc):
+            fails.add(12)
+            out.append("description_error: the description holds '<' or '>'; claude.ai strips angle brackets "
+                       "or reads them as XML tags, so write a placeholder as {name}, never <name>")
         if not re.match(r"^[a-z0-9]+(?:-[a-z0-9]+)*$", name) or len(name) > 64:
             fails.add(13)
 

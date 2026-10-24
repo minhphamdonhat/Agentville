@@ -1,8 +1,8 @@
 ---
 name: "plan"
-description: "Records a topic's plan, the goal, tasks with done criteria (and progress when given) and an approval status kept as a record only, as '<topic-folder>/plan.md', and returns the file path, sections and approval; with no file tool it returns the formatted plan inline. Modes create, append, update, locate (read-only). Records what it is given and approves nothing. Use to save a plan, update a task or approval, or find where the plan lives."
+description: "Records a topic's plan, the goal, tasks with done criteria (and progress when given) and an approval status kept as a record only, as '{topic-folder}/plan.md', and returns the file path, sections and approval; with no file tool it returns the formatted plan inline. Modes create, append, update, locate (read-only). Records what it is given and approves nothing. Use to save a plan, update a task or approval, or find where the plan lives."
 metadata:
-  version: 2.0.0
+  version: 2.0.1
 ---
 
 # Role
