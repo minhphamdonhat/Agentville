@@ -1,0 +1,57 @@
+# Command-line installer for the Agentville plugin, run with `uvx agentville install`.
+#
+# Publishing (maintainers):
+#   1. On PyPI, add a trusted publisher for this project: owner `minhphamdonhat`,
+#      repository `agentville`, workflow `publish.yml`, environment `pypi`.
+#   2. Bump `__version__` in agentville/__init__.py, then push a tag
+#      `agentville-cli--vX.Y.Z` that matches it; .github/workflows/publish.yml
+#      tests, builds and publishes.
+#   Manual fallback: `uv build`, then `uv publish` (trusted publishing or a token
+#   set in the UV_PUBLISH_TOKEN environment variable).
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentville"
+dynamic = ["version"]
+description = "Installs the Agentville plugin of skills and agents into Claude Code."
+readme = "README.md"
+requires-python = ">=3.15"
+authors = [{ name = "Minh Pham Do Nhat" }]
+keywords = ["claude-code", "plugin", "agents", "skills", "installer"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Software Development",
+]
+dependencies = []
+
+[project.scripts]
+agentville = "agentville.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/minhphamdonhat/agentville"
+Repository = "https://github.com/minhphamdonhat/agentville"
+Issues = "https://github.com/minhphamdonhat/agentville/issues"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.hatch.version]
+path = "agentville/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agentville"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["agentville", "tests", "README.md", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

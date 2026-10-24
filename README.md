@@ -32,6 +32,69 @@ Install one channel at a time: all three load the same names under `agentville:`
 
 In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/agentville` and install one channel.
 
+From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/), which downloads Python 3.15 when you do not have it. There are two ways to run it, and both take the same options.
+
+### Install with uvx
+
+`uvx` runs the latest published `agentville` without keeping it installed:
+
+```bash
+uvx agentville install
+uvx agentville install --scope project
+uvx agentville install --channel beta
+```
+
+If uv reports that no interpreter for Python 3.15 was found, add `--python 3.15` after `uvx`.
+
+### Install the agentville command
+
+The install script puts a persistent `agentville` command on your `PATH` with `uv tool install`, for your user only. When uv is missing, it prints the official Astral installer command and runs it; it asks first only when you run it at a terminal. It never uses `sudo` or administrator rights, and running it again upgrades the command.
+
+On Linux and macOS:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash
+```
+
+On Windows, in PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1 | iex"
+```
+
+On Windows, in the Command Prompt:
+
+```bat
+curl -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+Then open a new terminal, so that `PATH` includes the new command, and run `agentville install` with the options below.
+
+Each script takes an optional version, `latest` by default, and a switch to install from the GitHub repository instead of PyPI:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash -s 0.1.0
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash -s -- --from-source
+```
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) 0.1.0
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) -FromSource
+```
+
+Set `AGENTVILLE_NO_MODIFY_PATH=1` to leave `PATH` alone, and `AGENTVILLE_YES=1` (or pass `--yes`, in PowerShell `-Yes`) to skip the question at a terminal; nothing is asked when `CI` is set. Upgrade with `uv tool upgrade agentville` and remove the command with `uv tool uninstall agentville`.
+
+### Installer options
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `--scope` | `user` (your home folder) or `project` (the current folder, or `--project-dir PATH`) | `user` |
+| `--channel` | `stable`, `beta` or `dev`, the channels in the table above | `stable` |
+| `--target` | `claude-code` | `claude-code` |
+| `--dry-run` | Prints the actions and changes nothing | Off |
+
+With the `claude` command on your `PATH`, the installer runs `claude plugin marketplace add` and `claude plugin install`. Without it, the installer writes the same marketplace and plugin entries into Claude Code's `settings.json` and keeps every other key; it refuses to touch a file that is not valid JSON. User scope writes `~/.claude/settings.json` and `~/.claude/CLAUDE.md`; project scope writes `.claude/settings.json` and `CLAUDE.md` in the project folder. A second run changes nothing. The exit code is 0 on success, 1 when a step fails and 2 for a usage error.
+
 ## Three ways to run it
 
 In Claude Code, installing Agentville makes `pod-lead` the main agent by default, so `orchestrate` runs on every request. Chat and Cowork ignore plugin settings, so there you opt in. Pick one way:
