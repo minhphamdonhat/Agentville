@@ -207,3 +207,7 @@ The workspace writes its `.gitignore` on first use when it is missing, and write
 `skill-smith` calls `/skill-creator` for evals and description tuning, so install that skill alongside it if you want `skill-smith` to test what it drafts. Its helper scripts need Python 3 (see Requirements).
 
 Both smiths install only to project scope (`.claude/` in the project) or user scope (`.claude/` in the home folder). They refuse any plugin folder, Agentville included, and the helper scripts enforce that.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).

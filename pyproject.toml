@@ -18,6 +18,8 @@ name = "agentville"
 dynamic = ["version"]
 description = "Installs the Agentville plugin of skills and agents into Claude Code."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.15"
 authors = [{ name = "Minh Pham Do Nhat" }]
 keywords = ["claude-code", "plugin", "agents", "skills", "installer"]
@@ -51,7 +53,7 @@ path = "agentville/__init__.py"
 packages = ["agentville"]
 
 [tool.hatch.build.targets.sdist]
-only-include = ["agentville", "tests", "README.md", "pyproject.toml"]
+only-include = ["agentville", "tests", "README.md", "LICENSE", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
