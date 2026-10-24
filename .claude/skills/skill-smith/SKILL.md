@@ -2,7 +2,7 @@
 name: "skill-smith"
 description: "Agentville maintainer copy of skill-smith, for building skills in this repository: the canonical way to create, improve or convert a Claude skill, installing into the Agentville plugin or the project. Use when maintaining Agentville and asked to create, write or compile a skill or SKILL.md, to fix or re-test an existing one, or to convert an older skill to the current format."
 metadata:
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # Role

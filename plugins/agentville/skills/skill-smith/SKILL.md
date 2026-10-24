@@ -2,7 +2,7 @@
 name: "skill-smith"
 description: "The canonical way to create, improve or convert a Claude skill. Use when asked to create, write or compile a skill or SKILL.md, to fix or re-test an existing one, or to convert an older skill to the current format."
 metadata:
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # Role
