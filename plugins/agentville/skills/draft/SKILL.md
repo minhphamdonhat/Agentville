@@ -1,8 +1,8 @@
 ---
 name: "draft"
-description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '<topic-folder>/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
+description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '{topic-folder}/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
 metadata:
-  version: 2.0.0
+  version: 2.0.1
 ---
 
 # Role

@@ -1,8 +1,8 @@
 ---
 name: "report"
-description: "Records a topic's final report, outcome, what each task delivered, evidence pointers, review result, extra work, out-of-scope findings and open items, as '<topic-folder>/report.md' or at a given destination, and returns the file path and sections written; with no file tool, or when the write is refused, it returns the formatted report inline. Modes create, append, update, locate (read-only) and prepare-evidence, which creates and returns the next '<topic-folder>/evidence/run-<N>/' folder. Records results as given and judges nothing. Use to save a report, update it after new results, find where it lives, or get a fresh evidence folder."
+description: "Records a topic's final report, outcome, what each task delivered, evidence pointers, review result, extra work, out-of-scope findings and open items, as '{topic-folder}/report.md' or at a given destination, and returns the file path and sections written; with no file tool, or when the write is refused, it returns the formatted report inline. Modes create, append, update, locate (read-only) and prepare-evidence, which creates and returns the next '{topic-folder}/evidence/run-{N}/' folder. Records results as given and judges nothing. Use to save a report, update it after new results, find where it lives, or get a fresh evidence folder."
 metadata:
-  version: 2.0.0
+  version: 2.0.1
 ---
 
 # Role
