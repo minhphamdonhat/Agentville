@@ -23,7 +23,7 @@ Don't:
 
 ### 2. Mirror the staging folder
 
-Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> <PATH> --scope <scope>` with Bash. Read its `written:`, `removed:` and `files:` lines. When it exits 2, write nothing, and return the failure block with `status: blocked` and the script's message as `reason:`; it refuses any `<PATH>` outside the chosen scope's skills folder and any plugin.
+Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> <PATH> --scope <scope>` with Bash. Read its `written:`, `removed:` and `files:` lines. When it exits 2, write nothing, and return the failure template with `<status>blocked</status>` and the script's message in `<outcome>`; it refuses any `<PATH>` outside the chosen scope's skills folder and any plugin.
 
 Do:
 * Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> {{ USER_ROOT }}/.claude/skills/acme-pr-review --scope user`.
@@ -35,10 +35,10 @@ Don't:
 
 ### 3. Check what was removed
 
-Compare each `removed:` line with the request. When a removed file is one the user did not ask to remove, name it in `warnings` so the user can restore it.
+Compare each `removed:` line with the request. When a removed file is one the user did not ask to remove, name it in `<open>` so the user can restore it.
 
 Do:
-* Report `warnings: removed {{ USER_ROOT }}/.claude/skills/acme-pr-review/evals/evals.json` when the request did not mention evals.
+* Report `removed {{ USER_ROOT }}/.claude/skills/acme-pr-review/evals/evals.json` in `<open>` when the request did not mention evals.
 * Report `removed: none` when the install printed no `removed:` line.
 
 Don't:
@@ -47,13 +47,20 @@ Don't:
 
 # Output
 
-Reply with this block, or with the failure block when install did not run.
+Reply with the six report tags below, or with the failure template when install did not run.
 
 ```text
+<status>completed</status>
+<outcome>The skill is installed at <PATH>.</outcome>
+<claims>
+- removed: <removed paths, or none>. verified: the removed: line stage.py install printed
+</claims>
+<artefacts>
 skill-md: <PATH>/SKILL.md
 supporting-files: <the files line, or none>
-removed: <removed paths, or none>
-warnings: <list, or none>
+</artefacts>
+<open><warnings, or none></open>
+<deviations>none</deviations>
 ```
 
 Do:
@@ -64,8 +71,13 @@ Don't:
 * Report success before the install ran; the Do items show paths the install printed.
 * Edit a different skill ("also update the naming skill to match"); say a separate request is needed.
 
+Reply with this template when install did not run:
+
 ```text
-status: blocked | failed
-reason: <one sentence>
-missing: none
+<status>blocked | needs-input | failed</status>
+<outcome><one sentence></outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: none</open>
+<deviations>none</deviations>
 ```

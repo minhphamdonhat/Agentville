@@ -2,7 +2,7 @@
 name: "plugin-security"
 description: "Read-only security scan of a Claude Code plugin repository before it is published: every local and remote branch, every tag, the full history including deleted files, and commit metadata, checked for personal or project-specific information, host-machine paths, credentials, and risky skills, agents, hooks, MCP servers, marketplace entries, settings and CLAUDE.md files. Returns findings with category, severity, ref or SHA plus path:line, on-tip or history-only, and a fix, and never prints a secret value. Use when asked to check a plugin repository before making it public, to scan branches, files and history for leaks or secrets, to audit commit trailers and author emails, or to review plugin components for security risks before a release."
 metadata:
-  version: 1.1.0
+  version: 2.0.0
 ---
 
 # Role
@@ -124,49 +124,58 @@ Don't:
 
 # Output
 
-The reply returns these fields:
+The reply returns the six relay §4 tags, in order, flat, plain lines, with `none` in a tag that has nothing:
 
-* **status:** always - `completed` when every step ran, `partial` when a step was skipped.
-* **gate:** always - `pass` or `fail`, against `fail-on`, counting only findings that are not accepted.
-* **repo:** always - The repository scanned.
-* **refs-scanned:** always - Every ref covered, and whether remote refs were fetched.
-* **history:** always - Commits and text blobs scanned, and blobs skipped as binary or large.
-* **tools:** always - The scanners that ran and those not found.
-* **counts:** always - Open findings per severity, plus accepted.
-* **findings:** always - One line per finding: severity, category, rule, scope, location, message and fix.
-* **open-items:** always - Decisions for the owner, or none.
+* **status:** always - in `<status>`: `completed` when every step ran, `partial` when a step was skipped.
+* **outcome:** always - in `<outcome>`: the gate result and the open finding count in one or two sentences.
+* **gate:** always - in `<claims>` as `- gate: <pass|fail>. verified: <evidence>`, against `fail-on`, counting only findings that are not accepted.
+* **history:** always - in `<claims>` as `- history: <value>. verified: <evidence>`: commits and text blobs scanned, and blobs skipped as binary or large.
+* **tools:** always - in `<claims>` as `- tools: <value>. verified: <evidence>`: the scanners that ran and those not found.
+* **counts:** always - in `<claims>` as `- counts: <value>. verified: <evidence>`: open findings per severity, plus accepted.
+* **findings:** always - in `<claims>` as one `- finding: <value>. verified: <evidence>` line each: severity, category, rule, scope, location, message and fix.
+* **repo:** always - in `<artefacts>` as `repo: <path>`: the repository scanned.
+* **refs-scanned:** always - in `<artefacts>` as `refs-scanned: <refs>`: every ref covered, and whether remote refs were fetched.
+* **open-items:** always - in `<open>`: decisions for the owner, or `none`.
+* **deviations:** always - in `<deviations>`: any step skipped or changed, or `none`.
 
-Use the first template when the scan ran; use the failure block when it could not.
+Use the first template when the scan ran; use the failure template when it could not.
 
 ```text
-status: completed
-gate: fail
+<status>completed</status>
+<outcome>Gate fail: 1 high finding is open on origin/feature-mcp.</outcome>
+<claims>
+- gate: fail. verified: scan.py --fail-on medium exits 1
+- history: 212 commits, 1,480 text blobs, 0 binary skipped, 0 large skipped. verified: scan.py summary
+- tools: scan.py; gitleaks not found; trufflehog not found. verified: command -v gitleaks prints nothing
+- counts: critical 0, high 1, medium 3, low 4, info 6 (accepted 2). verified: scan.py summary
+- finding: high | component | PS-22 | tip | origin/feature-mcp:plugins/acme/.mcp.json:7 | MCP server installs from a moving tag | pin the 40-character commit SHA. verified: scan.py output
+- finding: medium | personal | PS-52 | commits | 74 trailer lines in 65 commits | Claude-Session trailers | strip with git filter-repo --message-callback. verified: scan.py output
+</claims>
+<artefacts>
 repo: {{ PROJECT_ROOT }}
 refs-scanned: main, beta, release, origin/main, origin/beta, origin/release, origin/feature-mcp, tag:acme--v1.2.0 (fetched: no)
-history: 212 commits, 1,480 text blobs, 0 binary skipped, 0 large skipped
-tools: scan.py; gitleaks not found; trufflehog not found
-counts: critical 0, high 1, medium 3, low 4, info 6 (accepted 2)
-findings:
-- high | component | PS-22 | tip | origin/feature-mcp:plugins/acme/.mcp.json:7 | MCP server installs from a moving tag | pin the 40-character commit SHA
-- medium | personal | PS-52 | commits | 74 trailer lines in 65 commits | Claude-Session trailers | strip with git filter-repo --message-callback
-- low | host | HOST-01 | tip | main:apps/web/README.md:12 | /home/<user>/acme path | write {{ PROJECT_ROOT }}
-open-items: decide whether to rewrite history for PS-52; protect the release branch (PS-25)
+</artefacts>
+<open>decide whether to rewrite history for PS-52; protect the release branch (PS-25)</open>
+<deviations>none</deviations>
 ```
 
 Do:
-* `- critical | secret | SEC-03 | history | 9f8e7d6c5b4a:apps/api/config.json:4 | GitHub token, 40 chars, sha256 1a2b3c4d5e | revoke it, then rewrite history`.
-* `gate: pass` with `counts: critical 0, high 0, medium 0, low 2, info 5 (accepted 1)` for a clean Acme scan.
-* `status: partial` with `tools: no Python 3; manual git grep pass` when step 3 was skipped.
+* `- finding: critical | secret | SEC-03 | history | 9f8e7d6c5b4a:apps/api/config.json:4 | GitHub token, 40 chars, sha256 1a2b3c4d5e | revoke it, then rewrite history. verified: scan.py output`.
+* `- gate: pass. verified: scan.py exits 0` with `counts: critical 0, high 0, medium 0, low 2, info 5 (accepted 1)` for a clean Acme scan.
+* `<status>partial</status>` with `tools: no Python 3; manual git grep pass` when step 3 was skipped.
 
 Don't:
-* `- critical | secret | SEC-03 | ... | token ghp_a1B2...`; never show any part of the value, as the first Do item shows.
-* Add a `summary:` or `recommendation:` line; put decisions in `open-items:`.
-* Open with a greeting or a preamble; start with `status:`.
+* Write `- finding: critical | secret | SEC-03 | ... | token ghp_a1B2...`; never show any part of the value, as the first Do item shows.
+* Add a `summary:` or `recommendation:` line; put decisions in `<open>`.
+* Open with a greeting or a preamble; start with `<status>`.
 
 When the skill cannot finish, reply with this block only:
 
 ```text
-status: partial | blocked | needs-input | failed
-reason: [one sentence naming what stopped the run, such as "{{ PROJECT_ROOT }} is not a git repository"]
-missing: [input names, for needs-input; otherwise none]
+<status>partial | blocked | needs-input | failed</status>
+<outcome>one sentence naming what stopped the run, such as "{{ PROJECT_ROOT }} is not a git repository"</outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: input names, for needs-input; otherwise what would unblock the run</open>
+<deviations>none</deviations>
 ```

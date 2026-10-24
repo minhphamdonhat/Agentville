@@ -56,8 +56,9 @@ def build(base, model, effort):
             if block[0].rstrip() not in FOLDED:
                 raise SystemExit("%s.md: unsupported description style" % base)
             block.append(
-                "  Variant fixed to %s at %s effort; generated from `%s.md`, do not edit."
-                % (model.capitalize(), effort, base)
+                "  Variant fixed to %s at %s effort, for sessions whose Agent tool has no `effort` parameter;"
+                " otherwise spawn `agentville:%s` with model and effort. Generated from `%s.md`, do not edit."
+                % (model.capitalize(), effort, base, base)
             )
             if len(" ".join(b.strip() for b in block[1:])) >= 1024:
                 raise SystemExit("%s.md: description too long" % base)
