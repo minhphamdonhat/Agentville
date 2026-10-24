@@ -7,7 +7,7 @@ Agentville is a plugin of skills and agents for running work through agents: a w
 Agentville runs out of the box on Linux, macOS and Windows, on a laptop or a bare VPS, with Claude Code as the main platform.
 
 * **Claude Code**, with the plugin installed as described below.
-* **Git**, for the release flow and the workspace's git-ignore check. The release flow's `git switch` needs Git 2.23 or newer; older Git uses `git checkout`.
+* **Git**, for the workspace's git-ignore check.
 * **Python 3.8 or newer**, only for the helper scripts of `agent-smith`, `skill-smith` and the maintainer skills. They use the standard library alone. Run them as `python3` on Linux and macOS and as `py -3` (or `python`) on Windows.
 * **A shell:** bash on Linux and macOS, PowerShell on Windows. Skills and agents write commands in that form and give a PowerShell form where the two differ. A project's `CLAUDE.md` or steering can name another shell, and that wins.
 
@@ -93,7 +93,6 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:plan` | Used by `orchestrate` only. Default for the `plan` slot: records a topic's goal, tasks with done criteria, and approval as a record only. |
 | `/agentville:report` | Used by `orchestrate` only. Default for the `report` slot: records a topic's outcome, evidence, review result, out-of-scope findings and open items. |
 | `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs. Discovery only; no network probes. |
-| `/agentville:release-flow` | Runs a one-way release flow in any repository; every merge, push, tag and branch deletion waits for your yes. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill, validates it and installs it to project or user scope. |
 | `/agentville:agent-smith` | Compiles an agent as a fork of the base worker, validates it, evals it against the worker and installs it to project or user scope. |
 

@@ -17,6 +17,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
 | `.claude-plugin/marketplace.json` | Marketplace entries `agentville`, `agentville-beta` and `agentville-dev`, each pointing at the plugin folder on one branch. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
+| `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
@@ -82,7 +83,7 @@ Topic documents and agents' artefacts go to the workspace under `{{ PROJECT_ROOT
 
 Commit subjects follow Conventional Commits: `type(scope): summary`, imperative, with `!` before the colon for a breaking change, as in `fix(agent-smith): drop the communication core block` or `feat(dispatch)!: rename the brief fields`. Commit, push and merge only when the user asks.
 
-Bump `version` in `plugins/agentville/.claude-plugin/plugin.json` whenever you change anything that ships, which means anything under `plugins/agentville/`. A change to `README.md`, `CLAUDE.md` or `.claude/` does not need a bump. Bump a skill's or agent's own `metadata.version` whenever its file changes: major for a breaking contract change, minor for new behaviour, patch for a wording change. When you add, remove or rename a skill or agent, update the tables in `README.md` in the same change.
+Bump `version` in `plugins/agentville/.claude-plugin/plugin.json` whenever you change anything that ships, which means anything under `plugins/agentville/`. Before any plugin `version` bump, ask the user with the question tool and propose the new version; ask at triage or in Plan, because `orchestrate` forbids questions from Execute on. A change to `README.md`, `CLAUDE.md` or `.claude/` does not need a bump. Bump a skill's or agent's own `metadata.version` whenever its file changes: major for a breaking contract change, minor for new behaviour, patch for a wording change. When you add, remove or rename a skill or agent, update the tables in `README.md` in the same change.
 
 Other workers may have uncommitted edits in the tree. Read them, and touch only the paths your brief names.
 
@@ -96,7 +97,7 @@ Do:
 * Write paths as `{{ PROJECT_ROOT }}`, `{{ SKILL_ROOT }}` and `{{ USER_ROOT }}`, and use `localhost` or `127.0.0.1` for a local address.
 * Use Acme in every few-shot example: one project with applications under it (`apps/web`, `apps/api`) or documentation work (`docs/`).
 * Keep exactly one `Co-Authored-By:` trailer per commit, and write Conventional Commits as set under Working in this repository.
-* Keep the plugin's components least-privilege: a tool list names only what the agent needs, MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and a side-effecting skill such as `release-flow` asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control).
+* Keep the plugin's components least-privilege: a tool list names only what the agent needs, MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control).
 * Write for any OS, Claude Code first: shell steps default to bash on Linux and macOS and to PowerShell on Windows unless the user's project `CLAUDE.md` or steering says otherwise; run `python3` on Linux and macOS and `py -3` on Windows; in Python use `pathlib`, `tempfile` and `encoding="utf-8"`; keep LF line endings, which `.gitattributes` pins.
 * Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --fail-on medium`. It covers all refs and fixes every finding at medium or above. Until the history squash it fails on PII-02 and PS-52 in history; the squash removes both. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
 
@@ -112,7 +113,7 @@ Don't:
 
 ## Release flow
 
-`Skill(agentville:release-flow)` runs the release steps and asks before every merge, push, tag and branch deletion. Work moves one way only, `main` → `beta` → `release`, and each branch feeds one marketplace entry: `agentville-dev` installs from `main`, `agentville-beta` from `beta` and `agentville` from `release`. Tags are `agentville--vX.Y.Z`, from `version` in `plugin.json`, created on `release` only when the user asks.
+`Skill(release-flow)` (maintainer-only, in `.claude/skills/release-flow/`) runs the release steps and asks before every merge, push, tag and branch deletion. Work moves one way only, `main` → `beta` → `release`, and each branch feeds one marketplace entry: `agentville-dev` installs from `main`, `agentville-beta` from `beta` and `agentville` from `release`. Tags are `agentville--vX.Y.Z`, from `version` in `plugin.json`, created on `release` only when the user asks.
 
 Settings `release-flow` reads:
 

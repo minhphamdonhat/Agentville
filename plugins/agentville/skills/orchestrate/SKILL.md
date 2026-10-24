@@ -2,7 +2,7 @@
 name: "orchestrate"
 description: "A sample, opt-in request workflow: it triages the request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, in that fixed order, and sends every spawn through `agentville:dispatch`. Use when a loaded instruction routes requests through it or the user asks for the session workflow; then also to decide how much process a request deserves or which stage comes next, when a failed check or review means looping back, when a plan must be drafted before work starts, or when gaps and out-of-scope findings must reach the user."
 metadata:
-  version: 1.3.0
+  version: 1.3.1
 ---
 
 # Role
@@ -16,7 +16,7 @@ You are the workflow controller of one user request. You triage it, run the stag
 
 * Pick one kebab-case topic-id per request, such as `acme-api-pagination-2026-10-18`, and pass it on every dispatch.
 * Steering is what is already in your context: project instructions, custom instructions and the conversation. Take it as given, and let a worker read any steering file it names.
-* Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, as the reply's first line (the one exception is the Execute line after the Plan summary of step 4, which follows the summary), in exactly this shape: `**<Stage label>: <stage name>**`, bold with no list marker and alone on its line, where the stage is Discuss, Plan, Execute, Validate, Review or Report. Write both the label and the stage name in the language of the user's latest message, and the rest of the reply in that language too; English reads `**Stage: Plan**`. Write the stage name only, never the stage plan or a reason, and never repeat it on a reply that stays in the same stage. Count each stage's entries in this request: the first entry prints the plain line, and every later entry of Execute, Validate or Review is a loop-back that adds the ordinal in brackets inside the bold, such as `**Stage: Execute (2nd loop-back)**`, then `(3rd loop-back)` and so on. In another language, translate the bracket as well.
+* Write a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included, as the reply's first line (the one exception is the Execute line after the Plan summary of step 4, which follows the summary), in exactly this shape: `**<Stage label>: <stage name>**`, bold with no list marker and alone on its line, where the stage is Discuss, Plan, Execute, Validate, Review or Report. Write both the label and the stage name in the language of the user's latest message, and the rest of the reply in that language too; English reads `**Stage: Plan**`. Write the stage name only, never the stage plan or a reason, and never repeat it: a reply that stays in the same stage opens with the answer and carries no stage line. Count each stage's entries in this request: the first entry prints the plain line, and every later entry of Execute, Validate or Review is a loop-back that adds the ordinal in brackets inside the bold, such as `**Stage: Execute (2nd loop-back)**`, then `(3rd loop-back)` and so on. In another language, translate the bracket as well.
 
 Do:
 * Open with `**Giai đoạn: Lập kế hoạch**` when the user writes in Vietnamese and the reply enters Plan.
@@ -27,6 +27,7 @@ Don't:
 * Write `**Stage: Plan**` above a Vietnamese reply, or translate only the label; translate the label and the stage name, as the first Do item shows.
 * Write `**Stage: Execute**` for the second entry to Execute, or add a bracket to a first entry; count the entries, as the third Do item shows.
 * Write `- **Stage: Execute**` with a list marker; write the bare bold line `**Stage: Execute**` alone on its line.
+* Open a second reply in Discuss with `**Stage: Discuss**`; a follow-up in the same stage opens with the answer.
 
 * Use the question tool by stage, and when no person is reachable where it is allowed, return `needs-input` with `missing:` naming the decision:
 
