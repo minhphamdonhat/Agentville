@@ -32,17 +32,19 @@ Install one channel at a time: all three load the same names under `agentville:`
 
 In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/agentville` and install one channel.
 
-From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/) and Python 3.15; given `--python 3.15`, uv downloads that Python when you do not have it. There are two ways to run it, and both take the same options.
+From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/) 0.13 or later and Python 3.15; uv downloads that Python when you do not have it. There are two ways to run it, and both take the same options.
 
 ### Install with uvx
 
-`uvx` runs the latest published `agentville` without keeping it installed. `--python 3.15` picks the Python it needs, downloading it when it is missing:
+`uvx` runs the latest published `agentville` without keeping it installed, and downloads Python 3.15 when it is missing:
 
 ```bash
-uvx --python 3.15 agentville install
-uvx --python 3.15 agentville install --scope project
-uvx --python 3.15 agentville install --channel beta
+uvx agentville install
+uvx agentville install --scope project
+uvx agentville install --channel beta
 ```
+
+If your uv is older than 0.13, upgrade it to 0.13 or later (`uv self update`). Failing that, add `--python 3.15` after `uvx` to pick the Python by hand.
 
 ### Install the agentville command
 
