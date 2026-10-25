@@ -2,6 +2,8 @@
 
 Agentville is a plugin of skills and agents for running work through agents: a workflow that triages each request and runs the stages it needs, a procedure that delegates one task at a time, writing standards for what agents and people read, standing rules for a delegating agent, and five swappable slots that each agent resolves for itself. It installs as one versioned unit; skills are namespaced `agentville:<skill>` and agents `agentville:<agent>`.
 
+New to Agentville, or using it in Claude Chat or Cowork? The documentation site walks you through it in plain words: <https://minhphamdonhat.github.io/agentville/>.
+
 ## Requirements
 
 Agentville runs out of the box on Linux, macOS and Windows, on a laptop or a bare VPS, with Claude Code as the main platform.
