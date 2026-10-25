@@ -1,104 +1,97 @@
-This PR adds the Townhall Python package in `townhall/`, starts its MCP server from the plugin through a SHA-pinned `uvx` launch, and merges `main` into the branch with a merge commit. It supersedes #13.
+This PR adds Townhall to the root `agentville` package in `agentville/townhall/`, runs it as `agentville townhall ...`, and starts its MCP server from the plugin through a SHA-pinned `uvx` launch. It supersedes #13 and is synced with `main` after #21 merged.
 
-Verdict: Pending review. Blocking items: 0. Decisions needed: 4.
+Verdict: Review round 1 fixes pushed; re-review pending. Blocking items: 0. Decisions needed: 1.
 
 ## Decisions needed
 
-No item blocks the merge. These four choices need the owner; each row says what happens if nobody answers.
+No item blocks the merge. The owner's PR #20 comment raised four decisions; three are settled and one stays open.
 
 | Question | Options | Agent default | Consequence if unanswered |
 | --- | --- | --- | --- |
-| Where does Townhall live now that `main`'s installer holds `agentville/`? | Move Townhall to `townhall/`, or rename or move the installer | Move Townhall to `townhall/` (`138433f`) | The move ships; the installer stays as `main` has it. |
-| Keep the shared `agentville` distribution and console name? | Keep both, or rename Townhall's to `townhall` | Keep both; `uvx` gives each its own environment | Installing both in one environment makes one console script replace the other. |
-| Merge without squashing to keep the pin `652451a` reachable? | Merge commit, or squash and re-pin in a follow-up | Merge commit | A squash leaves `.mcp.json` pointing at a commit no branch keeps, so the server stops starting. |
-| Re-pin with `subdirectory=townhall` at the next release? | Re-pin at 0.10.0, or keep `652451a` until a later release | Re-pin in the next release-preparation commit | The plugin keeps running Townhall as it was at `652451a`, before the move. |
+| Re-pin `.mcp.json` from `652451a` to a commit that holds `agentville/townhall/`? | Re-pin in the next release-preparation commit, or keep `652451a` until a later release | Undecided | The plugin keeps running Townhall as it was at `652451a`, with `subdirectory=agentville` and `agentville engine mcp`. |
 
-Options and reasoning for each are on the decisions page, linked in the Evidence index.
+Settled: (1) layout: Townhall lives in `agentville/townhall/`, done; (2) keep the shared `agentville` name: done, now one distribution; (3) merge: the owner merges manually. Detail is on the decisions page, linked in the Evidence index.
 
 ## Context
 
-Townhall is a file-based board-and-ticket engine for agents, released here as plugin version 0.10.0. PR #13 added it in `agentville/`, but `main` has since taken that folder for the installer CLI (`uvx agentville install`, PR #18). This branch merges `origin/main` (`5c0986f`) without squashing and moves Townhall to `townhall/`, so the two packages never share a folder. Townhall stays independent of `orchestrate` and of the `draft`, `plan` and `report` slots. #13 stays open until this PR replaces it.
+Townhall is a file-based board-and-ticket engine for agents. PR #13 added it in `agentville/`; `main` then took that folder for the installer CLI (#18). This branch merged `origin/main` again after #21 and moved Townhall into `agentville/townhall/`, with the inner board package at `agentville/townhall/board/`. There is now one `agentville` distribution: `agentville` alone is the installer CLI, and `agentville townhall ...` runs Townhall. This is a breaking rename: `agentville init` and `agentville engine` become `agentville townhall init` and `agentville townhall engine`. The plugin version is 0.11.0. Townhall's 9 dependencies are now core dependencies, so `uvx agentville install` pulls them; they are loaded lazily, only for `agentville townhall`. Townhall stays independent of `orchestrate` and of the `draft`, `plan` and `report` slots.
 
 ## Changes
 
-At `26c43c8` (the later commits touch only the PR pages) the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,633 insertions and 4 deletions; most of it is the new package and its lock file.
-
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
-| Add the package (`652451a`) | `townhall/` (then `agentville/`) | New CLI, 11 `townhall_*` MCP tools, viewer and Temporal workflows | REQ-2-CHK-9, REQ-2-CHK-10 |
-| Pin the MCP server (`f5577f2`) | `plugins/agentville/.mcp.json` | The plugin starts Townhall from `652451a` by full SHA | REQ-1-CHK-6 |
-| Merge `main` (`5273bc9`) | `CLAUDE.md`, `README.md`, `plugin.json` | Keeps both sides; plugin version 0.10.0 | REQ-1-CHK-1, REQ-1-CHK-2, REQ-1-CHK-5 |
-| Move to `townhall/` (`138433f`, `4471879`) | `townhall/`, `CLAUDE.md`, `README.md`, `.gitignore` | Townhall no longer shares a folder with the installer | REQ-2-CHK-9, REQ-2-CHK-11 |
-| Describe the PR (`7a9125e`, `74dc5c1`, `26c43c8`, `8923fc8`, `4e542f9`, `3c87e29` and the page-move commit) | `.agentville/pr/20/` | No runtime change | REQ-3-CHK-1, REQ-3-CHK-4 |
-| Record the PR folder (`26c43c8`) | `CLAUDE.md` | Adds an `.agentville/pr/` row to the layout table | REQ-2-CHK-1..10 |
+| Add the package (`652451a`) and pin the MCP server (`f5577f2`) | `agentville/`, `plugins/agentville/.mcp.json` | New CLI, 11 `townhall_*` MCP tools, viewer and Temporal workflows; plugin starts Townhall from `652451a` | run-1 |
+| Sync with `main` after #21 (`3541038`) | `CLAUDE.md`, `README.md`, `plugin.json` | Keeps both sides | run-1 |
+| Move into `agentville/townhall/` (`e674f0a`) | `agentville/townhall/`, `agentville/cli/app.py`, `pyproject.toml`, `uv.lock`, `tests/townhall/` | One distribution; `agentville townhall ...` subcommand; plugin 0.11.0 | run-1 |
+| Fix two stale docs (review round 1) | `CLAUDE.md`, `agentville/townhall/README.md` | Docs only | gate, pytest |
+| Describe the PR | `.agentville/pr/20/` | No runtime change | none |
 
-Two excerpts carry the decisions above. The pinned launch in `.mcp.json`:
+The pinned launch in `.mcp.json`:
 
-https://github.com/minhphamdonhat/Agentville/blob/447187929322ddacb3a18ee3550a1ed8a559c3bd/plugins/agentville/.mcp.json#L5-L9
+https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/plugins/agentville/.mcp.json
 
-The shared console script in `townhall/pyproject.toml`:
-
-https://github.com/minhphamdonhat/Agentville/blob/447187929322ddacb3a18ee3550a1ed8a559c3bd/townhall/pyproject.toml#L19-L20
-
-Per-commit detail and the merge resolution are on the changes page, linked in the Evidence index.
+Per-commit detail is on the changes page, linked in the Evidence index.
 
 ## Architecture changes
 
 ```mermaid
 flowchart LR
   accTitle: Townhall launch path and boundaries
-  accDescr: The plugin's .mcp.json runs uvx at commit 652451a with subdirectory agentville, which starts the Townhall MCP server. The server reads and writes .agentville/townhall/ and config.toml. The installer and the workspace share no files with Townhall.
-  mcp["plugins/agentville/.mcp.json"] -->|"uvx @652451a, subdirectory=agentville"| server["agentville engine mcp (Townhall)"]
+  accDescr: The plugin's .mcp.json runs uvx at commit 652451a with subdirectory agentville and agentville engine mcp, which starts the Townhall MCP server. At HEAD the agentville console script runs the installer, and agentville townhall loads Townhall lazily. Townhall reads and writes .agentville/townhall/ and config.toml; the workspace shares no files with it.
+  mcp["plugins/agentville/.mcp.json"] -->|"uvx @652451a, subdirectory=agentville"| server["agentville engine mcp (Townhall at 652451a)"]
+  cli["agentville console script"] -->|"install"| installer["agentville/cli/"]
+  cli -->|"townhall ... (lazy import)"| th["agentville/townhall/"]
   server --> boards[".agentville/townhall/ and config.toml"]
-  installer["agentville/ installer"] -.->|"no shared files"| server
+  th --> boards
   workspace[".agentville/topics/ workspace"] -.->|"no shared files"| boards
 ```
 
-The plugin's `.mcp.json` runs `uvx` at commit `652451a` with `subdirectory=agentville`, which starts the Townhall MCP server. The server reads and writes `.agentville/townhall/` and `.agentville/config.toml`. The installer in `agentville/` and the workspace in `.agentville/topics/` share no files with Townhall. The package layout and the launch sequence are on the architecture page, linked in the Evidence index.
+The plugin's `.mcp.json` still runs `uvx` at `652451a` with `subdirectory=agentville` and `agentville engine mcp`. At HEAD one `agentville` console script serves both parts: `agentville install` runs the installer in `agentville/cli/`, and `agentville townhall ...` imports `agentville/townhall/` only when called. The next re-pin uses the root package and `agentville townhall engine mcp`.
 
 ## Tests and evidence
 
-The validator ran every check at `26c43c8` (run-2) on Linux, in a clean clone where possible. All passed, and each control check failed as required. Later commits change only the PR pages; evidence run-4 at `3c87e29` re-checked the review findings R1 to R3.
+The validator ran every check on Linux; evidence run-1 for this topic, `SHA256SUMS` hash `38014ab84263`.
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
-| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 | `24ddf8b61baf` |
-| Pin reachable | `git merge-base --is-ancestor 652451a HEAD` | Exit 0 | `0a9561507bf4` |
-| Smith script tests (4 suites) | `python3 .../test_scripts.py` | 80, 84, 85 and 89 tests, OK | `6bc96d703511`, `2e36fd2925a5`, `2432284682b8`, `1cfc13e0629c` |
-| Townhall tests | `uv run --directory townhall pytest` | 277 passed, 0 skipped | `36c1bf648ede` |
-| Townhall lint | `uv run --directory townhall ruff check` | All checks passed | `a5e4c7d5cf73` |
-| Installer tests | `uv run pytest` | 38 passed, 0 skipped | `c58d0db0399e` |
-| Pre-publish gate | `scan.py ... --fail-on medium` | 0 critical, high or medium | `10bbb17412a3` |
+| All tests | `uvx --from 'uv>=0.13.5' uv run --locked pytest -q` | 316 passed: 38 installer, 278 Townhall | `38014ab84263` |
+| Help commands | `agentville --help`, `agentville townhall --help` | Pass | `38014ab84263` |
+| Lint | `ruff check agentville tests` | Pass | `38014ab84263` |
+| Build | `uv build` | Pass | `38014ab84263` |
+| Verify block in `CLAUDE.md` | smith tests, `worker.md` diffs, variant check, scan | Pass | `38014ab84263` |
+| Pre-publish gate | `scan.py ... --fail-on medium` | Pass | `38014ab84263` |
 
-Not tested or not verifiable: a live MCP launch from `.mcp.json`, a live Temporal run, any OS other than Linux, and `uv` older than 0.13.5. Commands and reproduction steps are on the tests page, linked in the Evidence index.
+Not tested: the macOS and Windows CI jobs for the Townhall tests in `.github/workflows/publish.yml`, a live MCP launch from `.mcp.json`, and a live Temporal run. Commands are on the tests page.
 
 ## Risks, limits and rollback
 
-The main risks are the shared `agentville` package and console name, a pin that depends on an unsquashed merge, and a slow first start while `uvx` fetches Python 3.15. To roll back the whole PR, revert its merge commit on `main` with `git revert -m 1 <merge-sha>`. Reverting the move (`138433f`) on its own is not supported: it puts Townhall back in `agentville/`, where it collides with the installer. Mitigations are on the risks page, linked in the Evidence index.
+The main risks are the breaking CLI rename, a heavier `uvx agentville install` now that Townhall's 9 dependencies are core, and a pin that still runs the pre-move server. To roll back the whole PR, revert its merge commit on `main` with `git revert -m 1 <merge-sha>`. Detail is on the risks page.
 
 ## Reviewer checklist
 
-- [ ] The `townhall/` move is the layout you want, rather than renaming the installer.
-- [ ] Sharing the `agentville` distribution and console name with the installer is acceptable.
-- [ ] You will merge with a merge commit, not a squash, so `652451a` stays reachable.
-- [ ] Re-pinning with `subdirectory=townhall` at the next release fits the release plan.
+- [ ] `agentville townhall init` and `agentville townhall engine` as the new commands are acceptable as a breaking rename.
+- [ ] Pulling Townhall's 9 dependencies into every `uvx agentville install` is acceptable.
+- [ ] Keeping `652451a` in `.mcp.json` for now is acceptable until the re-pin is decided.
 - [ ] The README's Townhall section reads clearly to a new user.
 
 ## Review verdicts
 
-Pending: reviewer runs next; this section is updated before review is requested.
+| Round | Verdict | Findings | Status |
+| --- | --- | --- | --- |
+| 1 | needs-changes | Two stale docs: `CLAUDE.md` Townhall section and `agentville/townhall/README.md` | Fixed in this push |
+| 2 | Pending | none | Re-review next |
 
 ## Evidence index
 
-Head: <HEAD_SHA>
+Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
-| Decisions | [Decisions page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/decisions.md) |
-| Per-commit changes | [Changes page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/changes.md) |
-| Diagrams | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/architecture.md) |
-| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/tests.md) |
-| Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/risks.md) |
-| Validator evidence | Folder `run-2` at `26c43c8`, `SHA256SUMS` hash `810454535056` |
+| Decisions | [Decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/20/decisions.md) |
+| Per-commit changes | [Changes page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/20/changes.md) |
+| Diagrams | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/20/architecture.md) |
+| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/20/tests.md) |
+| Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/20/risks.md) |
+| Validator evidence | Folder `.agentville/topics/agentville-pr20-sync-2026-10-25/evidence/run-1`, `SHA256SUMS` hash `38014ab84263` |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

@@ -1,19 +1,19 @@
-# Open decisions
+# Decisions
 
-This page lists the four decisions the owner needs to make before or at merge. Each gives the current choice and the alternative.
+The owner's PR #20 comment raised four decisions. Three are settled; the re-pin stays open.
 
-## 1. Move Townhall to `townhall/` or rename the installer
+## 1. Layout: settled
 
-The current choice moves Townhall to `townhall/` in `138433f`, because `main`'s installer already occupies `agentville/`, `pyproject.toml` and `tests/` at the root. The alternative renames or moves the installer instead and keeps Townhall in `agentville/`. That would match the pin's `subdirectory=agentville`, but it changes the installer that `main` already ships.
+Townhall lives in `agentville/townhall/` inside the root `agentville` package, beside the installer in `agentville/cli/`. The inner board package is `agentville/townhall/board/`. Done in `e674f0a`.
 
-## 2. Keep the shared `agentville` distribution and console name
+## 2. Keep the shared `agentville` name: settled
 
-Both packages use the distribution name `agentville` and a console script `agentville`: the installer maps it to `agentville.cli:main` and Townhall to `agentville.cli.main:app`. The current choice keeps both, because `uvx` gives each its own environment. The alternative renames Townhall's distribution or console script, such as to `townhall`, which changes the `.mcp.json` command and the docs.
+There is now one `agentville` distribution and one console script. `agentville` alone is the installer CLI; `agentville townhall ...` runs Townhall. This renames `agentville init` and `agentville engine` to `agentville townhall init` and `agentville townhall engine`, a breaking change. Done in `e674f0a`.
 
-## 3. Merge without squashing
+## 3. Merge: settled
 
-The current pin, `652451a`, is a feature-branch commit. A squash-merge leaves it on no branch that `main` keeps, so the server stops starting once the branches go. The current choice is a merge commit. The alternative is to squash and then re-pin to the squashed commit in a follow-up.
+The owner merges the PR manually.
 
-## 4. Re-pin to `subdirectory=townhall` at the next release
+## 4. Re-pin `.mcp.json`: open
 
-At the next release, the release-preparation commit on `main` moves the pin to the commit whose `townhall/` the release ships and switches the subdirectory to `townhall`. The decision is whether to do that at 0.10.0 itself or leave `652451a` in place until a later release.
+`.mcp.json` still pins `652451a` with `#subdirectory=agentville` and the command `agentville engine mcp`, because that commit predates both moves. The next re-pin, to a commit that holds `agentville/townhall/`, drops the subdirectory and uses `agentville townhall engine mcp`. Whether to re-pin in the next release-preparation commit or keep `652451a` until a later release is undecided. Until then the plugin runs Townhall as it was at `652451a`.
