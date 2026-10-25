@@ -1,8 +1,8 @@
 ---
 name: docs-site
-description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the theme and Mermaid diagrams, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
+description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the theme and Excalidraw diagrams, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
 metadata:
-  version: 1.3.0
+  version: 1.3.1
 ---
 
 # docs-site
@@ -19,7 +19,8 @@ Every page is a Markdown file under `{{ PROJECT_ROOT }}/website/docs/`, and `{{ 
 | `website/docs/guides/` | `index.md` (the category page) plus `good-requests.md`, `following-along.md`, `updating.md` | Chat and Cowork users |
 | `website/docs/technical/` | `index.md` (the category page) plus `claude-code.md`, `command-line.md`, `channels.md` | Claude Code and terminal users |
 | `website/src/pages/index.tsx`, `website/src/css/custom.css` | The landing page and the theme styles | Everyone |
-| `website/static/` | `img/favicon.svg` and `.nojekyll`, served as they are | Everyone |
+| `website/static/` | `img/favicon.svg`, `.nojekyll`, `diagrams/` (Excalidraw sources) and `img/diagrams/` (compiled SVGs), served as they are | Everyone |
+| `website/scripts/build-diagrams.mjs` | The diagram compiler (§7); not part of the site bundle | Maintainers |
 | `website/docusaurus.config.ts` | Site URL, `baseUrl: '/Agentville/'`, locale `en-GB`, navbar, footer, link checks | Maintainers |
 
 - Add a page in the folder of its reader, then add its doc id (the path under `docs/` without `.md`, such as `guides/updating`) to `sidebars.ts` in the same change.
@@ -125,15 +126,19 @@ Wrong: "Moved `Last checked` to today on every page without opening the sources.
 
 ## 7. Theme and diagrams
 
-The site uses the Docusaurus classic theme with a green primary colour, follows the reader's light or dark setting and draws diagrams as Mermaid code blocks.
+The site uses the Docusaurus classic theme with a green primary colour, follows the reader's light or dark setting and draws diagrams as Excalidraw scenes compiled to SVG.
 
 - Set colours only through the `--ifm-color-primary` variables on `:root` and `[data-theme='dark']` in `website/src/css/custom.css`, and keep both modes, with `respectPrefersColorScheme: true` and the Prism `github` and `dracula` themes in `docusaurus.config.ts`.
 - Use the theme's default fonts; add no font package and load no font from Google Fonts or another CDN.
-- Draw a diagram as a fenced `mermaid` block, which `@docusaurus/theme-mermaid` and `markdown.mermaid: true` render, and explain each loop-back or branch in plain sentences right after it.
+- Draw each diagram as an Excalidraw scene in ink on white with one pastel tint, and compile it to SVG with Excalidraw's own `exportToSvg`, so the fonts are embedded and the page makes no font request.
+- Keep the source scene in `website/static/diagrams/<name>.excalidraw` and the compiled SVG in `website/static/img/diagrams/<name>.svg`, and commit both together; set `"source"` in the scene to `https://excalidraw.com`, never a local address with a port.
+- Compile with `website/scripts/build-diagrams.mjs`, which bundles Excalidraw with esbuild, opens it in headless Chromium through Playwright, aborts every request outside 127.0.0.1 and writes one SVG per scene. Install its packages outside `website/`, at exact versions, so the site's lock file and bundle stay as they are: `npm install --prefix <deps> --save-exact @excalidraw/excalidraw@0.18.1 react@19.3.1 react-dom@19.3.1 esbuild@0.28.2`, plus `playwright@1.63.0` in the same folder and its Chromium (`npx --prefix <deps> playwright install chromium`); the compiler loads Playwright from `<deps>` only. Then run `node website/scripts/build-diagrams.mjs --deps <deps>` from the repository root.
+- Show a diagram in a page as `<figure className="diagram-figure">` holding a Markdown image with alt text that states the whole flow, a `<figcaption>`, and, right after the figure, a plain numbered list of the same steps, then explain each loop-back or branch in plain sentences.
+- Keep the `.diagram-figure img` rule in `custom.css` (white background and padding), because the SVG is ink on white and would be unreadable on the dark page.
 
-Correct: "Add a stage to the `flowchart LR` block in `how-it-works.md` and describe it in the paragraph below."
+Correct: "Edit `six-stages.excalidraw`, run the compiler, commit both files, and update the alt text and the step list in `how-it-works.md` to match."
 
-Wrong: "Export the flow as a PNG with words a reader needs and drop the Mermaid block."
+Wrong: "Export a PNG screenshot of the diagram, or draw it in a Mermaid code block, and skip the step list."
 
 ## Pre-send check
 
@@ -146,4 +151,4 @@ Run each item before saving or handing over a docs change. The section holds the
 5. `npm ci && npm run build` exits 0, `npm audit` shows 0 critical and 0 high with fixes in `overrides`, and the security scan shows no critical or high finding (§4).
 6. No docs tag was created or pushed unless the user asked for that tag, and every action in `docs.yml` is pinned to a commit SHA (§5).
 7. `Last checked` moved only on pages whose steps were compared with their sources today (§6).
-8. Colours go through the `--ifm` variables in both light and dark modes, no font is added, and every diagram is a Mermaid block explained in plain sentences (§7).
+8. Colours go through the `--ifm` variables in both light and dark modes, no font is added, and every diagram is an Excalidraw scene compiled to SVG with embedded fonts, committed with its source, readable in dark mode and shown with alt text and a plain list of its steps (§7).
