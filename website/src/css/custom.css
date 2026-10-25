@@ -1,0 +1,44 @@
+/* Site-wide colours. Docusaurus reads the --ifm variables. */
+:root {
+  --ifm-color-primary: #2f6f5e;
+  --ifm-color-primary-dark: #2a6455;
+  --ifm-color-primary-darker: #285e50;
+  --ifm-color-primary-darkest: #214e42;
+  --ifm-color-primary-light: #347a67;
+  --ifm-color-primary-lighter: #36806c;
+  --ifm-color-primary-lightest: #3d907a;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #5cc4a6;
+  --ifm-color-primary-dark: #43bb98;
+  --ifm-color-primary-darker: #3eb08f;
+  --ifm-color-primary-darkest: #339176;
+  --ifm-color-primary-light: #75cdb4;
+  --ifm-color-primary-lighter: #82d2bb;
+  --ifm-color-primary-lightest: #a6dfcf;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.hero-agentville {
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.hero-agentville__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.features-agentville {
+  padding: 2rem 0 3rem;
+}
+
+.features-agentville h2 {
+  font-size: 1.25rem;
+}
