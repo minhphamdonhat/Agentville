@@ -40,6 +40,12 @@
   --pp-brick-dark: #86221b;
   --pp-black: #000000;
   --pp-on-ink: #f3f2f0;
+  --pp-on-ink-rule: rgba(243, 242, 240, 0.4); /* hairline on an ink card */
+  --pp-ink-body: #3a3836; /* short body text on white or a pastel */
+  --pp-yellow-ink: #6b4f35; /* small labels on the yellow hero only */
+  --pp-ink-divider: rgba(34, 32, 32, 0.15); /* dividers inside a pastel band */
+  --pp-ink-ghost: rgba(34, 32, 32, 0.14); /* ghost numerals on a pastel, never text */
+  --pp-rule-double: #c9c7c5; /* the short double rule beside the dateline */
   --pp-hairline: 1px solid var(--pp-rule);
   --pp-sheet-shadow: 0 2px 10px rgba(20, 20, 40, 0.12);
 

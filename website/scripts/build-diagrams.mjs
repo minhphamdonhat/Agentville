@@ -15,15 +15,18 @@
 //   npm install --prefix <deps> --save-exact @excalidraw/excalidraw@0.18.1 \
 //     react@19.3.1 react-dom@19.3.1 esbuild@0.28.2
 //
-// Playwright with Chromium must be installed too, in <deps> or globally
-// (npm install --prefix <deps> --save-exact playwright@<version> and
-// npx playwright install chromium). Then, from the repository root:
+// Playwright and its Chromium go into the same folder; the script loads
+// Playwright from <deps> only, never from a global install:
+//
+//   npm install --prefix <deps> --save-exact playwright@1.63.0
+//   npx --prefix <deps> playwright install chromium
+//
+// Then, from the repository root:
 //
 //   node website/scripts/build-diagrams.mjs --deps <deps>
 //
 // EXCALIDRAW_DEPS=<deps> works in place of --deps.
 
-import {execSync} from 'node:child_process';
 import {mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync, existsSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {createRequire} from 'node:module';
@@ -58,8 +61,7 @@ function loadPlaywright(requireFromDeps) {
   try {
     return requireFromDeps('playwright');
   } catch {
-    const globalRoot = execSync('npm root -g', {encoding: 'utf-8'}).trim();
-    return createRequire(join(globalRoot, 'noop.js'))('playwright');
+    throw new Error('Playwright is not in the dependency folder; install playwright@1.63.0 there, as the header of this script shows.');
   }
 }
 

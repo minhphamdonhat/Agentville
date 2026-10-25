@@ -244,7 +244,7 @@ export default function Home(): ReactNode {
               </article>
             ))}
             <div className={styles.promo}>
-              <span className={styles.promoScript} aria-hidden="true">
+              <span className={styles.promoLead}>
                 Use a
                 <br />
                 terminal?

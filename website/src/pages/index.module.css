@@ -119,7 +119,7 @@
 
 .doubleRule {
   width: 40px;
-  border-top: 3px double #c9c7c5;
+  border-top: 3px double var(--pp-rule-double);
 }
 
 .price {
@@ -176,7 +176,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 8px 16px;
-  border-right: 1px solid rgba(34, 32, 32, 0.15);
+  border-right: 1px solid var(--pp-ink-divider);
   line-height: 1.3;
 }
 
@@ -236,21 +236,31 @@
   min-height: 280px;
 }
 
+/* The rail shows on desktop only, where its label is turned on its side */
 .heroRail {
+  display: none;
   flex: 0 0 36px;
-  display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .heroRail span {
-  transform: rotate(-90deg);
   white-space: nowrap;
   font-family: var(--pp-font-label);
   font-size: 11px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #6b4f35;
+  color: var(--pp-yellow-ink);
+}
+
+@media (min-width: 997px) {
+  .heroRail {
+    display: flex;
+  }
+
+  .heroRail span {
+    transform: rotate(-90deg);
+  }
 }
 
 .heroCopy {
@@ -270,7 +280,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #6b4f35;
+  color: var(--pp-yellow-ink);
 }
 
 .heroHeadline {
@@ -284,7 +294,7 @@
 .heroStandfirst {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #3a3836;
+  color: var(--pp-ink-body);
   max-width: 46ch;
 }
 
@@ -340,7 +350,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(243, 242, 240, 0.4);
+  border-bottom: 1px solid var(--pp-on-ink-rule);
   padding-bottom: 8px;
   margin-bottom: 8px !important;
 }
@@ -418,6 +428,8 @@
 }
 
 .roundArrow:hover {
+  /* Brick text sits on white only, so the pink ground turns white on hover */
+  background: var(--pp-paper);
   color: var(--pp-brick);
   border-color: var(--pp-brick);
   text-decoration: none;
@@ -491,7 +503,7 @@
 .shortBody {
   font-size: 0.85rem;
   line-height: 1.6;
-  color: #3a3836;
+  color: var(--pp-ink-body);
 }
 
 .promo {
@@ -505,11 +517,12 @@
   padding: 14px 18px;
 }
 
-.promoScript {
-  font-family: var(--pp-font-script);
+.promoLead {
+  font-family: var(--pp-font-label);
   font-weight: 500;
-  font-size: 2rem;
-  line-height: 0.9;
+  font-size: 1.35rem;
+  line-height: 1.05;
+  text-transform: uppercase;
 }
 
 .promoText {
@@ -539,8 +552,15 @@
 }
 
 .promoLink:hover {
-  color: var(--pp-pink);
-  text-decoration: none;
+  color: var(--pp-on-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+/* The ink focus ring vanishes on the ink card, so it turns light here */
+.promo :focus-visible {
+  outline-color: var(--pp-on-ink);
 }
 
 /* Sidebar */
@@ -768,7 +788,7 @@
   font-weight: 600;
   font-size: 88px;
   line-height: 0.8;
-  color: rgba(34, 32, 32, 0.14);
+  color: var(--pp-ink-ghost);
 }
 
 .tintPink {
@@ -837,10 +857,6 @@
 
   .price {
     width: 100%;
-  }
-
-  .heroRail {
-    display: none;
   }
 
   .heroCopy {
