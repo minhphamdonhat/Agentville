@@ -26,7 +26,7 @@ Claude is merging Chat and Cowork into one experience. This is rolling out now, 
 2. Open the **Plugins** tab.
 3. Click **Add**, then **Add marketplace**, then **Add from a repository**.
 4. Enter `minhphamdonhat/agentville` and confirm.
-5. Open the **Discover** tab, find the **Stable** plugin, which is called `agentville`, and click **Add**.
+5. Open the **Discover** tab, find `agentville` (the Stable version) and click **Add**.
 
 :::info[Screenshot coming soon: Customize → Plugins]
 :::
@@ -42,8 +42,6 @@ Claude is merging Chat and Cowork into one experience. This is rolling out now, 
 You may also see `agentville-beta` and `agentville-dev`. These are early versions for testing. Add only one of the three, because they clash with each other. Stable is the one to use.
 
 :::
-
-If you also use Claude Code, the plugin syncs there too, where it shows up as `agentville@synced`.
 
 ## Step 2: Turn it on with your Instructions
 
@@ -94,5 +92,5 @@ Last checked: 25 October 2026
 Sources:
 
 - [Use plugins in Claude](https://support.claude.com/en/articles/13837440-use-plugins-in-claude)
-- [Understanding Claude's personalisation features](https://support.claude.com/en/articles/10185728-understanding-claude-s-personalization-features)
+- [Understanding Claude's personalization features](https://support.claude.com/en/articles/10185728-understanding-claude-s-personalization-features)
 - [Claude Cowork and Chat are one Claude](https://support.claude.com/en/articles/16761823-claude-cowork-and-chat-are-one-claude)

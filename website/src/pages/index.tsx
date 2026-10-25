@@ -14,7 +14,7 @@ const features: Feature[] = [
     body: 'For anything bigger than a quick fix, Agentville talks the request through with you and writes a short plan before it changes anything.',
   },
   {
-    title: 'It checks its own work',
+    title: 'Its work is checked',
     body: 'A separate helper checks the result, and another reviews it, so you get evidence rather than a promise.',
   },
   {

@@ -21,7 +21,7 @@ If your uv is older than 0.13, run `uv self update`. Failing that, add `--python
 
 ## Install the agentville command
 
-The install script puts a persistent `agentville` command on your `PATH` with `uv tool install`, for your user only. It never uses `sudo` or administrator rights.
+The install script puts a persistent `agentville` command on your `PATH` with `uv tool install`, for your user only. When uv is missing, it downloads Astral's official uv installer, pinned to one uv version, to a temporary file and runs it; it asks first only when you run it at a terminal. It never uses `sudo` or administrator rights, and running it again upgrades the command.
 
 On Linux and macOS:
 

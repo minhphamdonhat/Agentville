@@ -30,7 +30,7 @@ The dotted arrows are loop-backs: when a check fails or the review asks for chan
 | Stage | What happens | What you do |
 | --- | --- | --- |
 | Discuss | Claude talks the request through with you: what is in, what is out and what "done" looks like. Nothing is changed yet. | Answer its questions. When it says "All points are settled, do you have anything else to add?", add anything else or tell it to go ahead. |
-| Plan | Claude writes a short plan: the goal and a list of tasks, each with a check that shows it is done. | Nothing. Claude shows you a summary and carries on; it does not wait for approval. |
+| Plan | Claude writes a short plan: the goal and a list of tasks, each with a check that shows it is done. | Usually nothing; it may ask for a missing fact or a yes to a web search. Claude shows you a summary and carries on; it does not wait for approval. |
 | Execute | A helper does each task in the plan. | Nothing. Claude does not ask questions from here on. |
 | Validate | A different helper checks each task and keeps the evidence. | Nothing. |
 | Review | Another helper reads the work against the plan and the evidence, and approves it or asks for changes. | Nothing. |
@@ -67,4 +67,4 @@ There are two things it always asks about first:
 
 ## Where its notes go
 
-When Agentville works on files, such as in Cowork, it keeps its notes, plan and report for each request in a folder called `.agentville/topics/`. You do not need to look there; the report tells you what you need.
+When Agentville works on files, such as in Cowork, it keeps its notes, plan and report for each request in a folder of its own. You do not need to look there; the report tells you what you need.

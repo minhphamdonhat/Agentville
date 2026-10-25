@@ -49,6 +49,10 @@ If you added Agentville in Claude Chat or Cowork, it also syncs to Claude Code a
 | `settings.json` (`agent`) | Yes | Ignored | Ignored |
 | Hooks | Yes | Yes | Ignored |
 
+## Where its notes go
+
+Agentville keeps each request's notes, plan, report and evidence under `.agentville/topics/` in the project folder, one folder per request. Its own `.gitignore` keeps evidence and the helpers' run folders out of commits.
+
 ## Updates
 
 Auto-update is off by default for third-party marketplaces. Run `claude plugin marketplace update minhphamdo` to refresh the listings, then `claude plugin update agentville@minhphamdo` (or the channel you installed). A running session keeps the old version until you restart it or run `/reload-plugins`.
