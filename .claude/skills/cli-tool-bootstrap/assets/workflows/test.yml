@@ -1,0 +1,44 @@
+# Template: fill every placeholder in double braces; keep GitHub expressions such as ${{ matrix.os }}.
+# Pin each action by the full commit SHA that `git ls-remote --tags` prints for the tag in the comment.
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@{{ SHA_CHECKOUT }} # {{ TAG_CHECKOUT }}
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@{{ SHA_SETUP_UV }} # {{ TAG_SETUP_UV }}
+      - name: Unit tests
+        run: uv run --python {{ PYTHON_VERSION }} python -m unittest discover -s tests -v
+      - name: Build
+        run: uv build --out-dir dist
+      - name: Run the built wheel through uvx
+        shell: bash
+        run: |
+          wheel="$(ls dist/*.whl)"
+          uvx --python {{ PYTHON_VERSION }} --from "$wheel" {{ PACKAGE_NAME }} --version
+          uvx --python {{ PYTHON_VERSION }} --from "$wheel" {{ PACKAGE_NAME }} install --dry-run
+      - name: Check install.sh syntax
+        if: runner.os != 'Windows'
+        run: bash -n install.sh
+      - name: Check install.ps1 syntax
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD/install.ps1", [ref]$null, [ref]$errors)
+          if ($errors) { $errors; exit 1 }
