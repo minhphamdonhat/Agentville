@@ -178,7 +178,7 @@ Each base agent except `pod-lead` also ships in nine variants, one per model and
 
 Townhall is a Python package in `townhall/` that keeps tickets on boards under `.agentville/` in your project (tracked in git) and moves them through a fixed set of stages. The plugin starts its MCP server for you through `plugins/agentville/.mcp.json`, so the tools below appear as `mcp__plugin_agentville_agentville__townhall_*` with no setup.
 
-The server launches with `uvx` from a pinned commit SHA of this repository, with Python 3.15, so it runs on any OS whatever Python the host has. On `main` and `beta`, `.mcp.json` pins the SHA of the last released commit, so development and beta run the last released server; the release step moves the pin, never a tag, because tags can move. Version 0.7.0 introduces the package, so until it is released `.mcp.json` pins the commit that adds the package, and the server starts once that commit is on GitHub.
+The server launches with `uvx` from a pinned commit SHA of this repository, with Python 3.15, so it runs on any OS whatever Python the host has. On `main` and `beta`, `.mcp.json` pins the SHA of the last released commit, so development and beta run the last released server; the release step moves the pin, never a tag, because tags can move. Version 0.10.0 introduces the package, so until it is released `.mcp.json` pins the commit that adds the package, and the server starts once that commit is on GitHub.
 
 Townhall keeps its files beside the workspace: `.agentville/config.toml`, `.agentville/.gitignore` for its lock and temporary files, and the boards under `.agentville/townhall/`.
 

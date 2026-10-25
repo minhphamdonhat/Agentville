@@ -16,6 +16,4 @@ This page lists the risks this PR brings and what limits or mitigates each one.
 
 * The files on disk are the ground truth; Temporal mirrors them on a best-effort basis.
 * The viewer imports a private Textual module, as #13 reports; the `textual>=8.2.8,<9` cap in `townhall/pyproject.toml` protects it for now.
-* `townhall/README.md` still shows `uvx --python 3.15 --from ./agentville`, from before the move; it should read `./townhall`.
-* `README.md` says "Version 0.7.0 introduces the package"; the plugin now ships it in 0.10.0.
 * Townhall is not wired into any agent or skill yet.
