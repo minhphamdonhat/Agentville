@@ -4,15 +4,7 @@ Verdict: Ready to merge. Blocking items: 0. Decisions needed: 0.
 
 ## Decisions needed
 
-none. The owner settled all three earlier decisions:
-
-| Question | Owner's answer | Where |
-| --- | --- | --- |
-| How does the `pr-report` push rule (`CLAUDE.md:112`) relate to the commit and push rule (`CLAUDE.md:93`)? | Commit and push automatically in this repository; only merging waits for the owner's review and approval | `0769ea1` |
-| Keep orchestrate's step that combines parallel workers' worktrees? | Yes; unchanged | none |
-| Align the maintainer `skill-smith` example `acme-pr-review` with the shipped `acme-code-review`? | Yes; aligned | `16d3b35` |
-
-More on each in the [decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/decisions.md).
+none. The owner settled all three: commit and push automatically, merge waits for the owner (`CLAUDE.md:93`, `0769ea1`); keep orchestrate's worktree step; align the maintainer `skill-smith` example (`16d3b35`). See the [decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/decisions.md).
 
 ## Context
 
@@ -63,7 +55,7 @@ The installer modules now live in `agentville/cli/`, and `agentville/__init__.py
 
 92 checks pass at `b3ac5b2` (run-3). Per-check detail is on the [tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/tests.md).
 
-Not tested or not verifiable: the `townhall` Verify commands, because `townhall/` is on neither this branch nor `main`. At `16d3b35` a worker re-ran the other Verify commands (exit 0), root `pytest` (38 passed), `measure.py` on the maintainer `skill-smith` (exit 0), the shipped-files `git grep` (0 hits) and the `--fail-on medium` gate (exit 0); these are worker checks, not sealed evidence.
+Not tested: the `townhall` Verify commands; `townhall/` is on neither this branch nor `main`. After `16d3b35` a worker re-ran the other Verify commands (exit 0), root `pytest` (38 passed), `measure.py` on the maintainer `skill-smith` (exit 0), the shipped-files `git grep` (0 hits) and the `--fail-on medium` gate (exit 0); worker checks, not sealed evidence.
 
 ## Risks, limits and rollback
 
