@@ -25,6 +25,7 @@ The installer package sat flat at the root of `agentville/`, which leaves no roo
 | Accept PS-06 (`1111337`) | `CLAUDE.md` | Gate accepts `PS-06:*pr-report/SKILL.md` | REQ-2, REQ-3 |
 | Drop commit and PR handling (`029e707`) | `plugins/agentville/agents/`, `plugins/agentville/skills/` | Shipped agents and skills no longer commit or open PRs; `commit:` renamed `revision:`; plugin 0.10.0 | REQ-4 |
 | Bump validator and reviewer (`b3ac5b2`) | `validator.md`, `reviewer.md`, variants, `pr-report` 1.0.1, `CLAUDE.md` | Validator and reviewer at 3.0.0; push rule tidied | REQ-4 |
+| Merge `main` at `0ab7181` (`02caf1a`) | `CLAUDE.md` | `CLAUDE.md` conflict resolved keeping both sides; no shipped file changed; plugin stays 0.10.0 | worker checks |
 
 https://github.com/minhphamdonhat/Agentville/blob/b3ac5b27805783e03c3e68c76ed1423e5bb49aa9/CLAUDE.md#L109-L109
 
@@ -58,7 +59,7 @@ The installer modules now live in `agentville/cli/`, and `agentville/__init__.py
 
 92 checks pass at `b3ac5b2` (run-3). Per-check detail is on the [tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/tests.md).
 
-Not tested or not verifiable: none, as run-3 records.
+Not tested or not verifiable: none, as run-3 records. After the merge of `main`, a worker re-ran the Verify block, root `pytest` (38 passed), the shipped-files `git grep` (0 hits) and the `--fail-on medium` gate (exit 0) at `02caf1a`; these are worker checks, not sealed evidence.
 
 ## Risks, limits and rollback
 
@@ -87,5 +88,6 @@ Head: {head-sha}
 | Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/tests.md) |
 | Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/risks.md) |
 | Validator evidence | Folder `run-3` at `b3ac5b2`, `SHA256SUMS` hash `37622fd28912` |
+| Post-merge worker checks | Verify block, root `pytest`, `git grep`, gate at `02caf1a`; not sealed, run-3 stays the sealed run |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
