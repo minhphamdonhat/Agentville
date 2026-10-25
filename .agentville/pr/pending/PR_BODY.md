@@ -62,7 +62,7 @@ The validator ran every check at `26c43c8` (run-2) on Linux, in a clean clone wh
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
-| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 | `83a02188a4c0` |
+| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 | `24ddf8b61baf` |
 | Pin reachable | `git merge-base --is-ancestor 652451a HEAD` | Exit 0 | `0a9561507bf4` |
 | Smith script tests (4 suites) | `python3 .../test_scripts.py` | 80, 84, 85 and 89 tests, OK | `6bc96d703511`, `2e36fd2925a5`, `2432284682b8`, `1cfc13e0629c` |
 | Townhall tests | `uv run --directory townhall pytest` | 277 passed, 0 skipped | `36c1bf648ede` |
