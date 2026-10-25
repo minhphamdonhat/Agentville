@@ -5,6 +5,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import re
 import tempfile
 import unittest
 
@@ -57,6 +58,12 @@ def read(path):
 
 NW = "TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Write, Edit, Glob, Grep, Bash, NotebookEdit, Monitor, Skill"
 BASE_TEXT = read(BASE)
+# The base worker omits `tools` and inherits every tool. Fork-shaped agents need a list, so tests that
+# exercise `tools` start from this copy, which grants NW and keeps the pre-1.3.0 deny list.
+OLD_DENY = "WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup"
+WORKER_DENY = OLD_DENY + ", Agent, SendMessage, ListAgents, TaskOutput, AskUserQuestion, SendUserFile, mcp__claude-code-remote__send_later"
+assert "\ndisallowedTools: " + WORKER_DENY + "\n" in BASE_TEXT and "\ntools:" not in BASE_TEXT
+TOOLS_TEXT = BASE_TEXT.replace("disallowedTools: " + WORKER_DENY, "tools: " + NW + "\ndisallowedTools: " + OLD_DENY, 1)
 
 FILLED = {
     "[[What the agent does and the roles it serves, then when to spawn it; at most 1,024 characters.]]":
@@ -76,9 +83,9 @@ FILLED = {
         "* **job:** optional - default: the newest - The job name.",
     "1. **[[Step title].]** [[What to do, the tool by name, the literal command; or load `Skill(namespace:name)`; "
     "or stop and hand back a spawn request.]]": "1. **Read the log.** Grep the log for FAILED.",
-    "* **[[field-name]]:** always - [[What the field holds.]]": "* **cause:** always - The failing test.",
-    "* **[[field-name]]:** when [[condition]] - [[What the field holds.]]":
-        "* **fix:** when found - The proposed fix.",
+    "* **[[field-name]]:** always - `<[[tag]]>`: [[What the field holds.]]": "* **cause:** always - `<claims>`: The failing test.",
+    "* **[[field-name]]:** when [[condition]] - `<[[tag]]>`: [[What the field holds.]]":
+        "* **fix:** when found - `<claims>`: The proposed fix.",
     "* **[[Condition]]:** [[what to do, and the relay §4 status token to report]].":
         "* **No log:** return `blocked`.",
 }
@@ -120,7 +127,7 @@ class Base(unittest.TestCase):
 
 class TestMeasure(Base):
     def test_01_base_worker_passes(self):
-        rc, out = self.measure(BASE_TEXT)
+        rc, out = self.measure_as(BASE_TEXT, "worker")
         self.assertEqual(rc, 0, out)
         self.assertEqual(fails(out), set())
         self.assertEqual(kv(out)["workflows"], ["1"])
@@ -150,103 +157,167 @@ class TestMeasure(Base):
 
     def test_04_model_and_effort_fail(self):
         for key in ("model: sonnet", "effort: high"):
-            _, out = self.measure(BASE_TEXT.replace("tools:", key + "\ntools:", 1))
+            _, out = self.measure(TOOLS_TEXT.replace("tools:", key + "\ntools:", 1))
             self.assertIn("A2", fails(out))
 
+    def variant_text(self, name, model="sonnet", effort="high"):
+        text = re.sub(r"^name:.*$", f"name: {name}", TOOLS_TEXT, count=1, flags=re.M)
+        extra = "".join(f"{k}: {v}\n" for k, v in (("model", model), ("effort", effort)) if v)
+        return text.replace("tools:", extra + "tools:", 1)
+
+    def measure_as(self, text, stem):
+        rc, out, err = run(MEASURE, self.write(text, stem + ".md"))
+        self.assertIn(rc, (0, 1), err)
+        return rc, out
+
+    def test_04b_variant_with_matching_keys_passes_a2(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high"), "worker-sonnet-high")
+        self.assertNotIn("A2", fails(out))
+
+    def test_04c_variant_with_mismatching_effort_fails(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high", effort="low"), "worker-sonnet-high")
+        self.assertIn("A2", fails(out))
+
+    def test_04d_variant_missing_a_key_fails(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high", effort=None), "worker-sonnet-high")
+        self.assertIn("A2", fails(out))
+
+    def test_04e_base_agent_with_model_fails(self):
+        _, out = self.measure_as(self.variant_text("worker", effort=None), "worker")
+        self.assertIn("A2", fails(out))
+
+    def test_04f_non_variant_name_with_model_fails(self):
+        _, out = self.measure_as(self.variant_text("worker-gpt-high", model="gpt"), "worker-gpt-high")
+        self.assertIn("A2", fails(out))
+
+    def test_04g_variant_name_must_equal_file_stem(self):
+        _, out = self.measure_as(self.variant_text("worker-sonnet-high"), "agent")
+        self.assertIn("A2", fails(out))
+
+    def test_04h_scout_variant_gets_the_scout_core_exemption(self):
+        path = os.path.join(os.path.dirname(PLUGIN_WORKER), "scout-haiku-low.md")
+        if not os.path.exists(path):
+            self.skipTest("no scout-haiku-low.md next to the plugin worker")
+        rc, out, err = run(MEASURE, path)
+        self.assertEqual(rc, 0, out + err)
+        self.assertNotIn("A5", fails(out))
+
     def test_05_unknown_key_warns(self):
-        rc, out = self.measure(BASE_TEXT.replace("tools:", "color: blue\ntools:", 1))
+        rc, out = self.measure(TOOLS_TEXT.replace("tools:", "color: blue\ntools:", 1))
         self.assertEqual(rc, 0)
         self.assertIn("A2", warns(out))
 
     def test_06_agent_tool_needs_override(self):
-        text = BASE_TEXT.replace("Monitor, Skill\n", "Monitor, Skill, Agent\n", 1)
+        text = TOOLS_TEXT.replace("Monitor, Skill\n", "Monitor, Skill, Agent\n", 1)
         _, out = self.measure(text)
         self.assertIn("A3", fails(out))
         rc, out = self.measure(text, "--allow-agent")
         self.assertEqual(rc, 0, out)
-        _, out = self.measure(BASE_TEXT.replace("Monitor, Skill\n", "Monitor, Skill, Task\n", 1))
+        _, out = self.measure(TOOLS_TEXT.replace("Monitor, Skill\n", "Monitor, Skill, Task\n", 1))
         self.assertIn("A3", fails(out))
 
     def test_07_missing_tools_fails(self):
-        _, out = self.measure(BASE_TEXT.replace("tools: "+NW+"\n", ""))
+        _, out = self.measure(TOOLS_TEXT.replace("tools: "+NW+"\n", ""))
         self.assertIn("A1", fails(out))
 
+    def no_tools_as(self, name, stem=None):
+        """BASE_TEXT (no `tools` line) renamed to `name` and measured from the file `<stem>.md`."""
+        text = re.sub(r"^name:.*$", f"name: {name}", BASE_TEXT, count=1, flags=re.M)
+        return self.measure_as(text, stem or name)[1]
+
+    def test_07b_worker_without_tools_passes(self):
+        out = self.no_tools_as("worker")
+        self.assertNotIn("A1", fails(out))
+        self.assertIn("tools_omitted: yes", out)
+
+    def test_07c_worker_variant_without_tools_passes(self):
+        text = self.variant_text("worker-sonnet-high").replace("tools: " + NW + "\n", "")
+        self.assertNotIn("\ntools:", text)
+        _, out = self.measure_as(text, "worker-sonnet-high")
+        self.assertNotIn("A1", fails(out))
+        self.assertNotIn("A2", fails(out))
+
+    def test_07d_other_agents_without_tools_fail(self):
+        for name in ("validator", "reviewer", "scout", "acme-triage", "validator-sonnet-high", "worker-gpt-high"):
+            self.assertIn("A1", fails(self.no_tools_as(name)), name)
+        self.assertIn("A1", fails(self.no_tools_as("worker", stem="agent")))
+
     def test_08_core_changed_fails(self):
-        _, out = self.measure(BASE_TEXT.replace("Do not address the human.", "Address the human."))
+        _, out = self.measure(TOOLS_TEXT.replace("Do not address the human.", "Address the human."))
         self.assertIn("A5", fails(out))
         self.assertIn("identity | differs", kv(out)["core"])
 
     def test_09_core_missing_or_misplaced_fails(self):
-        start = BASE_TEXT.index("<!-- core:begin identity -->")
-        end = BASE_TEXT.index("<!-- core:end identity -->") + len("<!-- core:end identity -->")
-        block = BASE_TEXT[start:end]
-        _, out = self.measure(BASE_TEXT.replace(block, "1. Talk plainly."))
+        start = TOOLS_TEXT.index("<!-- core:begin identity -->")
+        end = TOOLS_TEXT.index("<!-- core:end identity -->") + len("<!-- core:end identity -->")
+        block = TOOLS_TEXT[start:end]
+        _, out = self.measure(TOOLS_TEXT.replace(block, "1. Talk plainly."))
         self.assertIn("identity | missing", kv(out)["core"])
-        moved = BASE_TEXT.replace(block, "1. Talk plainly.").replace("# Exception handler\n", "# Exception handler\n\n" + block + "\n")
+        moved = TOOLS_TEXT.replace(block, "1. Talk plainly.").replace("# Exception handler\n", "# Exception handler\n\n" + block + "\n")
         _, out = self.measure(moved)
         self.assertIn("identity | misplaced", kv(out)["core"])
 
     def test_10_extending_rule_before_core_fails(self):
-        _, out = self.measure(BASE_TEXT.replace("# Constraints\n\n", "# Constraints\n\n0. **Extra:** first.\n\n", 1))
+        _, out = self.measure(TOOLS_TEXT.replace("# Constraints\n\n", "# Constraints\n\n0. **Extra:** first.\n\n", 1))
         self.assertIn("A5", fails(out))
 
     def test_11_section_order(self):
-        text = BASE_TEXT.replace("# Exception handler", "# Talk")
+        text = TOOLS_TEXT.replace("# Exception handler", "# Talk")
         _, out = self.measure(text)
         self.assertIn("A4", fails(out))
 
     def test_12_workflow_rules(self):
-        _, out = self.measure(BASE_TEXT.replace("Role: worker\n", ""))
+        _, out = self.measure(TOOLS_TEXT.replace("Role: worker\n", ""))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("Role: worker\n", "Role: wizard\n"))
+        _, out = self.measure(TOOLS_TEXT.replace("Role: worker\n", "Role: wizard\n"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("3. **Break it down.**", "5. **Break it down.**"))
+        _, out = self.measure(TOOLS_TEXT.replace("3. **Break it down.**", "5. **Break it down.**"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("* **steps:** always -", "* **steps:** sometimes -"))
+        _, out = self.measure(TOOLS_TEXT.replace("* **steps:** always -", "* **steps:** sometimes -"))
         self.assertIn("A6", fails(out))
-        _, out = self.measure(BASE_TEXT.replace("## Execute", "## Bad Name"))
+        _, out = self.measure(TOOLS_TEXT.replace("## Execute", "## Bad Name"))
         self.assertIn("A6", fails(out))
-        lo = BASE_TEXT.index("## Execute")
-        hi = BASE_TEXT.index("# Exception handler")
-        _, out = self.measure(BASE_TEXT[:lo] + BASE_TEXT[hi:])
+        lo = TOOLS_TEXT.index("## Execute")
+        hi = TOOLS_TEXT.index("# Exception handler")
+        _, out = self.measure(TOOLS_TEXT[:lo] + TOOLS_TEXT[hi:])
         self.assertIn("A6", fails(out))
 
     def test_13_exception_handler_needs_items(self):
-        lo = BASE_TEXT.index("# Exception handler") + len("# Exception handler\n")
-        _, out = self.measure(BASE_TEXT[:lo] + "\n")
+        lo = TOOLS_TEXT.index("# Exception handler") + len("# Exception handler\n")
+        _, out = self.measure(TOOLS_TEXT[:lo] + "\n")
         self.assertIn("A7", fails(out))
 
     def test_14_leftovers(self):
-        _, out = self.measure(BASE_TEXT + "\n[[fill me]]\n")
+        _, out = self.measure(TOOLS_TEXT + "\n[[fill me]]\n")
         self.assertIn("A8", fails(out))
-        _, out = self.measure(BASE_TEXT + "\n<!-- note -->\n")
+        _, out = self.measure(TOOLS_TEXT + "\n<!-- note -->\n")
         self.assertIn("A8", fails(out))
 
     def test_15_foreign_namespace_fails(self):
-        _, out = self.measure(BASE_TEXT.replace("agentville:relay", "anthropic-skills" + ":relay", 1))
+        _, out = self.measure(TOOLS_TEXT.replace("agentville:relay", "anthropic-skills" + ":relay", 1))
         self.assertIn("A9", fails(out))
-        rc, out = self.measure(BASE_TEXT.replace("1. **Read the brief.** Restate", "1. **Read the brief.** Load `Skill(relay)`. Restate"))
+        rc, out = self.measure(TOOLS_TEXT.replace("1. **Read the brief.** Restate", "1. **Read the brief.** Load `Skill(relay)`. Restate"))
         self.assertEqual(rc, 0)
         self.assertIn("A9", warns(out))
 
     def test_16_granted_and_denied(self):
-        _, out = self.measure(BASE_TEXT.replace("disallowedTools: WebSearch", "disallowedTools: Read, WebSearch"))
+        _, out = self.measure(TOOLS_TEXT.replace("disallowedTools: WebSearch", "disallowedTools: Read, WebSearch"))
         self.assertIn("A10", fails(out))
 
     def test_17_size(self):
-        _, out = self.measure(BASE_TEXT + "\n* **Extra:** line.\n" * 400)
+        _, out = self.measure(TOOLS_TEXT + "\n* **Extra:** line.\n" * 400)
         self.assertIn("A11", fails(out))
 
     def test_18_usage_and_read_errors(self):
         self.assertEqual(run(MEASURE)[0], 2)
         self.assertEqual(run(MEASURE, os.path.join(self.tmp, "nope.md"))[0], 2)
         self.assertEqual(run(MEASURE, self.write("no frontmatter\n"))[0], 2)
-        self.assertEqual(run(MEASURE, self.write(BASE_TEXT), "--base", os.path.join(self.tmp, "x.md"))[0], 2)
+        self.assertEqual(run(MEASURE, self.write(TOOLS_TEXT), "--base", os.path.join(self.tmp, "x.md"))[0], 2)
 
     def test_20_constraints_core_needs_status_line(self):
-        rc, out = self.measure(BASE_TEXT)
+        rc, out = self.measure(TOOLS_TEXT)
         self.assertEqual(kv(out)["status_line_rule"], ["yes"])
-        weak = BASE_TEXT.replace("`<status>` comes first and holds one of", "the status comes with one of")
+        weak = TOOLS_TEXT.replace("`<status>` comes first and holds one of", "the status comes with one of")
         base = self.write(weak, "weak-base.md")
         rc, out = self.measure(weak, "--base", base)
         self.assertEqual(rc, 1)
@@ -276,74 +347,74 @@ class TestMeasure(Base):
         self.assertIn("A2", fails(out))
 
     def test_slot_direct_call_fails_a18(self):
-        _, out = self.measure(BASE_TEXT + "\n* Resolve with `Skill(agentville:toolbelt)` now.\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* Resolve with `Skill(agentville:toolbelt)` now.\n")
         self.assertIn("A18", fails(out))
         self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
 
     def test_slot_plugin_default_mention_allowed(self):
-        _, out = self.measure(BASE_TEXT + "\n* The slot default is the plugin default `Skill(agentville:toolbelt)`.\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* The slot default is the plugin default `Skill(agentville:toolbelt)`.\n")
         self.assertNotIn("A18", fails(out))
 
     def test_slot_plugin_default_then_call_fails_a18(self):
-        _, out = self.measure(BASE_TEXT + "\n* Fall back to the plugin default, then call Skill(agentville:toolbelt).\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* Fall back to the plugin default, then call Skill(agentville:toolbelt).\n")
         self.assertIn("A18", fails(out))
         self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
 
     def test_slot_call_with_source_outside_record_fails_a18(self):
         for text in ("Call `Skill(agentville:toolbelt) (project-x)` now.", "Call `Skill(agentville:toolbelt) (project-rules)` now.",
                      "Write `toolbelt: Skill(agentville:toolbelt) (project-rules)` now."):
-            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            _, out = self.measure(TOOLS_TEXT + f"\n* {text}\n")
             self.assertIn("A18", fails(out), text)
 
     def test_slot_call_followed_by_plugin_default_record_allowed(self):
-        _, out = self.measure(BASE_TEXT + "\n* Name `Skill(agentville:toolbelt) (plugin-default)` in the claims.\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* Name `Skill(agentville:toolbelt) (plugin-default)` in the claims.\n")
         self.assertNotIn("A18", fails(out))
 
     def test_slot_imperative_verb_before_default_call_fails_a18(self):
         for text in ("Call `Skill(agentville:toolbelt) (plugin-default)` now.", "Load the plugin default `Skill(agentville:workspace)`.",
                      "Then run Skill(agentville:draft) (plugin-default).", "Invoke the plugin default Skill(agentville:plan).",
                      "Use `Skill(agentville:report)` (plugin-default)."):
-            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            _, out = self.measure(TOOLS_TEXT + f"\n* {text}\n")
             self.assertIn("A18", fails(out), text)
             self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:" in l for l in out.splitlines()), text)
 
     def test_slot_non_imperative_default_description_still_allowed_a18(self):
         for text in ("The slot falls back to the plugin default `Skill(agentville:draft)`.", "Name `Skill(agentville:plan) (plugin-default)` in the claims.",
                      "Write `report: agentville:report (plugin-default)` in the claims."):
-            _, out = self.measure(BASE_TEXT + f"\n* {text}\n")
+            _, out = self.measure(TOOLS_TEXT + f"\n* {text}\n")
             self.assertNotIn("A18", fails(out), text)
 
     def test_slot_record_needs_known_source_and_own_slot(self):
         for text in ("toolbelt: agentville:toolbelt (project-x)", "workspace: agentville:toolbelt (project-rules)"):
-            _, out = self.measure(BASE_TEXT + f"\n* Write `{text}` in the claims.\n")
+            _, out = self.measure(TOOLS_TEXT + f"\n* Write `{text}` in the claims.\n")
             self.assertIn("A18", fails(out), text)
-        _, out = self.measure(BASE_TEXT + "\n* Write `toolbelt: agentville:toolbelt (project-rules)` in the claims.\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* Write `toolbelt: agentville:toolbelt (project-rules)` in the claims.\n")
         self.assertNotIn("A18", fails(out))
 
     def test_slot_without_context_injection_fails_a18(self):
-        text = BASE_TEXT.replace("Skill(agentville:context-injection)", "Skill(agentville:relay)")
+        text = TOOLS_TEXT.replace("Skill(agentville:context-injection)", "Skill(agentville:relay)")
         _, out = self.measure(text + "\n* Use the `toolbelt` slot.\n")
         self.assertIn("A18", fails(out))
         self.assertTrue(any(l.startswith("slot_without_context_injection:") and "toolbelt" in l for l in out.splitlines()), out)
 
     def test_slot_via_context_injection_passes(self):
-        _, out = self.measure(BASE_TEXT + "\n* Use the `toolbelt` slot, resolved with `Skill(agentville:context-injection)`.\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* Use the `toolbelt` slot, resolved with `Skill(agentville:context-injection)`.\n")
         self.assertNotIn("A18", fails(out))
 
     def test_slot_plugin_default_elsewhere_on_line_does_not_exempt(self):
         old = "and report a fallback to the plugin default in `<deviations>`."
-        self.assertIn(old, BASE_TEXT)
-        _, out = self.measure(BASE_TEXT.replace(old, old + " Then call Skill(agentville:toolbelt)."))
+        self.assertIn(old, TOOLS_TEXT)
+        _, out = self.measure(TOOLS_TEXT.replace(old, old + " Then call Skill(agentville:toolbelt)."))
         self.assertIn("A18", fails(out))
         self.assertTrue(any(l.startswith("slot_direct_calls:") and "Skill(agentville:toolbelt)" in l for l in out.splitlines()))
 
     def test_slot_other_call_forms_fail_a18(self):
         for form in ("agentville:toolbelt", "/agentville:toolbelt", "Skill(toolbelt)"):
-            _, out = self.measure(BASE_TEXT + f"\n* Load {form} first.\n")
+            _, out = self.measure(TOOLS_TEXT + f"\n* Load {form} first.\n")
             self.assertIn("A18", fails(out), form)
 
     def test_slot_record_with_source_allowed(self):
-        _, out = self.measure(BASE_TEXT + "\n* Write `workspace: agentville:workspace (plugin-default)` in the claims.\n")
+        _, out = self.measure(TOOLS_TEXT + "\n* Write `workspace: agentville:workspace (plugin-default)` in the claims.\n")
         self.assertNotIn("A18", fails(out))
 
 
@@ -391,14 +462,14 @@ class TestStage(Base):
         self.assertEqual(run(STAGE, "fork", TEMPLATE, nocore, out, "x")[0], 2)
 
     def test_seed_needs_marker(self):
-        src = self.write(BASE_TEXT, "acme-triage.md")
+        src = self.write(TOOLS_TEXT, "acme-triage.md")
         plain = os.path.join(self.tmp, "plain")
         os.mkdir(plain)
         self.assertEqual(run(STAGE, "seed", src, plain)[0], 2)
         p = self.create()
         rc, out, err = run(STAGE, "seed", src, p)
         self.assertEqual(rc, 0, err)
-        self.assertEqual(read(os.path.join(p, "acme-triage.md")), BASE_TEXT)
+        self.assertEqual(read(os.path.join(p, "acme-triage.md")), TOOLS_TEXT)
 
     def roots(self):
         project, user = os.path.join(self.tmp, "proj"), os.path.join(self.tmp, "home")
@@ -412,7 +483,7 @@ class TestStage(Base):
                    "--project-root", project, "--user-root", user, *extra)
 
     def test_install_refuses_overwrite(self):
-        src = self.write(BASE_TEXT, "acme-triage.md")
+        src = self.write(TOOLS_TEXT, "acme-triage.md")
         self.roots_cache = self.roots()
         dst = os.path.join(self.roots_cache[0], ".claude", "agents")
         rc, out, err = self.install(src, dst, "project")
@@ -425,7 +496,7 @@ class TestStage(Base):
         self.assertEqual(self.install(os.path.join(self.tmp, "nope.md"), dst, "project")[0], 2)
 
     def test_install_accepts_project_and_user_scope(self):
-        src = self.write(BASE_TEXT, "acme-triage.md")
+        src = self.write(TOOLS_TEXT, "acme-triage.md")
         self.roots_cache = project, user = self.roots()
         for scope, root in (("project", project), ("user", user)):
             dst = os.path.join(root, ".claude", "agents")
@@ -435,7 +506,7 @@ class TestStage(Base):
             self.assertTrue(os.path.isfile(os.path.join(dst, "acme-triage.md")))
 
     def test_install_refuses_plugin_target(self):
-        src = self.write(BASE_TEXT, "acme-triage.md")
+        src = self.write(TOOLS_TEXT, "acme-triage.md")
         self.roots_cache = project, user = self.roots()
         plugin = os.path.join(project, "plugins", "acme")
         os.makedirs(os.path.join(plugin, ".claude-plugin"))
@@ -457,7 +528,7 @@ class TestStage(Base):
         self.assertFalse(os.path.exists(os.path.join(plugin, ".claude", "agents", "acme-triage.md")))
 
     def test_install_accepts_project_root_under_plugins_folder(self):
-        src = self.write(BASE_TEXT, "acme-triage.md")
+        src = self.write(TOOLS_TEXT, "acme-triage.md")
         project = os.path.join(self.tmp, "plugins", "myapp")
         user = os.path.join(self.tmp, "home")
         os.makedirs(project)
@@ -469,7 +540,7 @@ class TestStage(Base):
         self.assertTrue(os.path.isfile(os.path.join(dst, "acme-triage.md")))
 
     def test_install_refuses_other_folders_and_missing_scope(self):
-        src = self.write(BASE_TEXT, "acme-triage.md")
+        src = self.write(TOOLS_TEXT, "acme-triage.md")
         self.roots_cache = project, user = self.roots()
         free = os.path.join(self.tmp, "elsewhere")
         self.assertEqual(self.install(src, free, "project")[0], 2)
@@ -490,7 +561,7 @@ class TestStage(Base):
         with open(os.path.join(self.tmp, "plugins", "acme", ".claude-plugin", "plugin.json"), "w", encoding="utf-8", newline="\n") as f:
             f.write("{}")
         with open(plugin_agent, "w", encoding="utf-8", newline="\n") as f:
-            f.write(BASE_TEXT)
+            f.write(TOOLS_TEXT)
         rc, _, err = run(STAGE, "seed", plugin_agent, p)
         self.assertEqual(rc, 2)
         self.assertIn("plugin", err)
@@ -651,9 +722,10 @@ class TestEval(Base):
             v, i = dec.raw_decode(rest.strip())
             args.append(v)
             rest = rest.strip()[i:]
-        base_tools = ",".join(t.strip() for t in
-                              [l for l in read(BASE).splitlines() if l.startswith("tools:")][0][6:].split(","))
-        self.assertEqual(args[args.index("--allowedTools") + 1], base_tools)
+        # The base worker omits `tools` and inherits every tool, but dontAsk auto-denies tools that are not
+        # pre-approved, so its run passes the session-safe built-in set as --allowedTools.
+        self.assertFalse([l for l in read(BASE).splitlines() if l.startswith("tools:")])
+        self.assertEqual(args[args.index("--allowedTools") + 1], NW.replace(", ", ","))
         self.assertEqual(args[args.index("--add-dir") + 1], work)
         self.assertEqual(args[args.index("--model") + 1], "sonnet")
         self.assertEqual(args[args.index("--permission-mode") + 1], "dontAsk")
@@ -817,6 +889,20 @@ class TestEval(Base):
         self.assertNotIn("<<<AGENT", text)
         self.assertTrue(text.startswith("<role>worker</role>"))
         self.assertIn("cwd=", kv(out)["dispatch"][0])
+
+    def test_inheriting_agent_keeps_tools_under_dontask(self):
+        """An agent without `tools` and the no-agent baseline both get the built-in set as --allowedTools."""
+        text = self.filled()
+        line = "tools: Read, Grep, Glob, Bash, Skill\n"
+        self.assertTrue(("\n" + line) in text)
+        inheriting = self.write(text.replace(line, "", 1), "acme-triage.md")
+        self.fill_cases()
+        env = self.fake_claude("print('{}')")
+        rc, out, err = run(EVAL, "run", inheriting, "none", self.cases, self.out, env=env)
+        self.assertEqual(rc, 0, err)
+        for cmd in kv(out)["command"]:
+            self.assertIn('"--allowedTools" "' + NW.replace(", ", ",") + '"', cmd)
+            self.assertIn('"--permission-mode" "dontAsk"', cmd)
 
     def test_usage(self):
         self.assertEqual(run(EVAL)[0], 2)

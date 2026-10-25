@@ -1,9 +1,10 @@
 {
   "name": "agentville",
   "displayName": "Agentville",
-  "version": "0.7.0",
+  "version": "0.10.0",
   "description": "A storybook for founding a town of agents, from the first worker to a self-governing village",
   "author": { "name": "Minh Pham Do Nhat" },
+  "license": "MIT",
   "repository": "https://github.com/minhphamdonhat/Agentville",
   "keywords": ["orchestration", "agents", "subagents", "delegation", "writing-standards", "skills"]
 }

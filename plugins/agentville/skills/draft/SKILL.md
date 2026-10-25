@@ -1,8 +1,8 @@
 ---
 name: "draft"
-description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '<topic-folder>/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
+description: "Records a topic's working draft, notes, decisions and open points in numbered rounds, as '{topic-folder}/draft.md', and returns the file path and sections written; with no file tool it returns the formatted draft inline. Modes create, append, update, locate (read-only). Records what it is given and decides nothing. Use to save or extend a draft, or to find where it lives."
 metadata:
-  version: 1.2.0
+  version: 2.0.1
 ---
 
 # Role
@@ -33,7 +33,7 @@ You are a draft recorder. You take a topic, the content of one round and a mode,
 
 ### 1. Collect the inputs
 
-Read the inputs from the request and use the defaults for what is absent. Return `status: needs-input` with `missing: content` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id`, `access: read` and the `project-root` when one is given; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/draft.md`.
+Read the inputs from the request and use the defaults for what is absent. Return `<status>needs-input</status>` with `missing: content` in `<open>` when `content` is absent and `mode` is not `locate`, asking first when a person is reachable. A `topic-id` that is not kebab-case returns `missing: topic-id`. Then resolve the `workspace` slot in two steps. Step 1: call `Skill(agentville:context-injection)` once with `slots: workspace`. Step 2: load the skill it returns by its id (or `Read` its path when it is not loadable) and run it with the `topic-id`, `access: read` and the `project-root` when one is given; its `topic` is `<topic-folder>`, and `none` means no folder. Keep the returned record as the claim `workspace: <skill> (<source>)`. The file is `<topic-folder>/draft.md`.
 
 Do:
 * Take the topic-id from the request's subject and today's date when none is given.
@@ -43,7 +43,7 @@ Don't:
 
 ### 2. Check the draft path
 
-With no file tool or no topic folder: in `locate` mode return `location: none`; otherwise go to step 3 with the inline route. Else run one `Glob` on the absolute path. `locate` stops here: `location` is the path when found, else `none`. When the file exists, `Read` it whole and take the next round as the highest `## Round N` plus one; otherwise round 1. `create` with an existing file returns `needs-input`, `missing: mode`, `reason: draft.md already exists; use append or update`.
+With no file tool or no topic folder: in `locate` mode return `location: none`; otherwise go to step 3 with the inline route. Else run one `Glob` on the absolute path. `locate` stops here: `location` is the path when found, else `none`. When the file exists, `Read` it whole and take the next round as the highest `## Round N` plus one; otherwise round 1. `create` with an existing file returns `needs-input` with `missing: mode` in `<open>` and `draft.md already exists; use append or update` in `<outcome>`.
 
 Do:
 * Set the next round to 3 when the record holds `## Round 1` and `## Round 2`.
@@ -54,7 +54,7 @@ Don't:
 
 ### 3. Write the draft
 
-Take the date from `date -u +%F` through `Bash` (PowerShell: `(Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')`; omit it when no shell is held). For a new file write `# Draft: <topic-id>` first. In `append` mode add one block at the end with `Edit` (or `Write` for a new file): `## Round <N> (<UTC date>)`, then one `### <section>` per name in `sections`, each holding its part of `content` as bullets, or `- none`. In `update` mode replace only the body under each named heading with `Edit`; a `###` heading is taken from the latest round unless `sections` names a round, such as `Round 1 / Open points`, and a named heading not in the file is added at the end of the last round. With no file tool, return the same text in the reply under `content:` and write nothing.
+Take the date from `date -u +%F` through `Bash` (PowerShell: `(Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')`; omit it when no shell is held). For a new file write `# Draft: <topic-id>` first. In `append` mode add one block at the end with `Edit` (or `Write` for a new file): `## Round <N> (<UTC date>)`, then one `### <section>` per name in `sections`, each holding its part of `content` as bullets, or `- none`. In `update` mode replace only the body under each named heading with `Edit`; a `###` heading is taken from the latest round unless `sections` names a round, such as `Round 1 / Open points`, and a named heading not in the file is added at the end of the last round. With no file tool, return the same text in `<artefacts>` under `content:` and write nothing.
 
 Do:
 * Append `## Round 2 (2026-10-18)`, `### Notes` with `- the list endpoint is in apps/api/src/orders.py`, `### Decisions` with `- page size 50`, `### Open points` with `- cap the page size?`.
@@ -70,40 +70,50 @@ List the headings written or replaced and reply with the Output block. Do not re
 
 # Output
 
-* **status:** always - `completed` when the draft holds the new content.
-* **location:** always - Where the draft is: an absolute path, a URL or `inline` (the record is then in `content`), or `none` when no draft exists (`locate`).
-* **mode:** always - `create`, `append`, `update` or `locate`.
-* **round:** when `mode` is not `locate` - The round written or updated.
-* **sections:** when `mode` is not `locate` - The headings written or replaced, in file order.
-* **kept:** when `mode` is not `locate` - The earlier rounds left unchanged, or `none`.
-* **content:** when `location: inline` - The formatted draft text.
-* **workspace:** always - The claim `workspace: <skill> (<source>)` for the slot resolved in step 1.
-* **note:** always - One line saying where the draft is and what was added.
+* **status:** always - In `<status>`: `completed` when the draft holds the new content.
+* **outcome:** always - In `<outcome>`: one line saying where the draft is and what was added.
+* **mode:** always - In `<claims>`: `- mode: create | append | update | locate`, labelled `verified` with the request input.
+* **round:** when `mode` is not `locate` - In `<claims>`: `- round: <N>`, the round written or updated, labelled `verified` with the highest round read from the file.
+* **sections:** when `mode` is not `locate` - In `<claims>`: one `- sections: [...]` line holding a minified JSON array of the headings written or replaced, in file order, labelled `verified` with the `Write` or `Edit` call on the file.
+* **kept:** when `mode` is not `locate` - In `<claims>`: one `- kept: [...]` line holding a minified JSON array of the earlier rounds left unchanged, `[]` when none, labelled `verified` with the `Edit` call that touched only the end of the file.
+* **workspace:** always - In `<claims>`: `- workspace: <skill> (<source>)`, the record for the slot resolved in step 1, labelled `verified` with that record.
+* **location:** always - In `<artefacts>`: `location: <where the draft is>`, an absolute path, a URL or `inline` (the record is then in `content`), or `none` when no draft exists (`locate`).
+* **content:** when `location: inline` - In `<artefacts>`: `content:` followed by the lines of the formatted draft text.
+* **open:** always - In `<open>`: `none`.
+* **deviations:** always - In `<deviations>`: `none`.
 
 ```text
-status: completed
-location: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/draft.md
-mode: append
-round: 2
-sections: Round 2 (2026-10-18), Notes, Decisions, Open points
-kept: Round 1
-workspace: agentville:workspace (plugin-default)
-note: round 2 appended to {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/draft.md
+<status>completed</status>
+<outcome>Round 2 appended to {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/draft.md.</outcome>
+<claims>
+- mode: append. verified: request input
+- round: 2. verified: the highest "## Round N" read in draft.md was 1
+- sections: ["Round 2 (2026-10-18)","Notes","Decisions","Open points"]. verified: Edit of {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/draft.md succeeded
+- kept: ["Round 1"]. verified: the Edit added text after the last line only
+- workspace: agentville:workspace (plugin-default). verified: Skill(agentville:context-injection) record
+</claims>
+<artefacts>location: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/draft.md</artefacts>
+<open>none</open>
+<deviations>none</deviations>
 ```
 
-`locate` returns only `status`, `location` (the path, or `none` with `note: no draft for this topic; nothing written`), `mode: locate`, `workspace` and `note`.
+`locate` returns only `status`, `outcome` (`no draft for this topic; nothing written` when the location is `none`), `mode: locate`, `workspace` and `location`.
 
 Do:
-* `mode: locate`, `location: none` when `Glob` finds no draft.
+* `- mode: locate` with `location: none` in `<artefacts>` when `Glob` finds no draft.
+* `location: inline`, then `content:` and the draft lines in `<artefacts>`, when no file tool is held.
 
 Don't:
 * Add a `decision:` or `next-step:` line.
-* Return a relative path or open with a greeting; the reply starts with `status:`.
+* Return a relative path or open with a greeting; the reply starts with `<status>`.
 
 When the draft cannot be written, reply with this block only:
 
 ```text
-status: blocked | needs-input | failed
-reason: [ONE_SENTENCE_NAMING_WHAT_STOPPED_THE_RUN]
-missing: [INPUT_NAMES_FOR_NEEDS_INPUT_OR_NONE]
+<status>blocked | needs-input | failed</status>
+<outcome>[ONE_SENTENCE_NAMING_WHAT_STOPPED_THE_RUN]</outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: [INPUT_NAMES_FOR_NEEDS_INPUT_OR_NONE]</open>
+<deviations>none</deviations>
 ```

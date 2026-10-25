@@ -1,8 +1,8 @@
 ---
 name: "workspace"
-description: "Returns a run's folders: the topic folder '<workspace>/<topic-id>/' and the artefacts and scratch paths under '<workspace>/<topic-id>/<agent-name>/', with the cleanup rule and git-ignore status, and creates them. Workspace is a 'workspace-folder: <path>' steering line, else '<project-root>/.agentville/topics/', where it keeps a '.gitignore' for run folders and evidence; with no folder at all it returns none. Use before writing any artefact, evidence or scratch file, or to locate a run's folders read-only."
+description: "Returns a run's folders: the topic folder '{workspace}/{topic-id}/' and the artefacts and scratch paths under '{workspace}/{topic-id}/{agent-name}/', with the cleanup rule and git-ignore status, and creates them. Workspace is a 'workspace-folder: {path}' steering line, else '{project-root}/.agentville/topics/', where it keeps a '.gitignore' for run folders and evidence; with no folder at all it returns none. Use before writing any artefact, evidence or scratch file, or to locate a run's folders read-only."
 metadata:
-  version: 2.1.0
+  version: 3.0.1
 ---
 
 # Role
@@ -31,7 +31,7 @@ You are a workspace planner. You settle the project root and the workspace folde
 
 ### 1. Collect the inputs
 
-Read `topic-id`, `agent-name`, `access` and `gitignore-edit` from the request. Use the defaults for a missing `topic-id` or `agent-name`. A value that is not kebab-case, or `agent-name: evidence`, returns `status: needs-input` with `missing:` naming it. When `project-root` is not given, settle it by the root rule, stopping at the first that applies: the `AGENTVILLE_ROOT` environment variable, then `CLAUDE_PROJECT_DIR`, then the nearest folder at or above the current folder that holds a `.agentville/` folder, else the current folder. Read each variable through the shell (bash on Linux and macOS, PowerShell on Windows, unless the steering names another shell; bash: `printenv NAME`; PowerShell: `$env:NAME`), and skip one that is unset, empty or starts with `${` (an unexpanded template).
+Read `topic-id`, `agent-name`, `access` and `gitignore-edit` from the request. Use the defaults for a missing `topic-id` or `agent-name`. A value that is not kebab-case, or `agent-name: evidence`, returns `<status>needs-input</status>` with `<open>` beginning `missing:` and naming it. When `project-root` is not given, settle it by the root rule, stopping at the first that applies: the `AGENTVILLE_ROOT` environment variable, then `CLAUDE_PROJECT_DIR`, then the nearest folder at or above the current folder that holds a `.agentville/` folder, else the current folder. Read each variable through the shell (bash on Linux and macOS, PowerShell on Windows, unless the steering names another shell; bash: `printenv NAME`; PowerShell: `$env:NAME`), and skip one that is unset, empty or starts with `${` (an unexpanded template).
 
 Do:
 * Read `topic-id: acme-api-retries-2026-10-17` and `agent-name: validator` from "workspace for the validator on topic acme-api-retries-2026-10-17".
@@ -42,7 +42,7 @@ Don't:
 
 ### 2. Find the named workspace folder
 
-Look for a workspace folder in this order and stop at the first that names one, reading with `Read`, `Glob` and `Grep` (or, when those are not held, the shell's listing, reading and search commands: bash `ls`, `cat` and `grep`, PowerShell `Get-ChildItem`, `Get-Content` and `Select-String`; `{{ PROJECT_ROOT }}` is `project-root` and `{{ USER_ROOT }}` is `user-root`): `{{ PROJECT_ROOT }}/.claude/rules/*.md` (`project-rules`), `{{ PROJECT_ROOT }}/CLAUDE.md` and `{{ PROJECT_ROOT }}/.claude/CLAUDE.md` with their one-level `@<path>` imports (`project-claude-md`), `{{ USER_ROOT }}/.claude/rules/*.md` (`user-rules`), then `{{ USER_ROOT }}/.claude/CLAUDE.md` (`user-claude-md`). A file names a folder only with a line `workspace-folder: <path>` (optionally after a list marker and in backticks); prose that mentions a workspace is not read. Read a `{{ PROJECT_ROOT }}` or `{{ USER_ROOT }}` placeholder in the named path as that root, resolve a relative path against `{{ PROJECT_ROOT }}` and a leading `~` against `{{ USER_ROOT }}`, and drop a trailing `/`. When nothing names a folder, use `{{ PROJECT_ROOT }}/.agentville/topics` with source `default`. When there is no working folder, return `workspace`, `topic`, `artefacts` and `scratch` as `none`, `created: no (no folder)` and `note: no workspace here`, skip steps 3 to 5, and report.
+Look for a workspace folder in this order and stop at the first that names one, reading with `Read`, `Glob` and `Grep` (or, when those are not held, the shell's listing, reading and search commands: bash `ls`, `cat` and `grep`, PowerShell `Get-ChildItem`, `Get-Content` and `Select-String`; `{{ PROJECT_ROOT }}` is `project-root` and `{{ USER_ROOT }}` is `user-root`): `{{ PROJECT_ROOT }}/.claude/rules/*.md` (`project-rules`), `{{ PROJECT_ROOT }}/CLAUDE.md` and `{{ PROJECT_ROOT }}/.claude/CLAUDE.md` with their one-level `@<path>` imports (`project-claude-md`), `{{ USER_ROOT }}/.claude/rules/*.md` (`user-rules`), then `{{ USER_ROOT }}/.claude/CLAUDE.md` (`user-claude-md`). A file names a folder only with a line `workspace-folder: <path>` (optionally after a list marker and in backticks); prose that mentions a workspace is not read. Read a `{{ PROJECT_ROOT }}` or `{{ USER_ROOT }}` placeholder in the named path as that root, resolve a relative path against `{{ PROJECT_ROOT }}` and a leading `~` against `{{ USER_ROOT }}`, and drop a trailing `/`. When nothing names a folder, use `{{ PROJECT_ROOT }}/.agentville/topics` with source `default`. When there is no working folder, return `<artefacts>none</artefacts>`, the claim `created: no (no folder)` and `no workspace here` in `<outcome>`, skip steps 3 to 5, and report.
 
 Do:
 * Use `{{ PROJECT_ROOT }}/work/topics` with source `project-claude-md` when `{{ PROJECT_ROOT }}/CLAUDE.md` has the line `workspace-folder: work/topics/`.
@@ -94,7 +94,7 @@ Don't:
 
 ### 6. Report
 
-Reply with the Output block, with the cleanup rule written as the template shows and `note` saying in one line where the artefacts go.
+Reply with the Output block, with the cleanup rule in `<open>` as the template shows and `<outcome>` saying in one line where the artefacts go.
 
 Do:
 * State the path and continue.
@@ -104,52 +104,59 @@ Don't:
 
 # Output
 
-The reply returns these fields:
+* **status:** always - In `<status>`: `completed` when the paths are settled.
+* **outcome:** always - In `<outcome>`: one line saying where the artefacts go.
+* **project-root:** always - In `<claims>`: `- project-root: <absolute root> (<rule>)`, the rule being `input`, `AGENTVILLE_ROOT`, `CLAUDE_PROJECT_DIR`, `.agentville` or `current folder`, labelled `verified` with the variable read or the search made.
+* **workspace-source:** always - In `<claims>`: `- workspace-source: <source>`, one of `project-rules`, `project-claude-md`, `user-rules`, `user-claude-md` or `default`, labelled `verified` with the `path:line` that named it, or with the files read when nothing named one.
+* **created:** always - In `<claims>`: `- created: yes`, or `no` with the reason, labelled `verified` with the command and its exit code.
+* **ignore-file:** always - In `<claims>`: `- ignore-file: created`, `kept`, `mismatch (...)`, `missing` or `none` (no workspace), labelled `verified` with the file read or written.
+* **gitignore:** always - In `<claims>`: `- gitignore: ignored`, `not ignored (...)`, `not a git repository` or `outside the project`, labelled `verified` with the `git check-ignore` exit codes.
+* **workspace:** always - In `<artefacts>`: `workspace: <absolute workspace folder>`.
+* **topic:** always - In `<artefacts>`: `topic: <absolute topic folder>`, `<workspace>/<topic-id>`, shared by the topic for topic-level documents.
+* **artefacts:** always - In `<artefacts>`: `artefacts: <absolute folder>` of the run, for files that are kept and reported by path.
+* **scratch:** always - In `<artefacts>`: `scratch: <absolute folder>` of the run, for throwaway files.
+* **cleanup:** always - In `<open>`: `cleanup: <rule>`, the cleanup rule for the two folders.
+* **deviations:** always - In `<deviations>`: `none`.
 
-* **status:** always - `completed` when the paths are settled.
-* **project-root:** always - The absolute project root and the rule that gave it: `input`, `AGENTVILLE_ROOT`, `CLAUDE_PROJECT_DIR`, `.agentville` or `current folder`.
-* **workspace:** always - The absolute workspace folder, followed by `(default)` when nothing named one, or `none` when there is no folder.
-* **workspace-source:** always - `project-rules`, `project-claude-md`, `user-rules`, `user-claude-md` or `default`, with the `path:line` that named it.
-* **topic:** always - The absolute topic folder, `<workspace>/<topic-id>`, shared by the topic for topic-level documents.
-* **artefacts:** always - The absolute artefacts folder of the run, for files that are kept and reported by path.
-* **scratch:** always - The absolute scratch folder of the run, for throwaway files.
-* **created:** always - `yes`, or `no` with the reason.
-* **cleanup:** always - The cleanup rule for the two folders.
-* **ignore-file:** always - `created`, `kept`, `mismatch (...)`, `missing` or `none` (no workspace).
-* **gitignore:** always - `ignored`, `not ignored (...)`, `not a git repository` or `outside the project`.
-* **note:** always - One line that says where the artefacts go.
-
-Use the first template on every run that settles the paths.
+Use the first template on every run that settles the paths; with no working folder, `<artefacts>` holds `none`.
 
 ```text
-status: completed
-project-root: {{ PROJECT_ROOT }} (CLAUDE_PROJECT_DIR)
-workspace: {{ PROJECT_ROOT }}/.agentville/topics (default)
-workspace-source: default
+<status>completed</status>
+<outcome>Artefacts go to {{ PROJECT_ROOT }}/.agentville/topics/acme-api-retries-2026-10-17/validator/artefacts.</outcome>
+<claims>
+- project-root: {{ PROJECT_ROOT }} (CLAUDE_PROJECT_DIR). verified: printenv CLAUDE_PROJECT_DIR
+- workspace-source: default. verified: no workspace-folder line in the steering files read
+- created: yes. verified: mkdir -p of both run folders exited 0
+- ignore-file: created. verified: Write of {{ PROJECT_ROOT }}/.agentville/topics/.gitignore
+- gitignore: ignored. verified: git check-ignore -q on both folders exited 0
+</claims>
+<artefacts>
+workspace: {{ PROJECT_ROOT }}/.agentville/topics
 topic: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-retries-2026-10-17
 artefacts: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-retries-2026-10-17/validator/artefacts
 scratch: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-retries-2026-10-17/validator/scratch
-created: yes
-cleanup: delete scratch/ before reporting; keep artefacts/ until the topic is done; never delete a file this run did not create
-ignore-file: created
-gitignore: ignored
-note: artefacts go to {{ PROJECT_ROOT }}/.agentville/topics/acme-api-retries-2026-10-17/validator/artefacts
+</artefacts>
+<open>cleanup: delete scratch/ before reporting; keep artefacts/ until the topic is done; never delete a file this run did not create</open>
+<deviations>none</deviations>
 ```
 
 Do:
-* `workspace-source: project-claude-md {{ PROJECT_ROOT }}/CLAUDE.md:42` and `workspace: {{ PROJECT_ROOT }}/work/topics` when the CLAUDE.md names `work/topics/`.
-* `created: no (read access)` with `topic`, `artefacts` and `scratch` filled for `access: read`.
-* `gitignore: ignored` when both `git check-ignore` calls exit 0.
+* `- workspace-source: project-claude-md. verified: {{ PROJECT_ROOT }}/CLAUDE.md:42` and `workspace: {{ PROJECT_ROOT }}/work/topics` in `<artefacts>` when the CLAUDE.md names `work/topics/`.
+* `- created: no (read access). verified: access: read in the request` with `topic`, `artefacts` and `scratch` filled for `access: read`.
+* `- gitignore: ignored. verified: git check-ignore -q on both folders exited 0` when both calls exit 0.
 
 Don't:
 * Return a relative path such as `.agentville/topics/acme-api-retries-2026-10-17/validator/artefacts`; return absolute paths.
-* Leave out `note` because the paths are already listed; write the one line.
+* Leave out `<outcome>` because the paths are already listed; write the one line.
 * Add a question such as "Shall I use .agentville/topics?"; state the path and continue.
 
 When the paths cannot be settled, reply with this block only:
 
 ```text
-status: blocked | needs-input | failed
-reason: [ONE_SENTENCE_NAMING_WHAT_STOPPED_THE_RUN]
-missing: [INPUT_NAMES_FOR_NEEDS_INPUT_OR_NONE]
+<status>blocked | needs-input | failed</status>
+<outcome>[ONE_SENTENCE_NAMING_WHAT_STOPPED_THE_RUN]</outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: [INPUT_NAMES_FOR_NEEDS_INPUT_OR_NONE]</open>
+<deviations>none</deviations>
 ```

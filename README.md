@@ -7,7 +7,7 @@ Agentville is a plugin of skills and agents for running work through agents: a w
 Agentville runs out of the box on Linux, macOS and Windows, on a laptop or a bare VPS, with Claude Code as the main platform.
 
 * **Claude Code**, with the plugin installed as described below.
-* **Git**, for the release flow and the workspace's git-ignore check. The release flow's `git switch` needs Git 2.23 or newer; older Git uses `git checkout`.
+* **Git**, for the workspace's git-ignore check.
 * **Python 3.8 or newer**, only for the helper scripts of `agent-smith`, `skill-smith` and the maintainer skills. They use the standard library alone. Run them as `python3` on Linux and macOS and as `py -3` (or `python`) on Windows.
 * **A shell:** bash on Linux and macOS, PowerShell on Windows. Skills and agents write commands in that form and give a PowerShell form where the two differ. A project's `CLAUDE.md` or steering can name another shell, and that wins.
 * **uv** 0.13.5 or newer, only for the Townhall MCP server (see Townhall).
@@ -32,6 +32,69 @@ In Claude Code, add the marketplace once, then install one channel:
 Install one channel at a time: all three load the same names under `agentville:`, so two would clash. To switch, uninstall the one you have and install the other, for example `/plugin uninstall agentville@minhphamdo` then `/plugin install agentville-beta@minhphamdo`.
 
 In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/agentville` and install one channel.
+
+From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/) 0.13 or later and Python 3.15; uv downloads that Python when you do not have it. There are two ways to run it, and both take the same options.
+
+### Install with uvx
+
+`uvx` runs the latest published `agentville` without keeping it installed, and downloads Python 3.15 when it is missing:
+
+```bash
+uvx agentville install
+uvx agentville install --scope project
+uvx agentville install --channel beta
+```
+
+If your uv is older than 0.13, upgrade it to 0.13 or later (`uv self update`). Failing that, add `--python 3.15` after `uvx` to pick the Python by hand.
+
+### Install the agentville command
+
+The install script puts a persistent `agentville` command on your `PATH` with `uv tool install`, for your user only. When uv is missing, it downloads Astral's official uv installer, pinned to one uv version, to a temporary file and runs it; it asks first only when you run it at a terminal. It never uses `sudo` or administrator rights, and running it again upgrades the command.
+
+On Linux and macOS:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash
+```
+
+On Windows, in PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1 | iex"
+```
+
+On Windows, in the Command Prompt:
+
+```bat
+curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+Then open a new terminal, so that `PATH` includes the new command, and run `agentville install` with the options below.
+
+Each script takes an optional version, `latest` by default, and a switch to install from the GitHub repository instead of PyPI:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash -s 0.1.0
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash -s -- --from-source
+```
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) 0.1.0
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) -FromSource
+```
+
+Set `AGENTVILLE_NO_MODIFY_PATH=1` to leave `PATH` alone, and `AGENTVILLE_YES=1` (or pass `--yes`, in PowerShell `-Yes`) to skip the question at a terminal; nothing is asked when `CI` is set. Upgrade with `uv tool upgrade agentville` and remove the command with `uv tool uninstall agentville`.
+
+### Installer options
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `--scope` | `user` (your home folder) or `project` (the current folder, or `--project-dir PATH`) | `user` |
+| `--channel` | `stable`, `beta` or `dev`, the channels in the table above | `stable` |
+| `--target` | `claude-code` | `claude-code` |
+| `--dry-run` | Prints the actions and changes nothing | Off |
+
+With the `claude` command on your `PATH`, the installer runs `claude plugin marketplace add` and `claude plugin install`. Without it, the installer writes the same marketplace and plugin entries into Claude Code's `settings.json` and keeps every other key; it refuses to touch a file that is not valid JSON. User scope writes `~/.claude/settings.json` and `~/.claude/CLAUDE.md`; project scope writes `.claude/settings.json` and `CLAUDE.md` in the project folder. A second run changes nothing. The exit code is 0 on success, 1 when a step fails and 2 for a usage error.
 
 ## Three ways to run it
 
@@ -70,7 +133,7 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
 | `settings.json` (`agent`) | Yes | Ignored | Ignored |
 | Hooks | Yes | Yes | Ignored |
 
-Chat now shares Cowork's Agent tool and file writing in some accounts, so `dispatch` can still spawn there; when an `agentville:` agent type is missing, it falls back to `general-purpose`.
+Chat now shares Cowork's Agent tool and file writing in some accounts, so `dispatch` can still spawn there; when an `agentville:` agent type is missing, it falls back to `general-purpose`. `dispatch` spawns a variant such as `agentville:worker-sonnet-high` only when the session's Agent tool has no `effort` parameter; otherwise it spawns the base agent and passes model and effort, and a missing variant falls back to the base agent with the model passed and records `effort unenforced, variant missing`.
 
 ### Updates
 
@@ -84,7 +147,7 @@ Each skill is invoked as `/agentville:<name>`.
 | --- | --- |
 | `/agentville:orchestrate` | Workflow that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
-| `/agentville:root-agent` | Standing rules for an agent that delegates every task: voice on every reply, the answer first, a fixed tool list with no file reads, full skill names and a live task list. |
+| `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. |
 | `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
 | `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports, commit text and document files. |
 | `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |
@@ -94,7 +157,6 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:plan` | Used by `orchestrate` only. Default for the `plan` slot: records a topic's goal, tasks with done criteria, and approval as a record only. |
 | `/agentville:report` | Used by `orchestrate` only. Default for the `report` slot: records a topic's outcome, evidence, review result, out-of-scope findings and open items. |
 | `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs. Discovery only; no network probes. |
-| `/agentville:release-flow` | Runs a one-way release flow in any repository; every merge, push, tag and branch deletion waits for your yes. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill, validates it and installs it to project or user scope. |
 | `/agentville:agent-smith` | Compiles an agent as a fork of the base worker, validates it, evals it against the worker and installs it to project or user scope. |
 
@@ -104,11 +166,13 @@ Each agent reads its role from a `<role>ROLE</role>` tag on the first line of th
 
 | Agent | Purpose |
 | --- | --- |
-| `agentville:worker` | The base agent: implements, explores and drafts. Its scout workflow is local-only. |
+| `agentville:worker` | The base agent: implements, explores and drafts. Its scout workflow is local-only. It inherits every tool, MCP included (MCP web tools too), except those its `disallowedTools` list denies, such as built-in web search and fetch and root-only tools (planning, scheduling, messaging and spawn). |
 | `agentville:scout` | Researches external questions with web search and fetch only; holds no file or shell tool. |
 | `agentville:validator` | Proves a behaviour with independent checks and writes hashed evidence; never edits product code. |
 | `agentville:reviewer` | Reviews a diff against a plan, read-only, and reads the validator's evidence when present. |
 | `agentville:pod-lead` | Standalone lead, not a worker fork: runs every request through `orchestrate`, delegates all work and holds no edit, search or shell tool. |
+
+Each base agent except `pod-lead` also ships in nine variants, one per model and effort pair, named `<base>-<model>-<effort>`, with model `haiku`, `sonnet` or `opus` and effort `low`, `medium` or `high`, such as `agentville:reviewer-opus-high`. That makes 36 variants across worker, validator, reviewer and scout. Each is a copy of its base agent with `model` and `effort` fixed in its frontmatter, generated by the maintainer script `scripts/gen_agent_variants.py`; do not edit a variant by hand. `dispatch` uses a variant only when the session's Agent tool has no `effort` parameter.
 
 ## Townhall
 
@@ -178,3 +242,7 @@ The workspace writes its `.gitignore` on first use when it is missing. Townhall 
 `skill-smith` calls `/skill-creator` for evals and description tuning, so install that skill alongside it if you want `skill-smith` to test what it drafts. Its helper scripts need Python 3 (see Requirements).
 
 Both smiths install only to project scope (`.claude/` in the project) or user scope (`.claude/` in the home folder). They refuse any plugin folder, Agentville included, and the helper scripts enforce that.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).

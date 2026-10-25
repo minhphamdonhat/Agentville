@@ -2,7 +2,7 @@
 name: release-flow
 description: "Runs a one-way branch release flow in any git repository: starts nested working branches, promotes development to beta and beta to release after checks pass, and tags the release branch only when asked. Settings come from the project's CLAUDE.md. Use when asked to start a branch, promote or ship to beta or release, cut or tag a release, or find the next step of the flow."
 metadata:
-  version: 1.3.0
+  version: 2.0.0
 ---
 
 # Role
@@ -87,41 +87,52 @@ Don't:
 
 # Output
 
-The reply returns these fields:
+The reply returns the six relay §4 tags, in order, flat, plain lines, with `none` in a tag that has nothing:
 
-* **mode:** always - The mode that ran.
-* **settings:** always - The branches, tag format, checks and version file used, each marked `(claude-md)`, `(input)` or `(default)`.
-* **ran:** always - Each command run, with its exit code.
-* **declined:** always - Each guarded command the user declined, or `none`.
-* **result:** always - The new branch, the merge commit sha or the tag created.
-* **next:** always - The next step of the flow, such as `promote release when beta is verified`.
+* **status:** always - in `<status>`: `completed` when the mode finished, `partial` when a guarded step was declined.
+* **outcome:** always - in `<outcome>`: the result in one or two sentences.
+* **mode:** always - in `<claims>` as `- mode: <value>. verified: <evidence>`: the mode that ran.
+* **settings:** always - in `<claims>` as `- settings: <value>. verified: <evidence>`: the branches, tag format, checks and version file used, each marked `(claude-md)`, `(input)` or `(default)`.
+* **ran:** always - in `<claims>` as `- ran: <command> (<exit code>). verified: <evidence>`, one line per command run.
+* **declined:** always - in `<claims>` as `- declined: <command>. verified: <evidence>` per guarded command the user declined, or `- declined: none`.
+* **result:** always - in `<artefacts>` as `result: <value>`: the new branch, the merge commit sha or the tag created.
+* **next:** always - in `<open>`: the next step of the flow, such as `promote release when beta is verified`.
+* **deviations:** always - in `<deviations>`: any change to the plan, or `none`.
 
-Use the first template when the mode finished; use the failure block when it did not.
+Use the first template when the mode finished; use the failure template when it did not.
 
 ```text
-status: completed
-mode: promote beta
-settings: dev main (default), beta beta (default), release release (default), tag agentville--vX.Y.Z (default), checks python3 scripts/test.py (claude-md), version plugins/agentville/.claude-plugin/plugin.json (default)
-ran: git merge --no-ff main (0); git push origin beta (0)
-declined: none
-result: beta at 3fa91c2
-next: promote release when beta is verified
+<status>completed</status>
+<outcome>beta now holds main at merge commit 3fa91c2.</outcome>
+<claims>
+- mode: promote beta. verified: the request
+- settings: dev main (default), beta beta (default), release release (default), tag agentville--vX.Y.Z (default), checks python3 scripts/test.py (claude-md), version plugins/agentville/.claude-plugin/plugin.json (default). verified: CLAUDE.md Release flow section
+- ran: git merge --no-ff main (0). verified: command exit code
+- ran: git push origin beta (0). verified: command exit code
+- declined: none. verified: no guarded command was refused
+</claims>
+<artefacts>result: beta at 3fa91c2</artefacts>
+<open>promote release when beta is verified</open>
+<deviations>none</deviations>
 ```
 
 Do:
 * Write `result: tag agentville--v0.1.0 on release at 9b2e4d1` after a `tag` run.
-* Write `declined: git push origin feature/retry-on-timeout` when the user said no to the push.
-* Write `next: tag when you want to publish 0.1.0` after `promote release`, without tagging.
+* Write `- declined: git push origin feature/retry-on-timeout. verified: the user said no` when the user said no to the push.
+* Write `<open>tag when you want to publish 0.1.0</open>` after `promote release`, without tagging.
 
 Don't:
-* Add a line the template lacks, such as `notes:`; put it in `next:` or `reason:`.
-* Open with a greeting or close with an offer; start with `status:`.
+* Add a tag the template lacks, such as `<notes>`; put it in `<open>`.
+* Open with a greeting or close with an offer; start with `<status>`.
 * Write `result: tagged` without the tag name; name the tag and the commit.
 
 When the skill cannot finish, reply with this block only:
 
 ```text
-status: partial | blocked | needs-input | rejected | failed
-reason: one sentence naming what stopped the run, with the command and its exit code when a check was rejected
-missing: input names, for needs-input; otherwise none
+<status>partial | blocked | needs-input | rejected | failed</status>
+<outcome>one sentence naming what stopped the run, with the command and its exit code when a check was rejected</outcome>
+<claims>none</claims>
+<artefacts>none</artefacts>
+<open>missing: input names, for needs-input; otherwise what would unblock the run</open>
+<deviations>none</deviations>
 ```

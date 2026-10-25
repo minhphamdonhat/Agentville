@@ -16,3 +16,14 @@ CLAUDE.local.md
 Thumbs.db
 .idea/
 .vscode/
+
+# Python package build and tooling
+dist/
+build/
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Agentville workspace: topic documents stay local
+.agentville/topics/*
+!.agentville/topics/.gitignore
