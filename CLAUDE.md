@@ -48,6 +48,7 @@ Don't:
 * Give a child the `Agent` tool unless the user asked for it by name. Children hand back a `spawn-request:` instead.
 * Write `model` or `effort` in an agent's frontmatter, except in a generated variant. `dispatch` chooses both on every spawn for every other agent.
 * Hand-edit a variant or build one with `agent-smith`; `scripts/gen_agent_variants.py` writes them.
+* Make a shipped agent or skill commit, push, open or merge a pull request, or mention doing so; users customise that in their own project.
 
 A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `worker`, `validator`, `reviewer` or `scout`, `<model>` one of `haiku`, `sonnet` or `opus`, and `<effort>` one of `low`, `medium` or `high`. Its `name` equals the file stem, and it is the only agent that sets `model` and `effort`, both, equal to the parts of its name; `measure.py` fails rule A2 otherwise. After any edit to a base agent, regenerate the variants with `python3 scripts/gen_agent_variants.py`.
 

@@ -2,7 +2,7 @@
 name: "intelligence-routing-model"
 description: Framework to triage any task to the cheapest Claude tier (Haiku, Sonnet, Opus) and effort level that still succeeds. Score ceiling to pick tier, depth to pick effort, adjust for domain, gate Haiku on task shape and a deterministic check. Use whenever you must pick a model or effort, budget a run, or decide whether to escalate after a failure, even if nobody says "routing".
 metadata:
-  version: 1.0.2
+  version: 1.0.3
 ---
 
 # intelligence-routing-model
@@ -103,10 +103,10 @@ Apply in order. Each overrides §4.
    - Tools and credentials scoped to the task; no production access: it has acted outside its sandbox.
    - Brief well under the long-prompt price threshold; no pasted codebases or document dumps.
 6. **Haiku stretch for contained edits.** A single-purpose edit or extraction in a few files, gate otherwise passed, can take Haiku `high` in place of Sonnet `low`/`medium` up to C 4, matching it at a fraction of the cost. Provisional: one benchmark family.
-7. **Decompose gate.** C ≥ 6 and D ≥ 5 → do not spawn one worker. Split, re-score each part; parts usually drop two tiers. Merge the parts' results into one answer. Only exception: an unattended end-to-end run that is one dependent chain whose steps cannot be checked separately → one Opus worker at `high` (`xhigh` if >30 min), human gate before anything irreversible.
+7. **Decompose gate.** C ≥ 6 and D ≥ 5 → do not spawn one worker. Split, re-score each part; parts usually drop two tiers. Combine the parts' results into one answer. Only exception: an unattended end-to-end run that is one dependent chain whose steps cannot be checked separately → one Opus worker at `high` (`xhigh` if >30 min), human gate before anything irreversible.
 8. **Prefer newer generation over higher effort.** Current model at `low` often beats prior generation at `xhigh`, cheaper.
-9. **When you split work, keep planning in one place.** Decomposition, arbitration and merge stay with one step; plan errors cascade.
-10. **Fan out rather than deepen when parallel.** Breadth-first → many cheap workers, results merged once; Haiku still needs rule 5.
+9. **When you split work, keep planning in one place.** Decomposition, arbitration and combining stay with one step; plan errors cascade.
+10. **Fan out rather than deepen when parallel.** Breadth-first → many cheap workers, results combined once; Haiku still needs rule 5.
 11. **Effort costs wall-clock superlinearly.** Top effort can run tens of times longer than `low`. Latency-bound → cap at `medium`, narrow scope.
 12. **Human gate.** Irreversible or production actions need human approval first, on every tier; they never run on Haiku.
 
@@ -188,7 +188,7 @@ Generation and verification want different levels.
 | Fix storage-engine bug from crash report without breaking compaction | 6 | 6 | Decompose: failing repro test, fix, compaction regression check; parts at Opus `medium`/`high` (parts stay coupled) |
 | Month-end regulatory filing end to end | 5 (Domain 2, Consequence 2) | 2 (−1 rulebook) | Opus `medium` via §5.1, human review |
 | Migrate service to new datastore end to end | 8 | 6 | Decompose; parts at Opus `medium`/`high` (parts stay coupled); human gate before cutover |
-| Multi-hop research, 20 sources | 4 | 5 | Sonnet `high`, or fan out per §5.10 with each part's D re-scored; results merged once; untrusted web rules out Haiku |
+| Multi-hop research, 20 sources | 4 | 5 | Sonnet `high`, or fan out per §5.10 with each part's D re-scored; results combined once; untrusted web rules out Haiku |
 | Unattended overnight build-and-verify of an app | 7 | 6 | §5.7 exception (one dependent chain): Opus `xhigh`, human gate before deploy |
 
 ## 11. Upkeep

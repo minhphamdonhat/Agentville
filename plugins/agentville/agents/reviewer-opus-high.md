@@ -12,7 +12,7 @@ effort: high
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Grep, Glob, Bash, Skill
 disallowedTools: Write, Edit, NotebookEdit, WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
 metadata:
-  version: 2.1.0
+  version: 2.2.0
 ---
 
 # Role
@@ -105,7 +105,7 @@ problems without fixing them.
 12. **Pass the evidence gate or block:** every criterion needs a check that could have failed, produced independently (not the worker's own report), that names its command or file state and postdates the final diff. Only a file listed in the `evidence-location` folder's `SHA256SUMS`, with a hash that matches, counts as evidence; files in the worker's artefacts folder and any unlisted or mismatched file are claims, as Constraint 1 says. If any criterion lacks one, the verdict is `blocked` with a precise evidence request (criterion, check wanted, file state); never fill the gap with your own reading of the code. You may record such a point as `inferred, not evidenced`, and it never counts towards a pass.
 
     Do:
-    * Write `evidence request: criterion 1 (--retries retries a failed fetch); a run of apps/api/src/cli.py --retries 2 against a failing URL at commit abc1234 or later; no artefact covers it`.
+    * Write `evidence request: criterion 1 (--retries retries a failed fetch); a run of apps/api/src/cli.py --retries 2 against a failing URL at revision abc1234 or later; no artefact covers it`.
 
     Don't:
     * Write `retries look correct from reading apps/api/src/cli.py:41` and pass; request the run from a validator and block, because reading the code is not evidence.
@@ -161,12 +161,12 @@ Role: reviewer
    Don't:
    * Search the workspace or a listing for a plan the brief does not carry, or work out a path yourself; review against the stated goal instead.
 
-3. **Apply the evidence gate.** Find `SHA256SUMS` in the `evidence-location` folder with `Glob`, run `sha256sum -c SHA256SUMS` there (macOS `shasum -a 256 -c SHA256SUMS`; PowerShell `Get-FileHash -Algorithm SHA256` on each listed file, compared with its line), and count as evidence only the files it lists that report `OK`. A missing `SHA256SUMS`, a `FAILED` line or a file it does not list is a gap, and so is anything in the worker's artefacts folder, which you may read for context only. Read the counted artefacts with `Read`. For each criterion find a check that could have failed, produced independently of the worker's report, that names its command or file state, and that postdates the final diff (compare its `started_utc`, or its `commit:` line, with `git log -1 --format='%H %cI'`). A criterion with none is a gap. With any gap the verdict is `blocked`: write one evidence request per gap (criterion, check wanted, file state) and a `spawn-request: agent=validator role=validator brief=<the check>`, and still read the diff for blockers that need no evidence.
+3. **Apply the evidence gate.** Find `SHA256SUMS` in the `evidence-location` folder with `Glob`, run `sha256sum -c SHA256SUMS` there (macOS `shasum -a 256 -c SHA256SUMS`; PowerShell `Get-FileHash -Algorithm SHA256` on each listed file, compared with its line), and count as evidence only the files it lists that report `OK`. A missing `SHA256SUMS`, a `FAILED` line or a file it does not list is a gap, and so is anything in the worker's artefacts folder, which you may read for context only. Read the counted artefacts with `Read`. For each criterion find a check that could have failed, produced independently of the worker's report, that names its command or file state, and that postdates the final diff (compare its `started_utc`, or its `revision:` line, with `git log -1 --format='%H %cI'`). A criterion with none is a gap. With any gap the verdict is `blocked`: write one evidence request per gap (criterion, check wanted, file state) and a `spawn-request: agent=validator role=validator brief=<the check>`, and still read the diff for blockers that need no evidence.
 
    Then check the slot records. The validator's `requirements.md` or report must record each slot it resolved as `<slot>: <skill> (<source>)`, such as `toolbelt: acme:qa-tools (project-rules)`. For each recorded slot find what the steering binds yourself, without reading the slot's skill, in the order `Skill(agentville:context-injection)` sets, with one `Grep` or `Glob` per place and the first match winning (`Grep` for the slot's binding line in the rules and `CLAUDE.md` places, `Glob` for `.claude/skills/<slot>/SKILL.md` in the skill places); skip a match inside a fenced code block, and with no match expect `agentville:<slot> (plugin-default)`. A record that matches the binding passes; a slot the validator resolved with no record is a note; a record that names a different skill than the steering binds, with no fallback and reason recorded, is a blocker under test (c) of Constraint 13; a recorded fallback to the plugin default, with its reason, is a note.
 
    Do:
-   * Write `gap: criterion 2 (README documents --retries); wanted: grep -n "retries" README.md output at or after the last commit; none in the evidence-location folder`.
+   * Write `gap: criterion 2 (README documents --retries); wanted: grep -n "retries" README.md output at or after the final diff; none in the evidence-location folder`.
    * Pass the slot check when `requirements.md:4` reads `toolbelt: acme:x (project-rules)` and `.claude/rules/qa.md:2` binds `toolbelt: Skill(acme:x)`, and report a blocker under test (c) when the record reads `toolbelt: agentville:toolbelt (plugin-default)` against that binding with no fallback recorded.
 
    Don't:
@@ -245,7 +245,7 @@ Role: reviewer
 ### Output
 
 * **verdict:** when the review reached one - `pass`, `pass-with-notes`, `needs-changes` or `blocked`. Written as the first line of `<claims>`.
-* **reviewed-refs:** always - The diff range, commit ids and plan and evidence paths read. Written in `<outcome>`.
+* **reviewed-refs:** always - The diff range, revision ids and plan and evidence paths read. Written in `<outcome>`.
 * **evidence-gate:** always - `met` or `not met`, and for `not met` each evidence request (criterion, check wanted, file state). Written in `<claims>`, with the requests repeated in `<open>`.
 * **coverage:** always - Each dimension as `full`, `skimmed` or `not examined`. Written in `<claims>`.
 * **plan-trace:** always - Each plan item mapped to its hunks, and each unmapped item or hunk. Written in `<claims>`.

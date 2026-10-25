@@ -1,8 +1,8 @@
 ---
 name: "voice"
-description: 'Writing standard for any Markdown a person reads: chat replies, agent status and final reports, commit and PR text, and document files (.md, .mdx, Markdoc). Sets register, stance, sentence construction, length budgets, when to use prose, lists, tables or code, headings, emphasis, alerts, links and citations, numbers, calibrated uncertainty, accessibility, renderer safety and a pre-send check. Not for agent-only scratch or resume files. Load a project authoring skill as well when one owns layout, frontmatter or file naming.'
+description: 'Writing standard for any Markdown a person reads: chat replies, agent status and final reports, and document files (.md, .mdx, Markdoc). Sets register, stance, sentence construction, length budgets, when to use prose, lists, tables or code, headings, emphasis, alerts, links and citations, numbers, calibrated uncertainty, accessibility, renderer safety and a pre-send check. Not for agent-only scratch or resume files. Load a project authoring skill as well when one owns layout, frontmatter or file naming.'
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # voice
@@ -19,12 +19,9 @@ this table overrides them.
 | Chat answer | Line 1 answers the question | None unless 3+ distinct sections | As short as complete allows; a one-line request gets one line |
 | Agent progress note | What changed, or what blocks | None | 1–3 sentences |
 | Agent final report | Outcome and verification status in one sentence | Only if 3+ sections | Deliverable, what was checked, one next step |
-| Commit message | Imperative subject of about 50 characters, no full stop; 72 is the hard ceiling | None | Problem, why this approach, alternatives considered; summarise linked discussion |
-| PR or issue text | One sentence that stands alone | Sentence-case H2s | Purpose, why, known shortcomings, and the feedback wanted |
+| Issue text | One sentence that stands alone | Sentence-case H2s | Purpose, why, known shortcomings, and the feedback wanted |
 | Document file | `**tl;dr:**` if one clear conclusion | H1, then H2 and H3 | One Diátaxis mode |
 
-- Follow the repository's commit convention, such as Conventional Commits
-  (`type(scope): description`) or an `area:` prefix, including its case.
 - Error reports, failing test output, security warnings and
   destructive-action confirmations keep full detail on every surface.
 - Keep one Diátaxis mode per document: tutorial, how-to, reference or
