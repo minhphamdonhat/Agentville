@@ -20,7 +20,8 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
 | `plugins/agentville/.mcp.json` | Launches the Townhall MCP server (server key `agentville`) from the `agentville` package at a pinned commit SHA (see Townhall package). |
-| `agentville/` | The `agentville` Python package (Townhall and the umbrella for later parts): `src/agentville/{core,cli,mcp,townhall,rag,memory}` and `tests/`. Python 3.15 or later, managed with `uv`. |
+| `agentville/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` package at the repository root, its tests and its packaging. Not Townhall. |
+| `townhall/` | The Townhall Python package (Townhall and the umbrella for later parts), with its own `pyproject.toml`: `src/agentville/{core,cli,mcp,townhall,rag,memory}` and `tests/`. Python 3.15 or later, managed with `uv`. It lives apart from `agentville/` so the two never share a folder. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
 | `.agentville/config.toml`, `.agentville/townhall/` | Townhall's config and its boards and tickets in a project, created by `agentville init` and tracked in git, beside the workspace; `agentville init` also writes `.agentville/.gitignore` for Townhall's lock and temporary files. Neither exists in this repository. |
@@ -63,20 +64,21 @@ This repository binds the `workspace` slot to the default, which writes to `{{ P
 
 ## Townhall package
 
-Townhall is the board-and-ticket layer of the `agentville` package in `agentville/`. It is fully independent of `orchestrate` and of the `draft`, `plan` and `report` slots: it never backs them and they never read it. Its config and boards live in `.agentville/config.toml` and `.agentville/townhall/`, tracked in git, beside the workspace's `.agentville/topics/`; neither reads the other's files. Temporal is required: `agentville engine worker` starts a local dev server on first use.
+Townhall is the board-and-ticket layer of the Python package in `townhall/`. It is fully independent of `orchestrate` and of the `draft`, `plan` and `report` slots: it never backs them and they never read it. Its config and boards live in `.agentville/config.toml` and `.agentville/townhall/`, tracked in git, beside the workspace's `.agentville/topics/`; neither reads the other's files. Temporal is required: `agentville engine worker` starts a local dev server on first use.
 
 The plugin starts the MCP server through `plugins/agentville/.mcp.json`, pinned to a commit SHA as Security and publishing requires:
 
 ```bash
-uvx --python 3.15 --from git+https://github.com/minhphamdonhat/agentville@<commit-sha>#subdirectory=agentville agentville engine mcp
+uvx --python 3.15 --from git+https://github.com/minhphamdonhat/agentville@<commit-sha>#subdirectory=townhall agentville engine mcp
 ```
 
 Do:
 
 * On `main` and `beta`, keep `.mcp.json` pinned to the full 40-character SHA of the last released commit, so development and beta run the last released server.
-* Let the release step move the pin: in the release-preparation commit on `main`, together with the `version` bump in `plugins/agentville/.claude-plugin/plugin.json`, pin the commit whose `agentville/` the release ships, then promote to beta and release. A commit cannot name its own SHA, so pin the commit just before the pin change.
-* Until the first release that ships the package, pin the commit that introduces `agentville/`, and merge that change without squashing, or re-pin after the merge, so the SHA stays reachable.
-* Treat the `version` in `agentville/pyproject.toml` as separate; it does not have to match the plugin version.
+* Let the release step move the pin: in the release-preparation commit on `main`, together with the `version` bump in `plugins/agentville/.claude-plugin/plugin.json`, pin the commit whose `townhall/` the release ships, then promote to beta and release. A commit cannot name its own SHA, so pin the commit just before the pin change.
+* Until the first release that ships the package, pin the commit that introduces `townhall/`, and merge that change without squashing, or re-pin after the merge, so the SHA stays reachable.
+* Treat the `version` in `townhall/pyproject.toml` as separate; it does not have to match the plugin version.
+* Keep `#subdirectory=agentville` in `.mcp.json` while it pins `652451a`, because that commit predates the move to `townhall/`; change the subdirectory to `townhall` in the same edit that moves the pin to a later SHA.
 
 Don't:
 
@@ -149,7 +151,7 @@ Settings `release-flow` reads:
 * `release-flow: release-branch: release`
 * `release-flow: version-file: plugins/agentville/.claude-plugin/plugin.json`
 * `release-flow: tag-format: agentville--vX.Y.Z`
-* `release-flow: checks: uv run --directory agentville pytest && uv run --directory agentville ruff check`
+* `release-flow: checks: uv run --directory townhall pytest && uv run --directory townhall ruff check`
 
 ## Verify before you finish
 
@@ -164,8 +166,8 @@ git diff --no-index --quiet plugins/agentville/agents/worker.md plugins/agentvil
 git diff --no-index --quiet plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
 python3 scripts/gen_agent_variants.py --check
 python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
-uv run --directory agentville pytest
-uv run --directory agentville ruff check
+uv run --directory townhall pytest
+uv run --directory townhall ruff check
 ```
 
 On Windows run `py -3` for `python3`; the commands are otherwise the same in PowerShell. `git diff --no-index --quiet` exits 0 when the two files are identical, so it replaces `cmp` everywhere in this file. The scan is read-only and must show no critical or high finding. The everyday run keeps the default gate; the pre-publish gate is the `--fail-on medium` command under Security and publishing.

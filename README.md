@@ -176,13 +176,13 @@ Each base agent except `pod-lead` also ships in nine variants, one per model and
 
 ## Townhall
 
-Townhall is a Python package in `agentville/` that keeps tickets on boards under `.agentville/` in your project (tracked in git) and moves them through a fixed set of stages. The plugin starts its MCP server for you through `plugins/agentville/.mcp.json`, so the tools below appear as `mcp__plugin_agentville_agentville__townhall_*` with no setup.
+Townhall is a Python package in `townhall/` that keeps tickets on boards under `.agentville/` in your project (tracked in git) and moves them through a fixed set of stages. The plugin starts its MCP server for you through `plugins/agentville/.mcp.json`, so the tools below appear as `mcp__plugin_agentville_agentville__townhall_*` with no setup.
 
-The server launches with `uvx` from a pinned commit SHA of this repository, with Python 3.15, so it runs on any OS whatever Python the host has. On `main` and `beta`, `.mcp.json` pins the SHA of the last released commit, so development and beta run the last released server; the release step moves the pin, never a tag, because tags can move. Version 0.7.0 introduces the package, so until it is released `.mcp.json` pins the commit that adds `agentville/`, and the server starts once that commit is on GitHub.
+The server launches with `uvx` from a pinned commit SHA of this repository, with Python 3.15, so it runs on any OS whatever Python the host has. On `main` and `beta`, `.mcp.json` pins the SHA of the last released commit, so development and beta run the last released server; the release step moves the pin, never a tag, because tags can move. Version 0.7.0 introduces the package, so until it is released `.mcp.json` pins the commit that adds the package, and the server starts once that commit is on GitHub.
 
 Townhall keeps its files beside the workspace: `.agentville/config.toml`, `.agentville/.gitignore` for its lock and temporary files, and the boards under `.agentville/townhall/`.
 
-Requirements: `git`, network access on the first run, and `uv` new enough to offer Python 3.15.1 (0.13.5 does). Developing the package needs `uv` 0.13.5 or newer (`[tool.uv] required-version` in `agentville/pyproject.toml`); `uvx` may not enforce `required-version` for `--from` sources, so check your version yourself.
+Requirements: `git`, network access on the first run, and `uv` new enough to offer Python 3.15.1 (0.13.5 does). Developing the package needs `uv` 0.13.5 or newer (`[tool.uv] required-version` in `townhall/pyproject.toml`); `uvx` may not enforce `required-version` for `--from` sources, so check your version yourself.
 
 The first start downloads Python and the dependencies and builds PyYAML from source, because Python 3.15 has no prebuilt wheel yet. It can be slow. If Claude Code times out while starting the server, raise the limit, for example `MCP_TIMEOUT=60000 claude` in bash on Linux and macOS, or `$env:MCP_TIMEOUT = "60000"; claude` in PowerShell on Windows (milliseconds).
 
