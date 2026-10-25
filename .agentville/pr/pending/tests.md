@@ -1,6 +1,6 @@
 # Tests and evidence
 
-This page lists every check the validator ran at `4471879` (evidence folder `run-1`) and its result. All ran on 2026-10-25, on Linux, in a clean clone except the two scans, which read all refs in the checkout.
+This page lists every check the validator ran at `26c43c8` (evidence folder `run-2`, `SHA256SUMS` hash `810454535056`; run-1 at `4471879` is superseded) and its result. All ran on 2026-10-25, on Linux, in a clean clone except the two scans, which read all refs in the checkout.
 
 ## Verify before you finish
 

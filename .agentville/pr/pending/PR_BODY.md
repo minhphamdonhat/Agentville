@@ -21,7 +21,7 @@ Townhall is a file-based board-and-ticket engine for agents, released here as pl
 
 ## Changes
 
-At `74dc5c1` the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,626 insertions and 4 deletions; most of it is the new package and its lock file. Each row maps a change to the check that proves it.
+At `26c43c8` the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,633 insertions and 4 deletions; most of it is the new package and its lock file. Each row maps a change to the check that proves it.
 
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
@@ -29,7 +29,8 @@ At `74dc5c1` the diff against `main` (`git diff --stat origin/main...HEAD`) is 5
 | Pin the MCP server (`f5577f2`) | `plugins/agentville/.mcp.json` | The plugin starts Townhall from `652451a` by full SHA | REQ-1-CHK-6 |
 | Merge `main` (`5273bc9`) | `CLAUDE.md`, `README.md`, `plugin.json` | Keeps both sides; plugin version 0.10.0 | REQ-1-CHK-1, REQ-1-CHK-2, REQ-1-CHK-5 |
 | Move to `townhall/` (`138433f`, `4471879`) | `townhall/`, `CLAUDE.md`, `README.md`, `.gitignore` | Townhall no longer shares a folder with the installer | REQ-2-CHK-9, REQ-2-CHK-11 |
-| Describe the PR (`7a9125e`) | `.agentville/pr/pending/` | No runtime change | REQ-3-CHK-1, REQ-3-CHK-4 |
+| Describe the PR (`7a9125e`, `74dc5c1`, `26c43c8`) | `.agentville/pr/pending/` | No runtime change | REQ-3-CHK-1, REQ-3-CHK-4 |
+| Record the PR folder (`26c43c8`) | `CLAUDE.md` | Adds an `.agentville/pr/` row to the layout table | Verify block, run-2 |
 
 Two excerpts carry the decisions above. The pinned launch in `.mcp.json`:
 
@@ -57,23 +58,23 @@ The plugin's `.mcp.json` runs `uvx` at commit `652451a` with `subdirectory=agent
 
 ## Tests and evidence
 
-The validator ran every check at `4471879` on Linux, in a clean clone where possible. All passed, and each control check failed as required.
+The validator ran every check at `26c43c8` (run-2) on Linux, in a clean clone where possible. All passed, and each control check failed as required.
 
-| Check | Command | Result | Evidence hash |
-| --- | --- | --- | --- |
-| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 | `44241b6463c9` |
-| Pin reachable | `git merge-base --is-ancestor 652451a HEAD` | Exit 0 | `d9985b2d89be` |
-| Smith script tests (4 suites) | `python3 .../test_scripts.py` | 80, 84, 85 and 89 tests, OK | One hash per suite: see the tests page |
-| Townhall tests | `uv run --directory townhall pytest` | 277 passed, 0 skipped | `2b2b7bb2d93c` |
-| Townhall lint | `uv run --directory townhall ruff check` | All checks passed | `b16cb1fafeea` |
-| Installer tests | `uv run pytest` | 38 passed, 0 skipped | `ed2e4392044c` |
-| Pre-publish gate | `scan.py ... --fail-on medium` | 0 critical, high or medium | `71075819003a` |
+| Check | Command | Result |
+| --- | --- | --- |
+| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 |
+| Pin reachable | `git merge-base --is-ancestor 652451a HEAD` | Exit 0 |
+| Smith script tests (4 suites) | `python3 .../test_scripts.py` | 80, 84, 85 and 89 tests, OK |
+| Townhall tests | `uv run --directory townhall pytest` | 277 passed, 0 skipped |
+| Townhall lint | `uv run --directory townhall ruff check` | All checks passed |
+| Installer tests | `uv run pytest` | 38 passed, 0 skipped |
+| Pre-publish gate | `scan.py ... --fail-on medium` | 0 critical, high or medium |
 
 Not tested or not verifiable: a live MCP launch from `.mcp.json`, a live Temporal run, any OS other than Linux, and `uv` older than 0.13.5. Commands and reproduction steps are on the tests page, linked in the Evidence index.
 
 ## Risks, limits and rollback
 
-The main risks are the shared `agentville` package and console name, a pin that depends on an unsquashed merge, and a slow first start while `uvx` fetches Python 3.15. To roll back the whole PR, revert its merge commit on `main` with `git revert -m 1 <merge-sha>`. To undo only the merge with `main`, revert `5273bc9` with `-m 1`, then the later commits. Reverting the move (`138433f`) on its own is not supported: it puts Townhall back in `agentville/`, where it collides with the installer. Mitigations are on the risks page, linked in the Evidence index.
+The main risks are the shared `agentville` package and console name, a pin that depends on an unsquashed merge, and a slow first start while `uvx` fetches Python 3.15. To roll back the whole PR, revert its merge commit on `main` with `git revert -m 1 <merge-sha>`. Reverting the move (`138433f`) on its own is not supported: it puts Townhall back in `agentville/`, where it collides with the installer. Mitigations are on the risks page, linked in the Evidence index.
 
 ## Reviewer checklist
 
@@ -98,6 +99,6 @@ Head: <HEAD_SHA>
 | Diagrams | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/architecture.md) |
 | Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/tests.md) |
 | Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/risks.md) |
-| Validator evidence | Folder `run-1`, `SHA256SUMS` hash `6b9072c8df42` |
+| Validator evidence | Folder `run-2` at `26c43c8`, `SHA256SUMS` hash `810454535056` (run-1 at `4471879` is superseded) |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

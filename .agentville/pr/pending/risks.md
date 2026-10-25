@@ -21,5 +21,4 @@ This page lists the risks this PR brings and what limits or mitigates each one.
 ## Rollback
 
 * Whole PR: `git revert -m 1 <merge-sha>` on `main`, where `<merge-sha>` is this PR's merge commit.
-* The merge with `main` only: `git revert -m 1 5273bc9`, then revert the later commits.
 * The move to `townhall/` (`138433f` and `4471879`) on its own is not supported: reverting it puts Townhall back in `agentville/`, where it collides with `main`'s installer.
