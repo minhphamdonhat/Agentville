@@ -741,8 +741,8 @@ class StageTests(unittest.TestCase):
         return out.strip()[6:]
 
     def test_create_named_and_default(self):
-        p = self.create("acme-pr-review")
-        self.assertRegex(os.path.basename(p), r"^acme-pr-review-[0-9a-f]{8}$")
+        p = self.create("acme-code-review")
+        self.assertRegex(os.path.basename(p), r"^acme-code-review-[0-9a-f]{8}$")
         self.assertTrue(os.path.isfile(os.path.join(p, ".skill-smith-staging")))
         self.assertTrue(p.startswith(os.path.realpath(self.tmp) + "/skill-smith-staging/"))
         self.assertRegex(os.path.basename(self.create()), r"^draft-[0-9a-f]{8}$")
@@ -806,7 +806,7 @@ class StageTests(unittest.TestCase):
         stg = os.path.join(self.tmp, "stg")
         self.mk(stg, {"SKILL.md": b"x", "references/a.md": b"a", ".skill-smith-staging": b"m"})
         for scope, root in (("project", project), ("user", user)):
-            dst = os.path.join(root, ".claude", "skills", "acme-pr-review")
+            dst = os.path.join(root, ".claude", "skills", "acme-code-review")
             rc, out, err = self.install(stg, dst, scope, project, user)
             self.assertEqual(rc, 0, err)
             self.assertIn("files: ", out)
@@ -820,16 +820,16 @@ class StageTests(unittest.TestCase):
         plugin = os.path.join(project, "plugins", "acme")
         self.mk(plugin, {".claude-plugin/plugin.json": b"{}"})
         for scope in ("project", "user"):
-            for dst in (os.path.join(plugin, "skills", "acme-pr-review"),
-                        os.path.join(plugin, ".claude", "skills", "acme-pr-review"),
-                        os.path.join(project, "plugins", "other", "skills", "acme-pr-review"),
-                        os.path.join(plugin, ".claude-plugin", "acme-pr-review")):
+            for dst in (os.path.join(plugin, "skills", "acme-code-review"),
+                        os.path.join(plugin, ".claude", "skills", "acme-code-review"),
+                        os.path.join(project, "plugins", "other", "skills", "acme-code-review"),
+                        os.path.join(plugin, ".claude-plugin", "acme-code-review")):
                 rc, _, err = self.install(stg, dst, scope, project, user)
                 self.assertEqual(rc, 2, dst)
                 self.assertIn("refused", err)
                 self.assertFalse(os.path.exists(os.path.join(dst, "SKILL.md")), dst)
         # a project root that is itself a plugin is refused even at its own .claude/skills
-        rc, _, err = self.install(stg, os.path.join(plugin, ".claude", "skills", "acme-pr-review"), "project", plugin, user)
+        rc, _, err = self.install(stg, os.path.join(plugin, ".claude", "skills", "acme-code-review"), "project", plugin, user)
         self.assertEqual(rc, 2)
         self.assertIn("plugin", err)
         self.assertFalse(os.path.exists(os.path.join(plugin, ".claude", "skills")))
@@ -841,7 +841,7 @@ class StageTests(unittest.TestCase):
         user = os.path.join(self.tmp, "home")
         os.makedirs(project)
         os.makedirs(user)
-        dst = os.path.join(project, ".claude", "skills", "acme-pr-review")
+        dst = os.path.join(project, ".claude", "skills", "acme-code-review")
         rc, _, err = self.install(stg, dst, "project", project, user)
         self.assertEqual(rc, 0, err)
         self.assertTrue(os.path.isfile(os.path.join(dst, "SKILL.md")))
@@ -851,22 +851,22 @@ class StageTests(unittest.TestCase):
         stg = os.path.join(self.tmp, "stg")
         self.mk(stg, {"SKILL.md": b"x", ".skill-smith-staging": b"m"})
         skills = os.path.join(project, ".claude", "skills")
-        for dst, scope in ((os.path.join(self.tmp, "elsewhere", "acme-pr-review"), "project"),
+        for dst, scope in ((os.path.join(self.tmp, "elsewhere", "acme-code-review"), "project"),
                            (skills, "project"),
-                           (os.path.join(skills, "acme-pr-review", "deep"), "project"),
+                           (os.path.join(skills, "acme-code-review", "deep"), "project"),
                            (os.path.join(skills, "Bad Name"), "project"),
-                           (os.path.join(skills, "acme-pr-review"), "user"),
-                           (os.path.join(skills, "acme-pr-review"), "plugin")):
+                           (os.path.join(skills, "acme-code-review"), "user"),
+                           (os.path.join(skills, "acme-code-review"), "plugin")):
             self.assertEqual(self.install(stg, dst, scope, project, user)[0], 2, (dst, scope))
-        self.assertEqual(run(STAGE, "install", stg, os.path.join(skills, "acme-pr-review"),
+        self.assertEqual(run(STAGE, "install", stg, os.path.join(skills, "acme-code-review"),
                              "--project-root", project)[0], 2)
         self.assertFalse(os.path.exists(os.path.join(self.tmp, "elsewhere")))
-        self.assertFalse(os.path.exists(os.path.join(skills, "acme-pr-review")))
+        self.assertFalse(os.path.exists(os.path.join(skills, "acme-code-review")))
 
     def test_sync_refuses_plugin_on_either_side(self):
         src = os.path.join(self.tmp, "src")
         self.mk(src, {"SKILL.md": b"x"})
-        plugin = os.path.join(self.tmp, "plugins", "acme", "skills", "acme-pr-review")
+        plugin = os.path.join(self.tmp, "plugins", "acme", "skills", "acme-code-review")
         self.mk(plugin, {"SKILL.md": b"old"})
         self.mk(os.path.join(self.tmp, "plugins", "acme"), {".claude-plugin/plugin.json": b"{}"})
         self.assertEqual(run(STAGE, "sync", src, plugin)[0], 2)

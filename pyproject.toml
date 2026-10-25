@@ -36,7 +36,7 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-agentville = "agentville.cli:main"
+agentville = "agentville.cli.app:main"
 
 [project.urls]
 Homepage = "https://github.com/minhphamdonhat/Agentville"

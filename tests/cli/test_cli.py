@@ -8,9 +8,9 @@ from typing import Any
 import pytest
 
 from agentville import __version__
-from agentville.cli import main
-from agentville.targets import TARGETS
-from agentville.targets.claude_code import PLUGIN_IDS, STEERING_LINES
+from agentville.cli.app import main
+from agentville.cli.targets import TARGETS
+from agentville.cli.targets.claude_code import PLUGIN_IDS, STEERING_LINES
 
 CLAUDE = "/opt/bin/claude"
 
@@ -32,8 +32,8 @@ class FakeRun:
 @pytest.fixture
 def with_claude(monkeypatch: pytest.MonkeyPatch) -> FakeRun:
     fake = FakeRun()
-    monkeypatch.setattr("agentville.targets.claude_code.shutil.which", lambda name: CLAUDE if name == "claude" else None)
-    monkeypatch.setattr("agentville.targets.claude_code.subprocess.run", fake)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.shutil.which", lambda name: CLAUDE if name == "claude" else None)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.subprocess.run", fake)
     return fake
 
 
@@ -87,16 +87,16 @@ def test_cli_path_project_scope_runs_in_project(home: Path, project: Path, with_
 
 def test_cli_path_tolerates_marketplace_already_added(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     fake = FakeRun(codes=[1, 0], output="Marketplace 'minhphamdo' is already added")
-    monkeypatch.setattr("agentville.targets.claude_code.shutil.which", lambda name: CLAUDE)
-    monkeypatch.setattr("agentville.targets.claude_code.subprocess.run", fake)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.shutil.which", lambda name: CLAUDE)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.subprocess.run", fake)
     assert main(["install"]) == 0
     assert len(fake.calls) == 2
 
 
 def test_cli_path_install_failure_exits_1_and_skips_claude_md(home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     fake = FakeRun(codes=[0, 3], output="boom")
-    monkeypatch.setattr("agentville.targets.claude_code.shutil.which", lambda name: CLAUDE)
-    monkeypatch.setattr("agentville.targets.claude_code.subprocess.run", fake)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.shutil.which", lambda name: CLAUDE)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.subprocess.run", fake)
     assert main(["install"]) == 1
     assert not (home / ".claude" / "CLAUDE.md").exists()
 

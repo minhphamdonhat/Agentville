@@ -2,7 +2,7 @@ Used by SKILL.md step 4.
 
 # Input
 
-* **skill-name:** required - default: none - The kebab-case name from SKILL.md step 2, such as `acme-pr-review`.
+* **skill-name:** required - default: none - The kebab-case name from SKILL.md step 2, such as `acme-code-review`.
 * **mode:** required - default: none - `compile`, `improve` or `convert`.
 * **scope:** required - default: none - `plugin` or `project`; `user` is refused. For improve and convert, the scope `path` lives in.
 * **path:** optional - default: none - The existing skill folder, for improve and convert.
@@ -27,7 +27,7 @@ Don't:
 Set the target to `{{ PROJECT_ROOT }}/plugins/agentville/skills/<skill-name>` for `plugin` or `{{ PROJECT_ROOT }}/.claude/skills/<skill-name>` for `project`.
 
 Do:
-* `acme-pr-review` with scope `plugin` gives `{{ PROJECT_ROOT }}/plugins/agentville/skills/acme-pr-review`.
+* `acme-code-review` with scope `plugin` gives `{{ PROJECT_ROOT }}/plugins/agentville/skills/acme-code-review`.
 * `naming-rules` with scope `project` gives `{{ PROJECT_ROOT }}/.claude/skills/naming-rules`.
 
 Don't:

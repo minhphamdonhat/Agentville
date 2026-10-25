@@ -16,7 +16,7 @@ Used by SKILL.md step 5.
 For improve and convert, copy the existing skill folder into `<STAGING>` first by running `python3 {{ SKILL_ROOT }}/scripts/stage.py sync <source-folder> <STAGING>` with Bash. The install step mirrors `<STAGING>` onto the target and removes every file `<STAGING>` lacks, so a skill's `references/`, `scripts/` and `evals/` survive only if they are seeded here. For convert, then copy the old SKILL.md to `<STAGING>/references/original-SKILL.md` with `Read` and `Write` before any edit. For compile, skip this step.
 
 Do:
-* Improve `acme-pr-review`: run `python3 {{ SKILL_ROOT }}/scripts/stage.py sync {{ PROJECT_ROOT }}/plugins/agentville/skills/acme-pr-review <STAGING>` and keep its `references/checklist.md`.
+* Improve `acme-code-review`: run `python3 {{ SKILL_ROOT }}/scripts/stage.py sync {{ PROJECT_ROOT }}/plugins/agentville/skills/acme-code-review <STAGING>` and keep its `references/checklist.md`.
 * Convert `release-notes`: seed, then save `<STAGING>/references/original-SKILL.md`.
 
 Don't:

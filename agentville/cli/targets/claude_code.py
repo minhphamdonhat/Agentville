@@ -7,9 +7,9 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from agentville.console import Console
-from agentville.files import FileEditError, append_lines, merge_json_object, read_json_object
-from agentville.targets.base import EXIT_FAILED, EXIT_OK, InstallOptions
+from agentville.cli.console import Console
+from agentville.cli.files import FileEditError, append_lines, merge_json_object, read_json_object
+from agentville.cli.targets.base import EXIT_FAILED, EXIT_OK, InstallOptions
 
 MARKETPLACE_NAME = "minhphamdo"
 MARKETPLACE_REPO = "minhphamdonhat/Agentville"
