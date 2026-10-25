@@ -1,6 +1,20 @@
-import {themes as prismThemes} from 'prism-react-renderer';
+import type {PrismTheme} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+
+// Press & Paper code colours: ink and brick on newsprint, each at 4.5:1 or more.
+const pressPaperCode: PrismTheme = {
+  plain: {color: '#222020', backgroundColor: '#E8DCC4'},
+  styles: [
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#5C534B', fontStyle: 'italic'}},
+    {types: ['punctuation', 'operator', 'entity', 'url'], style: {color: '#4A4440'}},
+    {types: ['property', 'tag', 'boolean', 'number', 'constant', 'symbol', 'deleted'], style: {color: '#86221B'}},
+    {types: ['selector', 'attr-name', 'string', 'char', 'builtin', 'inserted'], style: {color: '#3E5226'}},
+    {types: ['atrule', 'attr-value', 'keyword'], style: {color: '#7A2E12'}},
+    {types: ['function', 'class-name'], style: {color: '#222020', fontWeight: 'bold'}},
+    {types: ['regex', 'important', 'variable'], style: {color: '#5E4530'}},
+  ],
+};
 
 const config: Config = {
   title: 'Agentville',
@@ -46,8 +60,14 @@ const config: Config = {
   ],
 
   themeConfig: {
+    // Press & Paper is a light edition only.
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'light',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
+    },
+    mermaid: {
+      theme: {light: 'neutral', dark: 'neutral'},
     },
     navbar: {
       title: 'Agentville',
@@ -89,8 +109,7 @@ const config: Config = {
       copyright: 'Agentville is released under the MIT licence. Built with Docusaurus.',
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      theme: pressPaperCode,
       additionalLanguages: ['bash', 'powershell'],
     },
   } satisfies Preset.ThemeConfig,

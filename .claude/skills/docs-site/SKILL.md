@@ -1,8 +1,8 @@
 ---
 name: docs-site
-description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts or package.json there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
+description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the Press & Paper design (tokens, type, ornaments), how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
 metadata:
-  version: 1.0.1
+  version: 1.1.1
 ---
 
 # docs-site
@@ -18,7 +18,9 @@ Every page is a Markdown file under `{{ PROJECT_ROOT }}/website/docs/`, and `{{ 
 | `website/docs/intro.md`, `get-started.md`, `how-it-works.md`, `faq.md` | The main pages, in that sidebar order with `faq` last | Chat and Cowork users |
 | `website/docs/guides/` | `index.md` (the category page) plus `good-requests.md`, `following-along.md`, `updating.md` | Chat and Cowork users |
 | `website/docs/technical/` | `index.md` (the category page) plus `claude-code.md`, `command-line.md`, `channels.md` | Claude Code and terminal users |
-| `website/src/pages/index.tsx`, `website/src/css/custom.css` | The landing page and the theme styles | Everyone |
+| `website/src/pages/index.tsx`, `website/src/pages/index.module.css` | The home page, a newspaper front page | Everyone |
+| `website/src/css/custom.css` | The Press & Paper tokens and the theme styles for every page | Everyone |
+| `website/src/components/Ephemera.tsx` | The decorative SVG ornaments: stamp, postmark, wax seal, handwritten note, barcode | Everyone |
 | `website/static/` | `img/favicon.svg` and `.nojekyll`, served as they are | Everyone |
 | `website/docusaurus.config.ts` | Site URL, `baseUrl: '/Agentville/'`, locale `en-GB`, navbar, footer, link checks | Maintainers |
 
@@ -78,7 +80,7 @@ A docs change is finished only when the site builds clean, the audit shows no cr
 |---|---|---|
 | Build | `cd website && npm ci && npm run build` | Exits 0; `onBrokenLinks: 'throw'` and `onBrokenAnchors: 'throw'` at the top of `docusaurus.config.ts`, and `onBrokenMarkdownLinks: 'throw'` under `markdown.hooks`, turn any broken link into a failure |
 | Audit | `cd website && npm audit` | 0 critical and 0 high |
-| Security scan | `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'` | No critical or high finding |
+| Security scan | `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'` | No critical or high finding |
 
 - Run `npm ci` for every build and check, never `npm install`, so the build uses `website/package-lock.json` exactly as CI does; on Windows run the same npm commands in PowerShell, with `cd website; npm ci; npm run build`, and `py -3` for `python3`.
 - Fix an audit finding with an exact-version entry in the `overrides` block of `website/package.json`, as `tinypool`, `serialize-javascript`, `postcss-selector-parser` and `sockjs` > `uuid` already are, then run `npm install` once, only because you changed dependencies or the lock file, to refresh the lock file, and `npm ci` again for the build; never downgrade a Docusaurus or React dependency to clear a finding.
@@ -95,7 +97,7 @@ The site deploys only from `{{ PROJECT_ROOT }}/.github/workflows/docs.yml`, on a
 
 - The workflow's `build` job runs `npm ci` and `npm run build` in `website/` on Node 22 and uploads `website/build`; its `deploy` job publishes it to the `github-pages` environment with `pages: write` and `id-token: write`, and the workflow-wide permission stays `contents: read`.
 - Pin every action in `docs.yml` to a full commit SHA with its release tag in a trailing comment, such as `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`; never point an action at a moving tag or branch.
-- Before pushing a docs tag, run the pre-publish gate from `CLAUDE.md` and push only when it exits 0: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`.
+- Before pushing a docs tag, run the pre-publish gate from `CLAUDE.md` and push only when it exits 0: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`.
 - Create, push or delete a docs tag only when the user names that tag and asks for it, and never on your own; the docs tag is separate from the plugin tag `agentville--vX.Y.Z`.
 - Set the repository's Pages source to GitHub Actions under **Settings**, then **Pages**, then **Source**; a branch source ignores the workflow.
 - Allow the docs tags on the `github-pages` environment under **Settings**, then **Environments**, then **github-pages**, then **Deployment branches and tags**, with a tag rule `agentville-docs--v*`; without it the `deploy` job is rejected for a tag-triggered run.
@@ -123,6 +125,36 @@ Correct: "support.claude.com now names the tab **Connectors**; step 2 and its sc
 
 Wrong: "Moved `Last checked` to today on every page without opening the sources."
 
+## 7. Press & Paper design
+
+The site wears Press & Paper Variant A, "Skeleton": the newspaper's structure (navigation band, thick-thin rules, ruled boxes, folio) with modern type, one brick accent on cream, light only and no rounded corners.
+
+The tokens live once, on `:root` in `website/src/css/custom.css`, and every style uses them by name.
+
+| Token | Value | Use |
+|---|---|---|
+| `--pp-cream` | `#F3E9DC` | Page ground |
+| `--pp-newsprint` | `#E8DCC4` | Panels: admonitions, code blocks, ticker, sidebar box, table heads |
+| `--pp-card` | `#FBF6EC` | Classified boxes and diagram frames |
+| `--pp-ink` | `#222020` | Text, rules, navigation band and footer |
+| `--pp-ink-soft` | `#4A4440` | Secondary text: breadcrumbs, TOC, datelines, ears |
+| `--pp-brick` | `#A32A22` | The one accent: links, kickers, call to action |
+| `--pp-brick-dark` | `#86221B` | Hover and focus state of the brick accent |
+| `--pp-mustard` | `#D4A017` | Fills and strips only, never text on cream |
+| `--pp-rust`, `--pp-kraft` | `#9C2F16`, `#C9A878` | Ornaments only |
+
+- Set type in three families from exact-pinned `@fontsource` packages imported at the top of `custom.css`: Anton for the nameplate, the navbar title, the page H1 and one display headline per view; Libre Caslon Text for body, H2 and the lead headline; Oswald for labels, navigation, H3 and kickers, in tracked uppercase. Never load fonts from Google Fonts or another CDN.
+- Keep the furniture as the interface: the navbar is the ink navigation band, H1 and the nameplate sit on a thick-thin rule (4px, a 2px gap, 1px), tables and admonitions are hairline-ruled boxes, and the home page ends in a folio line.
+- Use `border-radius: 0` everywhere and no grey drop shadows; a `box-shadow` is used only to draw the thin half of a thick-thin rule.
+- Keep `colorMode` at `defaultMode: 'light'` with `disableSwitch: true`; the code theme `pressPaperCode` in `docusaurus.config.ts` is light only too.
+- Check every text and ground pair at 4.5:1 or more with a WCAG contrast script before changing a token or a code colour.
+- Build the home page as a front page in mobile reading order: ears and nameplate, dateline between rules, a static ticker, a boxed lead headline with one call to action to Get started, stories in ruled columns, a sidebar box, numbered steps, a classifieds strip and a folio. Every word is live text; the ticker repeats facts the docs state.
+- Put ornaments from `Ephemera.tsx` in margins and openers only, never over text: each SVG carries `aria-hidden="true"` and `focusable="false"`, says nothing that is not also live text nearby, keeps its rotation in the desktop media query only (flat on mobile), never animates, and is hidden in print. Use one wax seal per page.
+
+Correct: "Add a new ornament as an `aria-hidden` SVG in `Ephemera.tsx` and place it in the opener's margin column, rotated only above 1100px."
+
+Wrong: "Set the kicker in mustard on cream, round the code blocks and lay the stamp over the lead headline."
+
 ## Pre-send check
 
 Run each item before saving or handing over a docs change. The section holds the rule.
@@ -134,3 +166,4 @@ Run each item before saving or handing over a docs change. The section holds the
 5. `npm ci && npm run build` exits 0, `npm audit` shows 0 critical and 0 high with fixes in `overrides`, and the security scan shows no critical or high finding (§4).
 6. No docs tag was created or pushed unless the user asked for that tag, and every action in `docs.yml` is pinned to a commit SHA (§5).
 7. `Last checked` moved only on pages whose steps were compared with their sources today (§6).
+8. Styles use the Press & Paper tokens, light only and square, every text pair is 4.5:1 or more, fonts come from pinned `@fontsource` packages, and every ornament is `aria-hidden`, off the reading path and still on mobile (§7).
