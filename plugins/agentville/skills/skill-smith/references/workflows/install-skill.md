@@ -26,7 +26,7 @@ Don't:
 Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> <PATH> --scope <scope>` with Bash. Read its `written:`, `removed:` and `files:` lines. When it exits 2, write nothing, and return the failure template with `<status>blocked</status>` and the script's message in `<outcome>`; it refuses any `<PATH>` outside the chosen scope's skills folder and any plugin.
 
 Do:
-* Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> {{ USER_ROOT }}/.claude/skills/acme-pr-review --scope user`.
+* Run `python3 {{ SKILL_ROOT }}/scripts/stage.py install <STAGING> {{ USER_ROOT }}/.claude/skills/acme-code-review --scope user`.
 * Keep the `files:` line for the report, such as `files: none` for a skill with only SKILL.md.
 
 Don't:
@@ -38,7 +38,7 @@ Don't:
 Compare each `removed:` line with the request. When a removed file is one the user did not ask to remove, name it in `<open>` so the user can restore it.
 
 Do:
-* Report `removed {{ USER_ROOT }}/.claude/skills/acme-pr-review/evals/evals.json` in `<open>` when the request did not mention evals.
+* Report `removed {{ USER_ROOT }}/.claude/skills/acme-code-review/evals/evals.json` in `<open>` when the request did not mention evals.
 * Report `removed: none` when the install printed no `removed:` line.
 
 Don't:
@@ -64,7 +64,7 @@ supporting-files: <the files line, or none>
 ```
 
 Do:
-* `skill-md: {{ USER_ROOT }}/.claude/skills/acme-pr-review/SKILL.md`
+* `skill-md: {{ USER_ROOT }}/.claude/skills/acme-code-review/SKILL.md`
 * `supporting-files: {{ PROJECT_ROOT }}/.claude/skills/catalogue/references/prices.md`
 
 Don't:

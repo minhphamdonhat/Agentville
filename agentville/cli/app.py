@@ -6,9 +6,9 @@ import argparse
 from pathlib import Path
 
 from agentville import __version__
-from agentville.console import Console
-from agentville.targets import DEFAULT_TARGET, TARGETS, get_target
-from agentville.targets.base import CHANNELS, EXIT_OK, EXIT_USAGE, SCOPES, InstallOptions
+from agentville.cli.console import Console
+from agentville.cli.targets import DEFAULT_TARGET, TARGETS, get_target
+from agentville.cli.targets.base import CHANNELS, EXIT_OK, EXIT_USAGE, SCOPES, InstallOptions
 
 EXIT_CODES = "exit codes: 0 success, 1 an install step failed, 2 usage error"
 

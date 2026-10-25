@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agentville.files import FileEditError, append_lines, merge_json_object
+from agentville.cli.files import FileEditError, append_lines, merge_json_object
 
 LINES = ("- first line", "- second line")
 

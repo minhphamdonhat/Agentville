@@ -42,3 +42,23 @@
 .features-agentville h2 {
   font-size: 1.25rem;
 }
+
+/* Diagram figures: the compiled SVG is ink on white, so it keeps a white sheet in dark mode. */
+.diagram-figure {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.diagram-figure img {
+  background: #ffffff;
+  border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+  padding: 1rem;
+}
+
+.diagram-figure figcaption {
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}

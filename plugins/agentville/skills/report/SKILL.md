@@ -2,7 +2,7 @@
 name: "report"
 description: "Records a topic's final report, outcome, what each task delivered, evidence pointers, review result, extra work, out-of-scope findings and open items, as '{topic-folder}/report.md' or at a given destination, and returns the file path and sections written; with no file tool, or when the write is refused, it returns the formatted report inline. Modes create, append, update, locate (read-only) and prepare-evidence, which creates and returns the next '{topic-folder}/evidence/run-{N}/' folder. Records results as given and judges nothing. Use to save a report, update it after new results, find where it lives, or get a fresh evidence folder."
 metadata:
-  version: 2.0.1
+  version: 2.0.2
 ---
 
 # Role
@@ -25,7 +25,7 @@ You are a report recorder. You take a topic, the report content and a mode, writ
 # Input
 
 * **topic-id:** optional - default: a kebab-case slug of the request plus the date, `<slug>-YYYY-MM-DD` - Such as `acme-api-pagination-2026-10-18`.
-* **content:** optional - default: none - Required unless `mode` is `locate` or `prepare-evidence`. The outcome, what each task delivered, evidence pointers, the review result and open items, such as `outcome: pagination added; T1 delivered, check passed; evidence: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/evidence/run-1; review: pass-with-notes; open: push not yet approved`.
+* **content:** optional - default: none - Required unless `mode` is `locate` or `prepare-evidence`. The outcome, what each task delivered, evidence pointers, the review result and open items, such as `outcome: pagination added; T1 delivered, check passed; evidence: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/evidence/run-1; review: pass-with-notes; open: deploy not yet approved`.
 * **mode:** optional - default: `create` when no report exists, else `update` - `create` (new report; refused when one exists), `append` (add a dated `## Update` section at the end), `update` (replace the body of named sections in place), `locate` (return the path or `none`; writes nothing) or `prepare-evidence` (create the next evidence run folder and return it; records no report).
 * **sections:** optional - default: every section the content touches - In `update` mode: `Outcome`, `Delivered`, `Evidence`, `Review`, `Extra work`, `Out of scope` or `Open items`.
 * **destination:** optional - default: none - The absolute report file to use instead of `<topic-folder>/report.md`, such as `{{ PROJECT_ROOT }}/docs/reports/acme-api-pagination.md`; ignored in `prepare-evidence` mode.

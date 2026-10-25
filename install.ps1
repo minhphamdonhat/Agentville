@@ -1,7 +1,7 @@
 # Puts a persistent `agentville` command on PATH with uv, on Windows (PowerShell 5.1 or 7).
 #
-#   powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1 | iex"
-#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) 0.1.0
+#   powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.ps1 | iex"
+#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.ps1))) 0.1.0
 #
 # Arguments: an optional VERSION (latest, the default, or a release such as 0.1.0),
 # -FromSource to install from the GitHub repository instead of PyPI, and -Yes to
@@ -34,7 +34,7 @@ param(
 
     $PythonVersion = '3.15'
     $Package = 'agentville'
-    $RepoUrl = 'https://github.com/minhphamdonhat/agentville'
+    $RepoUrl = 'https://github.com/minhphamdonhat/Agentville'
     $UvVersion = '0.13.5'
     $UvInstallerUrl = "https://astral.sh/uv/$UvVersion/install.ps1"
 

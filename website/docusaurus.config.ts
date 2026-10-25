@@ -8,9 +8,9 @@ const config: Config = {
   favicon: 'img/favicon.svg',
 
   url: 'https://minhphamdonhat.github.io',
-  baseUrl: '/agentville/',
+  baseUrl: '/Agentville/',
   organizationName: 'minhphamdonhat',
-  projectName: 'agentville',
+  projectName: 'Agentville',
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
@@ -22,12 +22,10 @@ const config: Config = {
   },
 
   markdown: {
-    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'throw',
     },
   },
-  themes: ['@docusaurus/theme-mermaid'],
 
   presets: [
     [
@@ -35,7 +33,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/minhphamdonhat/agentville/tree/main/website/',
+          editUrl: 'https://github.com/minhphamdonhat/Agentville/tree/main/website/',
         },
         blog: false,
         theme: {
@@ -60,7 +58,7 @@ const config: Config = {
         {to: '/docs/get-started', label: 'Get started', position: 'left'},
         {to: '/docs/faq', label: 'FAQ', position: 'left'},
         {
-          href: 'https://github.com/minhphamdonhat/agentville',
+          href: 'https://github.com/minhphamdonhat/Agentville',
           label: 'GitHub',
           position: 'right',
         },
@@ -82,7 +80,7 @@ const config: Config = {
           title: 'More',
           items: [
             {label: 'For technical users', to: '/docs/technical'},
-            {label: 'GitHub', href: 'https://github.com/minhphamdonhat/agentville'},
+            {label: 'GitHub', href: 'https://github.com/minhphamdonhat/Agentville'},
           ],
         },
       ],
