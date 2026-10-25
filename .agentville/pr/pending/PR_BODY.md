@@ -21,7 +21,7 @@ Townhall is a file-based board-and-ticket engine for agents, released here as pl
 
 ## Changes
 
-At `26c43c8` the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,633 insertions and 4 deletions; most of it is the new package and its lock file. Each row maps a change to the check that proves it.
+At `26c43c8` the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,633 insertions and 4 deletions; most of it is the new package and its lock file.
 
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
@@ -30,7 +30,7 @@ At `26c43c8` the diff against `main` (`git diff --stat origin/main...HEAD`) is 5
 | Merge `main` (`5273bc9`) | `CLAUDE.md`, `README.md`, `plugin.json` | Keeps both sides; plugin version 0.10.0 | REQ-1-CHK-1, REQ-1-CHK-2, REQ-1-CHK-5 |
 | Move to `townhall/` (`138433f`, `4471879`) | `townhall/`, `CLAUDE.md`, `README.md`, `.gitignore` | Townhall no longer shares a folder with the installer | REQ-2-CHK-9, REQ-2-CHK-11 |
 | Describe the PR (`7a9125e`, `74dc5c1`, `26c43c8`) | `.agentville/pr/pending/` | No runtime change | REQ-3-CHK-1, REQ-3-CHK-4 |
-| Record the PR folder (`26c43c8`) | `CLAUDE.md` | Adds an `.agentville/pr/` row to the layout table | Verify block, run-2 |
+| Record the PR folder (`26c43c8`) | `CLAUDE.md` | Adds an `.agentville/pr/` row to the layout table | REQ-2-CHK-1..10 |
 
 Two excerpts carry the decisions above. The pinned launch in `.mcp.json`:
 
@@ -60,15 +60,15 @@ The plugin's `.mcp.json` runs `uvx` at commit `652451a` with `subdirectory=agent
 
 The validator ran every check at `26c43c8` (run-2) on Linux, in a clean clone where possible. All passed, and each control check failed as required.
 
-| Check | Command | Result |
-| --- | --- | --- |
-| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 |
-| Pin reachable | `git merge-base --is-ancestor 652451a HEAD` | Exit 0 |
-| Smith script tests (4 suites) | `python3 .../test_scripts.py` | 80, 84, 85 and 89 tests, OK |
-| Townhall tests | `uv run --directory townhall pytest` | 277 passed, 0 skipped |
-| Townhall lint | `uv run --directory townhall ruff check` | All checks passed |
-| Installer tests | `uv run pytest` | 38 passed, 0 skipped |
-| Pre-publish gate | `scan.py ... --fail-on medium` | 0 critical, high or medium |
+| Check | Command | Result | Evidence hash |
+| --- | --- | --- | --- |
+| True merge of `main` | `git merge-base --is-ancestor origin/main HEAD` | Exit 0 | `83a02188a4c0` |
+| Pin reachable | `git merge-base --is-ancestor 652451a HEAD` | Exit 0 | `0a9561507bf4` |
+| Smith script tests (4 suites) | `python3 .../test_scripts.py` | 80, 84, 85 and 89 tests, OK | `6bc96d703511`, `2e36fd2925a5`, `2432284682b8`, `1cfc13e0629c` |
+| Townhall tests | `uv run --directory townhall pytest` | 277 passed, 0 skipped | `36c1bf648ede` |
+| Townhall lint | `uv run --directory townhall ruff check` | All checks passed | `a5e4c7d5cf73` |
+| Installer tests | `uv run pytest` | 38 passed, 0 skipped | `c58d0db0399e` |
+| Pre-publish gate | `scan.py ... --fail-on medium` | 0 critical, high or medium | `10bbb17412a3` |
 
 Not tested or not verifiable: a live MCP launch from `.mcp.json`, a live Temporal run, any OS other than Linux, and `uv` older than 0.13.5. Commands and reproduction steps are on the tests page, linked in the Evidence index.
 
@@ -99,6 +99,6 @@ Head: <HEAD_SHA>
 | Diagrams | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/architecture.md) |
 | Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/tests.md) |
 | Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/risks.md) |
-| Validator evidence | Folder `run-2` at `26c43c8`, `SHA256SUMS` hash `810454535056` (run-1 at `4471879` is superseded) |
+| Validator evidence | Folder `run-2` at `26c43c8`, `SHA256SUMS` hash `810454535056` |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
