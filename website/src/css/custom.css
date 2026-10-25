@@ -383,7 +383,7 @@ code {
 
 .theme-admonition.alert--success,
 .theme-admonition.alert--info {
-  border-top-color: var(--pp-mustard);
+  border-top-color: var(--pp-ink);
 }
 
 .theme-admonition.alert--warning,

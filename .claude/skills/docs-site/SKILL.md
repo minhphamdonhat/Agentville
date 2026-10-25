@@ -2,7 +2,7 @@
 name: docs-site
 description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the Press & Paper design (tokens, type, ornaments), how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
 metadata:
-  version: 1.1.0
+  version: 1.1.1
 ---
 
 # docs-site
@@ -80,7 +80,7 @@ A docs change is finished only when the site builds clean, the audit shows no cr
 |---|---|---|
 | Build | `cd website && npm ci && npm run build` | Exits 0; `onBrokenLinks: 'throw'` and `onBrokenAnchors: 'throw'` at the top of `docusaurus.config.ts`, and `onBrokenMarkdownLinks: 'throw'` under `markdown.hooks`, turn any broken link into a failure |
 | Audit | `cd website && npm audit` | 0 critical and 0 high |
-| Security scan | `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'` | No critical or high finding |
+| Security scan | `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'` | No critical or high finding |
 
 - Run `npm ci` for every build and check, never `npm install`, so the build uses `website/package-lock.json` exactly as CI does; on Windows run the same npm commands in PowerShell, with `cd website; npm ci; npm run build`, and `py -3` for `python3`.
 - Fix an audit finding with an exact-version entry in the `overrides` block of `website/package.json`, as `tinypool`, `serialize-javascript`, `postcss-selector-parser` and `sockjs` > `uuid` already are, then run `npm install` once, only because you changed dependencies or the lock file, to refresh the lock file, and `npm ci` again for the build; never downgrade a Docusaurus or React dependency to clear a finding.
@@ -97,7 +97,7 @@ The site deploys only from `{{ PROJECT_ROOT }}/.github/workflows/docs.yml`, on a
 
 - The workflow's `build` job runs `npm ci` and `npm run build` in `website/` on Node 22 and uploads `website/build`; its `deploy` job publishes it to the `github-pages` environment with `pages: write` and `id-token: write`, and the workflow-wide permission stays `contents: read`.
 - Pin every action in `docs.yml` to a full commit SHA with its release tag in a trailing comment, such as `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`; never point an action at a moving tag or branch.
-- Before pushing a docs tag, run the pre-publish gate from `CLAUDE.md` and push only when it exits 0: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`.
+- Before pushing a docs tag, run the pre-publish gate from `CLAUDE.md` and push only when it exits 0: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`.
 - Create, push or delete a docs tag only when the user names that tag and asks for it, and never on your own; the docs tag is separate from the plugin tag `agentville--vX.Y.Z`.
 - Set the repository's Pages source to GitHub Actions under **Settings**, then **Pages**, then **Source**; a branch source ignores the workflow.
 - Allow the docs tags on the `github-pages` environment under **Settings**, then **Environments**, then **github-pages**, then **Deployment branches and tags**, with a tag rule `agentville-docs--v*`; without it the `deploy` job is rejected for a tag-triggered run.
@@ -139,10 +139,11 @@ The tokens live once, on `:root` in `website/src/css/custom.css`, and every styl
 | `--pp-ink` | `#222020` | Text, rules, navigation band and footer |
 | `--pp-ink-soft` | `#4A4440` | Secondary text: breadcrumbs, TOC, datelines, ears |
 | `--pp-brick` | `#A32A22` | The one accent: links, kickers, call to action |
+| `--pp-brick-dark` | `#86221B` | Hover and focus state of the brick accent |
 | `--pp-mustard` | `#D4A017` | Fills and strips only, never text on cream |
 | `--pp-rust`, `--pp-kraft` | `#9C2F16`, `#C9A878` | Ornaments only |
 
-- Set type in three families from exact-pinned `@fontsource` packages imported at the top of `custom.css`: Anton for the nameplate, the page H1 and one display headline per view; Libre Caslon Text for body, H2 and the lead headline; Oswald for labels, navigation, H3 and kickers, in tracked uppercase. Never load fonts from Google Fonts or another CDN.
+- Set type in three families from exact-pinned `@fontsource` packages imported at the top of `custom.css`: Anton for the nameplate, the navbar title, the page H1 and one display headline per view; Libre Caslon Text for body, H2 and the lead headline; Oswald for labels, navigation, H3 and kickers, in tracked uppercase. Never load fonts from Google Fonts or another CDN.
 - Keep the furniture as the interface: the navbar is the ink navigation band, H1 and the nameplate sit on a thick-thin rule (4px, a 2px gap, 1px), tables and admonitions are hairline-ruled boxes, and the home page ends in a folio line.
 - Use `border-radius: 0` everywhere and no grey drop shadows; a `box-shadow` is used only to draw the thin half of a thick-thin rule.
 - Keep `colorMode` at `defaultMode: 'light'` with `disableSwitch: true`; the code theme `pressPaperCode` in `docusaurus.config.ts` is light only too.

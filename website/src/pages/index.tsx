@@ -97,7 +97,7 @@ export default function Home(): ReactNode {
           </header>
 
           <p className={styles.dateline}>
-            For Claude Chat, Cowork and Claude Code · Plans, checks and reports its work
+            First edition, 2026 · For Claude Chat, Cowork and Claude Code · Plans, checks and reports its work
           </p>
 
           <ul className={styles.ticker} aria-label="Agentville at a glance">
@@ -165,24 +165,21 @@ export default function Home(): ReactNode {
                 Inside this edition
               </Heading>
               <ol className={styles.insideList}>
-                {inside.map((item, index) => (
+                {inside.map((item) => (
                   <li key={item.to}>
-                    <span className={styles.pageNumber}>p. {index + 2}</span>
-                    <span>
-                      <Link to={item.to}>{item.title}</Link>
-                      <span className={styles.insideLine}>{item.line}</span>
-                    </span>
+                    <Link to={item.to}>{item.title}</Link>
+                    <span className={styles.insideLine}>{item.line}</span>
                   </li>
                 ))}
               </ol>
             </aside>
           </section>
 
-          <section className={styles.steps} aria-labelledby="steps-heading">
+          <section aria-labelledby="steps-heading">
             <Heading as="h2" id="steps-heading" className={styles.boxedHead}>
               Three steps
             </Heading>
-            <ol className={styles.stepList}>
+            <ol className={styles.stepList} role="list">
               {steps.map((step) => (
                 <li key={step.number}>
                   <span className={styles.stepNumber} aria-hidden="true">
@@ -195,7 +192,7 @@ export default function Home(): ReactNode {
             </ol>
           </section>
 
-          <section className={styles.classifiedsSection} aria-labelledby="classifieds-heading">
+          <section aria-labelledby="classifieds-heading">
             <Heading as="h2" id="classifieds-heading" className={styles.boxedHead}>
               Classifieds
             </Heading>
@@ -213,9 +210,10 @@ export default function Home(): ReactNode {
               ))}
               <div className={styles.noteCell}>
                 <p className={styles.noteText}>
-                  Pick Stable: add only one of the three versions, because they clash with each other.
+                  Add only <Link to="/docs/get-started">the Stable version</Link>: the three versions clash with
+                  each other, so add just one.
                 </p>
-                <HandNote className={`${styles.ornament} ${styles.note}`} lines={['Pick Stable,', 'add only one!']} />
+                <HandNote className={`${styles.ornament} ${styles.note}`} lines={['Stable only,', 'just one!']} />
               </div>
             </div>
           </section>
