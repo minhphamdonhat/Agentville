@@ -26,13 +26,13 @@ The install script puts a persistent `agentville` command on your `PATH` with `u
 On Linux and macOS:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.sh | bash
 ```
 
 On Windows, in PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1 | iex"
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.ps1 | iex"
 ```
 
 Then open a new terminal and run `agentville install`.
@@ -46,7 +46,7 @@ Then open a new terminal and run `agentville install`.
 | `--target` | `claude-code` | `claude-code` |
 | `--dry-run` | Prints the actions and changes nothing | Off |
 
-The exit code is 0 on success, 1 when a step fails and 2 for a usage error. The [README](https://github.com/minhphamdonhat/agentville#readme) has the full details, including version pinning and environment variables.
+The exit code is 0 on success, 1 when a step fails and 2 for a usage error. The [README](https://github.com/minhphamdonhat/Agentville#readme) has the full details, including version pinning and environment variables.
 
 ---
 
@@ -54,5 +54,5 @@ Last checked: 25 October 2026
 
 Sources:
 
-- [Agentville README](https://github.com/minhphamdonhat/agentville#readme)
+- [Agentville README](https://github.com/minhphamdonhat/Agentville#readme)
 - [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins)

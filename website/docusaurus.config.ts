@@ -35,7 +35,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/minhphamdonhat/agentville/tree/main/website/',
+          editUrl: 'https://github.com/minhphamdonhat/Agentville/tree/main/website/',
         },
         blog: false,
         theme: {
@@ -60,7 +60,7 @@ const config: Config = {
         {to: '/docs/get-started', label: 'Get started', position: 'left'},
         {to: '/docs/faq', label: 'FAQ', position: 'left'},
         {
-          href: 'https://github.com/minhphamdonhat/agentville',
+          href: 'https://github.com/minhphamdonhat/Agentville',
           label: 'GitHub',
           position: 'right',
         },
@@ -82,7 +82,7 @@ const config: Config = {
           title: 'More',
           items: [
             {label: 'For technical users', to: '/docs/technical'},
-            {label: 'GitHub', href: 'https://github.com/minhphamdonhat/agentville'},
+            {label: 'GitHub', href: 'https://github.com/minhphamdonhat/Agentville'},
           ],
         },
       ],
