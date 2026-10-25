@@ -23,3 +23,11 @@ Use **Remove** to take Agentville away completely, then delete the two lines fro
 ## Switch between Stable and beta
 
 Only one version can be on at a time, because they clash. Remove the one you have, then add the other from the **Discover** tab.
+
+---
+
+Last checked: 25 October 2026
+
+Sources:
+
+- [Use plugins in Claude](https://support.claude.com/en/articles/13837440-use-plugins-in-claude)
