@@ -20,7 +20,7 @@ Nothing else is required. `rg`, `jq` and `gh` are optional: where an agent could
 In Claude Code, add the marketplace once, then install one channel:
 
 ```text
-/plugin marketplace add minhphamdonhat/agentville
+/plugin marketplace add minhphamdonhat/Agentville
 /plugin install agentville@minhphamdo
 ```
 
@@ -32,7 +32,7 @@ In Claude Code, add the marketplace once, then install one channel:
 
 Install one channel at a time: all three load the same names under `agentville:`, so two would clash. To switch, uninstall the one you have and install the other, for example `/plugin uninstall agentville@minhphamdo` then `/plugin install agentville-beta@minhphamdo`.
 
-In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/agentville` and install one channel.
+In Chat, open Customize, then Plugins, choose Add marketplace, enter `minhphamdonhat/Agentville` and install one channel.
 
 From a terminal, the `agentville` command does the Claude Code install for you: it adds the marketplace, installs one channel and adds the two steering lines shown under [Three ways to run it](#three-ways-to-run-it) to `CLAUDE.md`. It needs [uv](https://docs.astral.sh/uv/) 0.13 or later and Python 3.15; uv downloads that Python when you do not have it. There are two ways to run it, and both take the same options.
 
@@ -55,19 +55,19 @@ The install script puts a persistent `agentville` command on your `PATH` with `u
 On Linux and macOS:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.sh | bash
 ```
 
 On Windows, in PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1 | iex"
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.ps1 | iex"
 ```
 
 On Windows, in the Command Prompt:
 
 ```bat
-curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
+curl --proto "=https" --tlsv1.2 -fsSL https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.cmd -o install.cmd && install.cmd && del install.cmd
 ```
 
 Then open a new terminal, so that `PATH` includes the new command, and run `agentville install` with the options below.
@@ -75,13 +75,13 @@ Then open a new terminal, so that `PATH` includes the new command, and run `agen
 Each script takes an optional version, `latest` by default, and a switch to install from the GitHub repository instead of PyPI:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash -s 0.1.0
-curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash -s -- --from-source
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.sh | bash -s 0.1.0
+curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.sh | bash -s -- --from-source
 ```
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) 0.1.0
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.ps1))) -FromSource
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.ps1))) 0.1.0
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.ps1))) -FromSource
 ```
 
 Set `AGENTVILLE_NO_MODIFY_PATH=1` to leave `PATH` alone, and `AGENTVILLE_YES=1` (or pass `--yes`, in PowerShell `-Yes`) to skip the question at a terminal; nothing is asked when `CI` is set. Upgrade with `uv tool upgrade agentville` and remove the command with `uv tool uninstall agentville`.

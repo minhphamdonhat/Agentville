@@ -10,7 +10,7 @@ description: Install Agentville in Claude Code and choose which agent runs it.
 In Claude Code, add the marketplace once, then install the Stable channel:
 
 ```text
-/plugin marketplace add minhphamdonhat/agentville
+/plugin marketplace add minhphamdonhat/Agentville
 /plugin install agentville@minhphamdo
 ```
 
@@ -19,7 +19,7 @@ Pick a scope when asked, then run `/reload-plugins` if Claude Code prompts you t
 From a shell, the same steps are:
 
 ```bash
-claude plugin marketplace add minhphamdonhat/agentville
+claude plugin marketplace add minhphamdonhat/Agentville
 claude plugin install agentville@minhphamdo --scope project
 ```
 
@@ -65,4 +65,4 @@ Sources:
 
 - [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins)
 - [Use plugins in Claude](https://support.claude.com/en/articles/13837440-use-plugins-in-claude)
-- [Agentville README](https://github.com/minhphamdonhat/agentville#readme)
+- [Agentville README](https://github.com/minhphamdonhat/Agentville#readme)

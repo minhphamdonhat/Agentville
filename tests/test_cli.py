@@ -68,7 +68,7 @@ def test_cli_path_user_scope_commands(home: Path, with_claude: FakeRun, channel:
     assert main(["install", "--channel", channel]) == 0
     commands = [call["command"] for call in with_claude.calls]
     assert commands == [
-        [CLAUDE, "plugin", "marketplace", "add", "minhphamdonhat/agentville", "--scope", "user"],
+        [CLAUDE, "plugin", "marketplace", "add", "minhphamdonhat/Agentville", "--scope", "user"],
         [CLAUDE, "plugin", "install", PLUGIN_IDS[channel], "--scope", "user"],
     ]
     assert all(call["cwd"] is None for call in with_claude.calls)
@@ -110,7 +110,7 @@ def test_fallback_user_scope_writes_settings(home: Path, no_claude: None) -> Non
     assert data["model"] == "opus"
     assert data["enabledPlugins"] == {"agentville-beta@minhphamdo": True}
     assert data["extraKnownMarketplaces"] == {
-        "minhphamdo": {"source": {"source": "github", "repo": "minhphamdonhat/agentville"}}
+        "minhphamdo": {"source": {"source": "github", "repo": "minhphamdonhat/Agentville"}}
     }
 
 

@@ -11,4 +11,4 @@ These pages are for people who use Claude Code or a terminal. If you use Claude 
 - [Command-line installer](./command-line.md): install with `uvx agentville` or the install scripts.
 - [Channels](./channels.md): Stable, Beta and Development, and how to switch.
 
-The full reference, including the skill and agent tables, is in the [README on GitHub](https://github.com/minhphamdonhat/agentville#readme).
+The full reference, including the skill and agent tables, is in the [README on GitHub](https://github.com/minhphamdonhat/Agentville#readme).
