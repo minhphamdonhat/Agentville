@@ -20,8 +20,11 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
 | `.claude/skills/pr-report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and creates or updates that one PR (see Security and publishing). |
+| `.claude/skills/docs-site/` | Maintainer-only standard for the documentation site in `website/`: page layout and sidebar, writing a page, build and audit checks, deploy and refresh; not shipped. |
 | `agentville/`, `agentville/cli/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` distribution and console script. `agentville/__init__.py` holds `__version__` and `agentville/__main__.py` runs `python -m agentville`; the installer code is in `agentville/cli/` (`app.py` the command, `console.py`, `files.py`, `targets/`), its tests in `tests/cli/`. Later parts of the package, such as `agentville/townhall/`, sit beside `cli/`. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
+| `website/` | Docusaurus documentation site for Claude Chat and Cowork users, with technical pages for Claude Code and the command-line installer; not shipped with the plugin. |
+| `.github/workflows/docs.yml` | Builds `website/` and deploys it to GitHub Pages. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
 | `.agentville/pr/<pr-number>/` | Tracked PR description pages, written by `pr-report`: `PR_BODY.md` and the detail pages a PR body links to, under `pending/` until the PR has a number. |
 
@@ -121,6 +124,8 @@ Don't:
 ## Release flow
 
 `Skill(release-flow)` (maintainer-only, in `.claude/skills/release-flow/`) runs the release steps and asks before every merge, push, tag and branch deletion. Work moves one way only, `main` → `beta` → `release`, and each branch feeds one marketplace entry: `agentville-dev` installs from `main`, `agentville-beta` from `beta` and `agentville` from `release`. Tags are `agentville--vX.Y.Z`, from `version` in `plugin.json`, created on `release` only when the user asks.
+
+The documentation site deploys from `.github/workflows/docs.yml` on tags `agentville-docs--vX.Y.Z`, created only when the user asks.
 
 Settings `release-flow` reads:
 
