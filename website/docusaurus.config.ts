@@ -8,9 +8,9 @@ const config: Config = {
   favicon: 'img/favicon.svg',
 
   url: 'https://minhphamdonhat.github.io',
-  baseUrl: '/agentville/',
+  baseUrl: '/Agentville/',
   organizationName: 'minhphamdonhat',
-  projectName: 'agentville',
+  projectName: 'Agentville',
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
