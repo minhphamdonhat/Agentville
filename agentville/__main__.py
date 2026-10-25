@@ -2,6 +2,6 @@
 
 import sys
 
-from agentville.cli import main
+from agentville.cli.app import main
 
 sys.exit(main())

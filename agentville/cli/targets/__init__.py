@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from agentville.targets import claude_code
-from agentville.targets.base import Target
+from agentville.cli.targets import claude_code
+from agentville.cli.targets.base import Target
 
 TARGETS: dict[str, Target] = {
     claude_code.TARGET.name: claude_code.TARGET,

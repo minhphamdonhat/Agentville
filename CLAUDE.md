@@ -19,6 +19,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
+| `agentville/`, `agentville/cli/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` distribution and console script. `agentville/__init__.py` holds `__version__` and `agentville/__main__.py` runs `python -m agentville`; the installer code is in `agentville/cli/` (`app.py` the command, `console.py`, `files.py`, `targets/`), its tests in `tests/cli/`. Later parts of the package, such as `agentville/townhall/`, sit beside `cli/`. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
 
