@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-from agentville.console import Console
+from agentville.cli.console import Console
 
 SCOPES = ("user", "project")
 CHANNELS = ("stable", "beta", "dev")

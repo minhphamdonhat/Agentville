@@ -1,0 +1,567 @@
+/*
+ * Press & Paper, Variant A "Skeleton": the newspaper's structure (navigation
+ * band, thick-thin rules, ruled boxes, folio) with modern type, one brick
+ * accent on cream, light only and no rounded corners. Fonts are bundled from
+ * the @fontsource packages, so the site makes no font requests to third parties.
+ */
+@import '@fontsource/anton/400.css';
+@import '@fontsource/libre-caslon-text/400.css';
+@import '@fontsource/libre-caslon-text/400-italic.css';
+@import '@fontsource/libre-caslon-text/700.css';
+@import '@fontsource/oswald/400.css';
+@import '@fontsource/oswald/500.css';
+@import '@fontsource/oswald/600.css';
+
+:root {
+  /* Press & Paper tokens. Text pairs are checked at 4.5:1 or more. */
+  --pp-cream: #f3e9dc;
+  --pp-newsprint: #e8dcc4;
+  --pp-card: #fbf6ec;
+  --pp-ink: #222020;
+  --pp-ink-soft: #4a4440;
+  --pp-brick: #a32a22;
+  --pp-brick-dark: #86221b;
+  --pp-mustard: #d4a017; /* fills and strips only, never text on cream */
+  --pp-rust: #9c2f16; /* wax seal and postmark ornaments */
+  --pp-kraft: #c9a878; /* tape ornaments */
+  --pp-hairline: 1px solid var(--pp-ink);
+  --pp-dotted: 1px dotted var(--pp-ink);
+
+  --pp-font-display: 'Anton', 'Arial Narrow', Impact, sans-serif;
+  --pp-font-body: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+  --pp-font-label: 'Oswald', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Infima mapping */
+  --ifm-color-primary: var(--pp-brick);
+  --ifm-color-primary-dark: #93261f;
+  --ifm-color-primary-darker: #8a231c;
+  --ifm-color-primary-darkest: #721d17;
+  --ifm-color-primary-light: #b32e25;
+  --ifm-color-primary-lighter: #bb3027;
+  --ifm-color-primary-lightest: #d0362c;
+
+  --ifm-background-color: var(--pp-cream);
+  --ifm-background-surface-color: var(--pp-cream);
+  --ifm-font-color-base: var(--pp-ink);
+  --ifm-heading-color: var(--pp-ink);
+  --ifm-color-content: var(--pp-ink);
+  --ifm-color-content-secondary: var(--pp-ink-soft);
+  --ifm-color-emphasis-600: var(--pp-ink-soft);
+  --ifm-color-emphasis-700: var(--pp-ink-soft);
+  --ifm-color-emphasis-800: var(--pp-ink);
+  --ifm-color-emphasis-900: var(--pp-ink);
+  --ifm-color-emphasis-300: rgba(34, 32, 32, 0.35);
+  --ifm-color-emphasis-200: rgba(34, 32, 32, 0.2);
+  --ifm-color-emphasis-100: var(--pp-newsprint);
+  --ifm-color-emphasis-0: var(--pp-cream);
+
+  --ifm-font-family-base: var(--pp-font-body);
+  --ifm-heading-font-family: var(--pp-font-body);
+  --ifm-font-size-base: 106.25%; /* 17px body */
+  --ifm-line-height-base: 1.65;
+  --ifm-heading-font-weight: 700;
+
+  --ifm-link-color: var(--pp-brick);
+  --ifm-link-hover-color: var(--pp-brick-dark);
+  --ifm-link-decoration: none;
+  --ifm-link-hover-decoration: underline;
+
+  /* No rounded corners, no grey UI shadows */
+  --ifm-global-radius: 0;
+  --ifm-button-border-radius: 0;
+  --ifm-code-border-radius: 0;
+  --ifm-alert-border-radius: 0;
+  --ifm-card-border-radius: 0;
+  --ifm-badge-border-radius: 0;
+  --ifm-pagination-nav-border-radius: 0;
+  --ifm-breadcrumb-border-radius: 0;
+  --ifm-global-shadow-lw: none;
+  --ifm-global-shadow-md: none;
+  --ifm-global-shadow-tl: none;
+
+  --ifm-code-background: var(--pp-newsprint);
+  --ifm-code-font-size: 90%;
+  --ifm-pre-background: var(--pp-newsprint);
+  --docusaurus-highlighted-code-line-bg: rgba(163, 42, 34, 0.12);
+
+  --ifm-hr-border-color: var(--pp-ink);
+  --ifm-toc-border-color: var(--pp-ink);
+  --ifm-table-border-color: var(--pp-ink);
+  --ifm-table-head-background: var(--pp-newsprint);
+  --ifm-table-stripe-background: rgba(232, 220, 196, 0.45);
+
+  --ifm-navbar-background-color: var(--pp-ink);
+  --ifm-navbar-link-color: var(--pp-cream);
+  --ifm-navbar-link-hover-color: var(--pp-cream);
+  --ifm-navbar-shadow: none;
+  --ifm-navbar-height: 3.75rem;
+
+  --ifm-menu-color: var(--pp-ink);
+  --ifm-menu-color-active: var(--pp-brick);
+  --ifm-menu-color-background-active: var(--pp-newsprint);
+  --ifm-menu-color-background-hover: var(--pp-newsprint);
+
+  --ifm-footer-background-color: var(--pp-ink);
+  --ifm-footer-color: var(--pp-cream);
+  --ifm-footer-link-color: var(--pp-cream);
+  --ifm-footer-link-hover-color: var(--pp-cream);
+  --ifm-footer-title-color: var(--pp-cream);
+
+  --ifm-breadcrumb-item-background-active: var(--pp-newsprint);
+  --ifm-color-primary-contrast-foreground: var(--pp-brick-dark);
+}
+
+html {
+  background-color: var(--pp-cream);
+}
+
+body {
+  background-color: var(--pp-cream);
+  color: var(--pp-ink);
+  font-feature-settings: 'kern', 'liga', 'onum';
+}
+
+::selection {
+  background: var(--pp-mustard);
+  color: var(--pp-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--pp-ink);
+  outline-offset: 2px;
+}
+
+/* Thick-thin rule: a 4px rule, a 2px gap, then a 1px rule */
+.pp-rule-thick-thin {
+  border-bottom: 4px solid var(--pp-ink);
+  box-shadow: 0 2px 0 var(--pp-cream), 0 3px 0 var(--pp-ink);
+}
+
+/* Labels: tracked uppercase condensed sans */
+.pp-label {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- Navigation band ---------- */
+
+.navbar {
+  border-bottom: 0;
+  box-shadow: 0 2px 0 var(--pp-cream), 0 3px 0 var(--pp-ink);
+  margin-bottom: 3px;
+}
+
+.navbar__brand:hover {
+  text-decoration: none;
+}
+
+.navbar__inner .navbar__title {
+  font-family: var(--pp-font-display);
+  font-weight: 400;
+  font-size: 1.6rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--pp-cream);
+}
+
+.navbar__inner .navbar__logo {
+  height: 1.9rem;
+}
+
+.navbar__inner .navbar__link {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-cream);
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+}
+
+.navbar__inner .navbar__link:hover {
+  color: var(--pp-cream);
+  box-shadow: inset 0 -3px 0 var(--pp-cream);
+}
+
+.navbar__inner .navbar__link--active,
+.navbar__inner .navbar__link--active:hover {
+  color: var(--pp-cream);
+  box-shadow: inset 0 -3px 0 var(--pp-mustard);
+}
+
+.navbar__inner .navbar__toggle {
+  color: var(--pp-cream);
+}
+
+.navbar :focus-visible {
+  outline-color: var(--pp-mustard);
+}
+
+/* External-link icon in the band */
+.navbar__inner .navbar__link svg {
+  color: var(--pp-cream);
+}
+
+/* Mobile drawer: the band carries the brand; the list sits on cream */
+.navbar-sidebar {
+  background-color: var(--pp-cream);
+}
+
+.navbar-sidebar__brand {
+  background-color: var(--pp-ink);
+}
+
+.navbar-sidebar__brand .navbar__title {
+  font-family: var(--pp-font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  color: var(--pp-cream);
+}
+
+.navbar-sidebar__brand .navbar__title:hover {
+  color: var(--pp-cream);
+}
+
+.navbar-sidebar__close {
+  color: var(--pp-cream);
+}
+
+.navbar-sidebar__back {
+  background: var(--pp-newsprint);
+  color: var(--pp-ink);
+  font-family: var(--pp-font-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Docs typography ---------- */
+
+.markdown {
+  --ifm-h1-vertical-rhythm-bottom: 1;
+}
+
+.markdown h1:first-child,
+.markdown header h1 {
+  font-family: var(--pp-font-display);
+  font-weight: 400;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  padding-bottom: 0.6rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 4px solid var(--pp-ink);
+  box-shadow: 0 2px 0 var(--pp-cream), 0 3px 0 var(--pp-ink);
+}
+
+.markdown h2 {
+  font-family: var(--pp-font-body);
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  border-top: var(--pp-hairline);
+  padding-top: 0.75rem;
+  margin-top: 2.5rem;
+}
+
+.markdown h3 {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.markdown > p,
+.markdown > ul,
+.markdown > ol {
+  max-width: 70ch;
+}
+
+.markdown a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+.markdown hr {
+  border: 0;
+  border-top: var(--pp-hairline);
+  height: 0;
+  background: none;
+}
+
+.markdown strong {
+  font-weight: 700;
+}
+
+/* Tables: ruled, newsprint head in label face */
+.markdown table {
+  border-collapse: collapse;
+  border-top: 2px solid var(--pp-ink);
+  border-bottom: 2px solid var(--pp-ink);
+}
+
+.markdown table th {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--pp-newsprint);
+  color: var(--pp-ink);
+}
+
+.markdown table th,
+.markdown table td {
+  border: 0;
+  border-bottom: 1px solid rgba(34, 32, 32, 0.4);
+  border-right: var(--pp-dotted);
+}
+
+.markdown table th:last-child,
+.markdown table td:last-child {
+  border-right: 0;
+}
+
+/* Inline code */
+code {
+  border: 1px solid rgba(34, 32, 32, 0.25);
+  color: var(--pp-ink);
+}
+
+/* Code blocks: newsprint panel inside a hairline box */
+.theme-code-block {
+  border: var(--pp-hairline);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.theme-code-block code {
+  border: 0;
+}
+
+.theme-code-block [class*='codeBlockTitle'] {
+  font-family: var(--pp-font-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: var(--pp-hairline);
+}
+
+.theme-code-block button {
+  border-radius: 0;
+  border-color: var(--pp-ink);
+}
+
+/* Admonitions: hairline-ruled boxes with a kicker heading */
+.theme-admonition.alert {
+  --ifm-alert-background-color: var(--pp-newsprint);
+  --ifm-alert-background-color-highlight: rgba(34, 32, 32, 0.08);
+  --ifm-alert-foreground-color: var(--pp-ink);
+  --ifm-alert-border-color: var(--pp-ink);
+  --ifm-alert-border-left-width: 1px;
+  background-color: var(--pp-newsprint);
+  color: var(--pp-ink);
+  border: var(--pp-hairline);
+  border-top: 4px solid var(--pp-ink);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.theme-admonition.alert--success,
+.theme-admonition.alert--info {
+  border-top-color: var(--pp-ink);
+}
+
+.theme-admonition.alert--warning,
+.theme-admonition.alert--danger {
+  border-top-color: var(--pp-brick);
+}
+
+.theme-admonition [class*='admonitionHeading'] {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-ink);
+}
+
+.theme-admonition [class*='admonitionIcon'] svg {
+  fill: var(--pp-ink);
+}
+
+.theme-admonition a {
+  text-decoration: underline;
+  color: var(--pp-brick);
+  text-decoration-color: var(--pp-brick);
+}
+
+/* Mermaid diagrams sit in a hairline frame */
+.docusaurus-mermaid-container {
+  border: var(--pp-hairline);
+  background: var(--pp-card);
+  padding: 1rem;
+  margin-bottom: var(--ifm-leading);
+}
+
+/* ---------- Sidebar, TOC, breadcrumbs, pagination ---------- */
+
+.theme-doc-sidebar-container {
+  border-right: var(--pp-hairline) !important;
+}
+
+.menu__link,
+.menu__caret {
+  border-radius: 0;
+}
+
+.menu__list-item-collapsible {
+  border-radius: 0;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--pp-brick);
+}
+
+.table-of-contents {
+  font-family: var(--pp-font-label);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.table-of-contents__link {
+  color: var(--pp-ink-soft);
+}
+
+.table-of-contents__link--active,
+.table-of-contents__link:hover {
+  color: var(--pp-brick);
+}
+
+.theme-doc-toc-desktop {
+  border-left: var(--pp-hairline);
+  padding-left: 0.5rem;
+}
+
+.breadcrumbs__link {
+  font-family: var(--pp-font-label);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 0;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  color: var(--pp-brick);
+}
+
+.pagination-nav__link {
+  border: var(--pp-hairline);
+  border-radius: 0;
+  background: var(--pp-cream);
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--pp-brick);
+}
+
+.pagination-nav__sublabel {
+  font-family: var(--pp-font-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
+}
+
+.pagination-nav__label {
+  font-family: var(--pp-font-body);
+  color: var(--pp-ink);
+}
+
+.theme-edit-this-page,
+.theme-last-updated {
+  font-family: var(--pp-font-label);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+  border-radius: 0;
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.button--primary {
+  background-color: var(--pp-brick);
+  border-color: var(--pp-brick);
+  color: var(--pp-cream);
+}
+
+.button--primary:hover {
+  background-color: var(--pp-brick-dark);
+  border-color: var(--pp-brick-dark);
+  color: var(--pp-cream);
+}
+
+/* ---------- Footer: ink band with a thin rule above ---------- */
+
+.footer {
+  box-shadow: 0 -2px 0 var(--pp-cream), 0 -3px 0 var(--pp-ink);
+  margin-top: 3px;
+}
+
+.footer--dark {
+  --ifm-footer-background-color: var(--pp-ink);
+  --ifm-footer-color: var(--pp-cream);
+  --ifm-footer-link-color: var(--pp-cream);
+  --ifm-footer-link-hover-color: var(--pp-cream);
+  --ifm-footer-title-color: var(--pp-cream);
+  background-color: var(--pp-ink);
+}
+
+.footer__title {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.footer__link-item {
+  text-decoration: underline;
+  text-decoration-color: rgba(243, 233, 220, 0.4);
+  text-underline-offset: 0.2em;
+}
+
+.footer__link-item:hover {
+  text-decoration-color: var(--pp-mustard);
+}
+
+.footer .footer__copyright {
+  font-family: var(--pp-font-label);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer :focus-visible {
+  outline-color: var(--pp-mustard);
+}

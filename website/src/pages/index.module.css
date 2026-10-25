@@ -1,0 +1,643 @@
+/*
+ * The front page. The HTML is in mobile reading order; wider screens place
+ * the same order on a grid. Ornaments sit in margins and openers only.
+ */
+
+.front {
+  background: var(--pp-cream);
+  padding: 1.5rem 0 3rem;
+}
+
+.sheet {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ---------- Nameplate and ears ---------- */
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 4px solid var(--pp-ink);
+  box-shadow: 0 2px 0 var(--pp-cream), 0 3px 0 var(--pp-ink);
+  margin-bottom: 3px;
+}
+
+.ear {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.25rem 0.6rem;
+  border: var(--pp-hairline);
+  font-family: var(--pp-font-label);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
+  text-align: center;
+}
+
+.earRight {
+  text-align: right;
+}
+
+.nameplate {
+  margin: 0;
+  font-family: var(--pp-font-display);
+  font-weight: 400;
+  font-size: clamp(3.25rem, 14vw, 9.5rem);
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--pp-ink);
+}
+
+.dateline {
+  margin: 0.6rem 0 0;
+  padding: 0.4rem 0;
+  border-top: var(--pp-hairline);
+  border-bottom: var(--pp-hairline);
+  font-family: var(--pp-font-label);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--pp-ink-soft);
+}
+
+/* ---------- Ticker band (static) ---------- */
+
+.ticker {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--pp-newsprint);
+  border-top: var(--pp-hairline);
+  border-bottom: var(--pp-hairline);
+  font-family: var(--pp-font-label);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ticker li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-right: var(--pp-dotted);
+  border-bottom: var(--pp-dotted);
+}
+
+.score {
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0 0.4rem;
+  background: var(--pp-mustard);
+  color: var(--pp-ink);
+}
+
+/* ---------- Above the fold ---------- */
+
+.above {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.leadBox {
+  border: 2px solid var(--pp-ink);
+  padding: 1.25rem;
+  background: var(--pp-cream);
+}
+
+.kicker {
+  margin: 0 0 0.5rem;
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pp-brick);
+}
+
+.leadHeadline {
+  margin: 0;
+  font-family: var(--pp-font-body);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+  line-height: 1.08;
+  color: var(--pp-ink);
+}
+
+.standfirst {
+  margin: 1rem 0 1.25rem;
+  max-width: 60ch;
+  font-size: 1.2rem;
+  line-height: 1.55;
+  font-style: italic;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1.4rem;
+  background: var(--pp-brick);
+  border: 2px solid var(--pp-brick);
+  color: var(--pp-cream);
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  background: var(--pp-brick-dark);
+  border-color: var(--pp-brick-dark);
+  color: var(--pp-cream);
+  text-decoration: none;
+}
+
+/* Margin column for the opener's ornaments */
+.openerMargin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* ---------- Stories ---------- */
+
+.stories {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin-top: 2rem;
+  border-top: 4px solid var(--pp-ink);
+  box-shadow: inset 0 3px 0 var(--pp-cream), inset 0 4px 0 var(--pp-ink);
+  padding-top: 6px;
+}
+
+.story {
+  padding: 1.25rem 0;
+  border-bottom: var(--pp-hairline);
+}
+
+.story p {
+  margin: 0 0 0.75rem;
+}
+
+.sectionLabel {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
+}
+
+.sectionNumber {
+  color: var(--pp-brick);
+  font-weight: 600;
+}
+
+.leadStoryTitle {
+  margin: 0.25rem 0 0.75rem;
+  font-family: var(--pp-font-body);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 4vw, 2.4rem);
+  line-height: 1.12;
+}
+
+.storyTitle {
+  margin: 0.25rem 0 0.6rem;
+  font-family: var(--pp-font-body);
+  font-weight: 700;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.lede::first-letter {
+  float: left;
+  font-family: var(--pp-font-display);
+  font-size: 3.6em;
+  line-height: 0.85;
+  padding: 0.08em 0.1em 0 0;
+  color: var(--pp-ink);
+}
+
+.arrowLink {
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-brick);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
+.arrowLink:hover {
+  color: var(--pp-brick-dark);
+  text-decoration: none;
+}
+
+.sidebarBox {
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+  border: var(--pp-hairline);
+  background: var(--pp-newsprint);
+  align-self: start;
+}
+
+.boxHeading {
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: var(--pp-hairline);
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.insideList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.insideList li {
+  margin: 0;
+  padding: 0.45rem 0;
+  border-bottom: var(--pp-dotted);
+}
+
+.insideList li:last-child {
+  border-bottom: 0;
+}
+
+.insideList a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.insideLine {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--pp-ink-soft);
+}
+
+/* ---------- Boxed section heads ---------- */
+
+.boxedHead {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2.5rem 0 1.25rem;
+  font-family: var(--pp-font-label);
+  font-weight: 400;
+  font-size: 1.1rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.boxedHead::before,
+.boxedHead::after {
+  content: '';
+  flex: 1 1 0;
+  border-top: var(--pp-hairline);
+}
+
+/* Three steps */
+.stepList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: var(--pp-hairline);
+}
+
+.stepList li {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-areas: 'num title' 'num body';
+  column-gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 0;
+  border-bottom: var(--pp-hairline);
+}
+
+.stepNumber {
+  grid-area: num;
+  font-family: var(--pp-font-display);
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--pp-brick);
+}
+
+.stepTitle {
+  grid-area: title;
+  font-family: var(--pp-font-label);
+  font-weight: 500;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stepBody {
+  grid-area: body;
+}
+
+/* ---------- Classifieds ---------- */
+
+.classifieds {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.classified {
+  padding: 0.75rem;
+  border: var(--pp-hairline);
+  background: var(--pp-card);
+}
+
+.classified p {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.classifiedHeading {
+  margin: 0 0 0.4rem;
+  font-family: var(--pp-font-label);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.noteCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.noteText {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ---------- Folio ---------- */
+
+.folio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 0.6rem;
+  border-top: 4px solid var(--pp-ink);
+  box-shadow: inset 0 3px 0 var(--pp-cream), inset 0 4px 0 var(--pp-ink);
+  font-family: var(--pp-font-label);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.folioOrnaments {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.barcode {
+  display: block;
+}
+
+/* ---------- Ornaments ---------- */
+
+.ornament {
+  display: block;
+  flex: 0 0 auto;
+  max-width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+/* On small screens ornaments lie flat and smaller, between blocks, never over text */
+.stamp {
+  width: 84px;
+}
+
+.postmark {
+  width: 140px;
+}
+
+.note {
+  width: 170px;
+}
+
+.seal {
+  width: 60px;
+}
+
+/* ---------- Tablet ---------- */
+
+@media (min-width: 768px) {
+  .sheet {
+    padding: 0 32px;
+  }
+
+  .masthead {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr) 11rem;
+    align-items: center;
+  }
+
+  .ear {
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .earRight {
+    align-items: flex-end;
+  }
+
+  .nameplate {
+    font-size: clamp(4rem, 10vw, 9.5rem);
+  }
+
+  .ticker {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ticker li {
+    border-bottom: 0;
+  }
+
+  .ticker li:last-child {
+    border-right: 0;
+  }
+
+  .leadBox {
+    padding: 2rem;
+  }
+
+  .stories {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .leadStory {
+    grid-column: 1 / -1;
+  }
+
+  .story:not(.leadStory) {
+    padding-right: 1.25rem;
+    border-bottom: 0;
+  }
+
+  .story:not(.leadStory) + .story:not(.leadStory) {
+    padding-left: 1.25rem;
+    border-left: var(--pp-dotted);
+  }
+
+  .sidebarBox {
+    margin: 1.25rem 0 0 1.25rem;
+  }
+
+  .stepList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 0;
+  }
+
+  .stepList li {
+    padding: 1rem 1.25rem;
+    border-top: var(--pp-hairline);
+    border-bottom: var(--pp-hairline);
+  }
+
+  .stepList li + li {
+    border-left: var(--pp-dotted);
+  }
+
+  .classifieds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Desktop ---------- */
+
+@media (min-width: 1100px) {
+  .above {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .leadBox {
+    padding: 2.5rem 3rem;
+  }
+
+  .openerMargin {
+    position: relative;
+    flex-direction: column;
+    gap: 0;
+    min-height: 260px;
+  }
+
+  .stamp {
+    width: 120px;
+    transform: rotate(-4deg);
+  }
+
+  .postmark {
+    width: 190px;
+    margin-top: -26px;
+    margin-left: -40px;
+    transform: rotate(-9deg);
+  }
+
+  .stories {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr);
+  }
+
+  .leadStory {
+    grid-column: auto;
+    padding-right: 1.5rem;
+    border-bottom: 0;
+  }
+
+  .story:not(.leadStory) {
+    padding-left: 1.25rem;
+    border-left: var(--pp-dotted);
+  }
+
+  .story:not(.leadStory) + .story:not(.leadStory) {
+    padding-left: 1.25rem;
+  }
+
+  .sidebarBox {
+    margin: 1.25rem 0 0 1.25rem;
+  }
+
+  .classifieds {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .note {
+    width: 190px;
+    transform: rotate(3deg);
+  }
+
+  .seal {
+    width: 80px;
+    transform: rotate(-6deg);
+  }
+}
+
+/* Ornaments never move; this guards against any later animation */
+@media (prefers-reduced-motion: reduce) {
+  .ornament {
+    transition: none;
+    animation: none;
+  }
+}
+
+@media print {
+  .ornament,
+  .barcode {
+    display: none;
+  }
+}

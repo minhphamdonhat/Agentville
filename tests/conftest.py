@@ -26,4 +26,4 @@ def project(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def no_claude(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("agentville.targets.claude_code.shutil.which", lambda name: None)
+    monkeypatch.setattr("agentville.cli.targets.claude_code.shutil.which", lambda name: None)

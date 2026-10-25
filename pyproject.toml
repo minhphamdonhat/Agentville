@@ -36,12 +36,12 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-agentville = "agentville.cli:main"
+agentville = "agentville.cli.app:main"
 
 [project.urls]
-Homepage = "https://github.com/minhphamdonhat/agentville"
-Repository = "https://github.com/minhphamdonhat/agentville"
-Issues = "https://github.com/minhphamdonhat/agentville/issues"
+Homepage = "https://github.com/minhphamdonhat/Agentville"
+Repository = "https://github.com/minhphamdonhat/Agentville"
+Issues = "https://github.com/minhphamdonhat/Agentville/issues"
 
 [dependency-groups]
 dev = ["pytest>=8"]
