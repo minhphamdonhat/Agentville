@@ -1,0 +1,49 @@
+# Template: fill every placeholder in double braces; keep GitHub expressions.
+# PyPI trusted publishing: no token is stored anywhere. On PyPI, add a (pending) publisher with
+# owner/repository {{ REPOSITORY }}, workflow publish.yml and environment pypi; on GitHub, create
+# the environment pypi and require a reviewer for it.
+name: publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@{{ SHA_CHECKOUT }} # {{ TAG_CHECKOUT }}
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@{{ SHA_SETUP_UV }} # {{ TAG_SETUP_UV }}
+      - name: Check the release tag matches the project version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          project_version="$(uv version --short)"
+          test "${TAG#v}" = "$project_version" || { echo "tag $TAG does not match version $project_version"; exit 1; }
+      - name: Build sdist and wheel
+        run: uv build --out-dir dist
+      - uses: actions/upload-artifact@{{ SHA_UPLOAD_ARTIFACT }} # {{ TAG_UPLOAD_ARTIFACT }}
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/{{ PACKAGE_NAME }}
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@{{ SHA_DOWNLOAD_ARTIFACT }} # {{ TAG_DOWNLOAD_ARTIFACT }}
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@{{ SHA_PYPI_PUBLISH }} # {{ TAG_PYPI_PUBLISH }}
