@@ -1,11 +1,11 @@
-# agentville
+# agentville.townhall
 
-Umbrella CLI and MCP platform for Agentville. Its first domain, Townhall, is a Kanban and documentation engine for agent towns.
+Townhall, the Kanban and documentation engine for agent towns, as part of the root `agentville` package. `agentville` alone is the installer CLI; `agentville townhall ...` runs Townhall.
 
-Run it without installing:
+Run it without installing, from the repository root:
 
 ```bash
-uvx --python 3.15 --from ./townhall agentville --help
+uvx --python 3.15 --from . agentville townhall --help
 ```
 
-Develop locally with `uv run pytest` and `uv run ruff check`.
+Develop locally from the repository root with `uv run pytest tests/townhall` and `uv run ruff check agentville tests`.
