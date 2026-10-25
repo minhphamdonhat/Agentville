@@ -8,7 +8,7 @@ none. The owner settled all three: commit and push automatically, merge waits fo
 
 ## Context
 
-The installer package sat flat at the root of `agentville/`, which leaves no room for the later Townhall move into `agentville/townhall/`; this PR puts it under `agentville/cli/`. Agentville also had no way to publish a topic's report as a PR description, so `pr-report` fills the `report` slot for this repository and pushes its working branch and opens or updates its PR on its own. By the owner's decision, shipped agents and skills no longer handle commits or PRs, and in this repository agents commit and push automatically while merging waits for the owner. PS-06 is accepted for `pr-report`, with the `CLAUDE.md` push rule as the control. When PR #20 syncs from `main`, it moves to plugin 0.11.0.
+The installer package sat flat at the root of `agentville/`, which leaves no room for the later Townhall move into `agentville/townhall/`; this PR puts it under `agentville/cli/`. Agentville also had no way to publish a topic's report as a PR description, so `pr-report` fills the `report` slot for this repository and pushes its working branch and opens or updates its PR on its own. By the owner's decision, shipped agents and skills no longer handle commits or PRs. PS-06 is accepted for `pr-report`, with the `CLAUDE.md` push rule as the control. When PR #20 syncs from `main`, it moves to plugin 0.11.0.
 
 ## Changes
 
@@ -19,7 +19,7 @@ The installer package sat flat at the root of `agentville/`, which leaves no roo
 | Accept PS-06 (`1111337`) | `CLAUDE.md` | Gate accepts `PS-06:*pr-report/SKILL.md` | REQ-2, REQ-3 |
 | Drop commit and PR handling (`029e707`) | `plugins/agentville/agents/`, `plugins/agentville/skills/` | Shipped agents and skills no longer commit or open PRs; `commit:` renamed `revision:`; plugin 0.10.0 | REQ-4 |
 | Bump validator and reviewer (`b3ac5b2`) | `validator.md`, `reviewer.md`, variants, `pr-report` 1.0.1, `CLAUDE.md` | Validator and reviewer at 3.0.0; push rule tidied | REQ-4 |
-| Merge `main` at `0ab7181` (`02caf1a`) and at `8d5d4a3` (`17df5f6`) | `CLAUDE.md`; installers, `pyproject.toml`, `README.md`, `website/` | First merge resolved a `CLAUDE.md` conflict keeping both sides; second merged cleanly (canonical `Agentville` repository name); no shipped file changed; plugin stays 0.10.0 | worker checks |
+| Merge `main` at `0ab7181` (`02caf1a`) and at `8d5d4a3` (`17df5f6`) | `CLAUDE.md`, installers, `website/` | One `CLAUDE.md` conflict, both sides kept; second merge clean; no shipped file changed | worker checks |
 | Commit and push rule (`0769ea1`) | `CLAUDE.md` | Agents commit and push automatically; only merging waits for the owner | worker checks |
 | Align smith example (`16d3b35`) | `.claude/skills/skill-smith/` | Maintainer example is `acme-code-review`, as shipped; 2.1.1 | worker checks |
 
@@ -84,6 +84,6 @@ Head: {head-sha}
 | Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/tests.md) |
 | Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/risks.md) |
 | Validator evidence | Folder `run-3` at `b3ac5b2`, `SHA256SUMS` hash `37622fd28912` |
-| Post-merge worker checks | Verify block, root `pytest`, `measure.py`, `git grep`, gate at `16d3b35`; not sealed, run-3 stays the sealed run |
+| Post-merge worker checks | Listed under Tests and evidence; not sealed |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
