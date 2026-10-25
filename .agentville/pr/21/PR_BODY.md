@@ -10,7 +10,7 @@ Verdict: Ready to merge. Blocking items: 0. Decisions needed: 3.
 | Keep orchestrate's step that combines parallel workers' worktrees? | Keep, or remove | Keep | The step stays in `orchestrate`. |
 | Align the maintainer `.claude/skills/skill-smith` example `acme-pr-review` with the shipped copy's `acme-code-review`? | Align now, or later | Later | The two smith copies keep different example names. |
 
-More on each in the [decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/decisions.md).
+More on each in the [decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/decisions.md).
 
 ## Context
 
@@ -30,7 +30,7 @@ https://github.com/minhphamdonhat/Agentville/blob/b3ac5b27805783e03c3e68c76ed142
 
 https://github.com/minhphamdonhat/Agentville/blob/b3ac5b27805783e03c3e68c76ed1423e5bb49aa9/.claude/skills/pr-report/SKILL.md#L14-L18
 
-Every commit is on the [changes page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/changes.md).
+Every commit is on the [changes page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/changes.md).
 
 ## Architecture changes
 
@@ -43,7 +43,7 @@ flowchart LR
   pr -->|"push working branch"| gh["GitHub PR"]
 ```
 
-The installer modules now live in `agentville/cli/`, and `agentville/__init__.py` stays at the package root. The `report` slot binds to the repository-level `pr-report` skill, which pushes the working branch and writes the GitHub PR. See the [architecture page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/architecture.md).
+The installer modules now live in `agentville/cli/`, and `agentville/__init__.py` stays at the package root. The `report` slot binds to the repository-level `pr-report` skill, which pushes the working branch and writes the GitHub PR. See the [architecture page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/architecture.md).
 
 ## Tests and evidence
 
@@ -56,13 +56,13 @@ The installer modules now live in `agentville/cli/`, and `agentville/__init__.py
 | REQ-5 pr-report content | `checks5.py`, mutated-copy negatives | 23 checks, pass | `9beb3decc2b6` |
 | REQ-6 worktree and merge base | `git` checks | 5 checks, pass | `ce59992a7c76` |
 
-92 checks pass at `b3ac5b2` (run-3). Per-check detail is on the [tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/tests.md).
+92 checks pass at `b3ac5b2` (run-3). Per-check detail is on the [tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/tests.md).
 
 Not tested or not verifiable: none, as run-3 records.
 
 ## Risks, limits and rollback
 
-`agentville/__init__.py` stays at the package root and is a likely merge point with the later Townhall move into `agentville/townhall/`. Users of the validator's `commit:` field must read `revision:`. Roll back with `git revert -m 1 {merge-sha}` on `main`; the [risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/risks.md) lists each risk.
+`agentville/__init__.py` stays at the package root and is a likely merge point with the later Townhall move into `agentville/townhall/`. Users of the validator's `commit:` field must read `revision:`. Roll back with `git revert -m 1 {merge-sha}` on `main`; the [risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/risks.md) lists each risk.
 
 ## Reviewer checklist
 
@@ -81,11 +81,11 @@ Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
-| Open decisions | [Decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/decisions.md) |
-| Commits | [Changes page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/changes.md) |
-| Architecture | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/architecture.md) |
-| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/tests.md) |
-| Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/risks.md) |
+| Open decisions | [Decisions page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/decisions.md) |
+| Commits | [Changes page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/changes.md) |
+| Architecture | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/architecture.md) |
+| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/tests.md) |
+| Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/21/risks.md) |
 | Validator evidence | Folder `run-3` at `b3ac5b2`, `SHA256SUMS` hash `37622fd28912` |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
