@@ -19,9 +19,11 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
+| `.claude/skills/pr-report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and creates or updates that one PR (see Security and publishing). |
 | `agentville/`, `agentville/cli/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` distribution and console script. `agentville/__init__.py` holds `__version__` and `agentville/__main__.py` runs `python -m agentville`; the installer code is in `agentville/cli/` (`app.py` the command, `console.py`, `files.py`, `targets/`), its tests in `tests/cli/`. Later parts of the package, such as `agentville/townhall/`, sit beside `cli/`. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
+| `.agentville/pr/<pr-number>/` | Tracked PR description pages, written by `pr-report`: `PR_BODY.md` and the detail pages a PR body links to, under `pending/` until the PR has a number. |
 
 ## Agent format
 
@@ -55,9 +57,10 @@ A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `wo
 
 Slots (`workspace`, `toolbelt`, `draft`, `plan`, `report`) work like dependency injection. `Skill(agentville:context-injection)` owns the two-step use, the binding syntax and the resolution order, and each slot's default skill owns its contract. Both pairs of smiths enforce the two-step use (agent rule A18, skill rule 22); `measure.py` holds the slots in one `SLOTS` constant and owns the exemption grammar. Add a future slot to `SLOTS` in all four `measure.py` files.
 
-This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`:
+This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`, and the `report` slot to the maintainer `pr-report` skill, which publishes the report as the PR for the current branch and its base:
 
 * `workspace: Skill(agentville:workspace)`
+* `report: Skill(pr-report)`
 
 ## Two pairs of smiths
 
@@ -102,6 +105,7 @@ Do:
 * Keep the plugin's components least-privilege: a tool list names only what the agent needs (the one exception is `worker`, with its generated variants: it omits `tools` and inherits every tool, MCP included, with its `disallowedTools` list as the control; PS-09, accepted by design for worker files only), MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control).
 * Write for any OS, Claude Code first: shell steps default to bash on Linux and macOS and to PowerShell on Windows unless the user's project `CLAUDE.md` or steering says otherwise; run `python3` on Linux and macOS and `py -3` on Windows; in Python use `pathlib`, `tempfile` and `encoding="utf-8"`; keep LF line endings, which `.gitattributes` pins.
 * Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`. It covers all refs and fixes every finding at medium or above. Until the history squash it fails on PII-02 and PS-52 in history; the squash removes both. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
+* Let the `pr-report` skill push only the current working branch and create or update its one PR for that branch and its base, after the pre-publish gate passes. It never pushes `main`, `beta` or `release`, never force-pushes and never merges.
 
 Don't:
 
