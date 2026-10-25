@@ -12,7 +12,7 @@ effort: high
 tools: TaskCreate, TaskUpdate, TaskGet, TaskList, TaskStop, Read, Grep, Glob, Bash, Skill
 disallowedTools: Write, Edit, NotebookEdit, WebSearch, WebFetch, EnterPlanMode, ExitPlanMode, CronCreate, CronList, CronDelete, ScheduleWakeup
 metadata:
-  version: 2.2.0
+  version: 3.0.0
 ---
 
 # Role

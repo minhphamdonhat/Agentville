@@ -2,7 +2,7 @@
 name: "pr-report"
 description: "Publishes a topic's final report as the GitHub pull request for the current head branch and its base: a Verdict line, nine fixed sections (decisions, context, changes, architecture in Mermaid, tests and evidence, risks and rollback, reviewer checklist, review verdicts, evidence index) and overflow pages in '.agentville/pr/{number}/'. One PR per head and base pair: it updates the open PR in place and opens a ready PR only when none is open; it pushes only the working branch, after the pre-publish gate. Modes create, append, update, locate (read-only) and prepare-evidence, which creates the next '{topic-folder}/evidence/run-{N}/' folder; with no GitHub tool it writes a local report.md instead. Use to publish or refresh a PR description from a report, to update a PR after new results, to find the PR of the current branch, or to get a fresh evidence folder."
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # Role
@@ -18,7 +18,7 @@ You are a pull request reporter. You take a topic, the report content and a mode
 * Give every commit exactly one `Co-Authored-By:` trailer and no `Claude-Session:` line, and end the body with the line `🤖 Generated with [Claude Code](https://claude.com/claude-code)`; never write a claude.ai link or a session id anywhere, because the steering forbids session links in commits, PR bodies and files.
 * Record each result, verdict and claim label exactly as `content` gives it, and copy every evidence pointer whole, because the description records what the checks and the review found.
 * Settle the topic folder only from the `workspace` slot, resolved through `Skill(agentville:context-injection)`, and keep `prepare-evidence` exactly as step 2 sets it, because the slot owns where a topic lives.
-* Write files only with `Write` and `Edit`: the pages under `{{ PROJECT_ROOT }}/.agentville/pr/{number}/` (or `pending/`) and, in the fallback, the local report file; use the shell only for `git`, the UTC time, a folder, one listing in step 2 and the character count, because a tool call keeps every other line as it was.
+* Write files only with `Write` and `Edit`: the pages under `{{ PROJECT_ROOT }}/.agentville/pr/{number}/` (or `pending/`) and, in the fallback, the local report file; use the shell only for `git`, the UTC time, a folder, one listing in step 2, the character count and `python3` (`py -3` on Windows) for the pre-publish gate command the project steering names in step 6, because a tool call keeps every other line as it was.
 * When a `Write`, `Edit`, `git push` or GitHub call is refused (a tool error or a harness policy message), stop, return the rendered body inline with `location: inline` and quote the refusal in `<deviations>`, and never retry it another way, because the refusal is a decision of the environment.
 * Write repository-relative paths in the body and pages and `{{ PROJECT_ROOT }}` placeholders in examples, never a host path, because the description is public.
 * Accept a `topic-id` only in kebab-case, and a `destination` only as a GitHub pull request URL or an absolute path to a `.md` file with no `..` part, because anything else could publish to the wrong place.
