@@ -1,6 +1,6 @@
 # Changes
 
-This page lists the branch's commits against `main` and what each one changed. The diff is `git diff origin/main...HEAD`: 61 files, 687 insertions and 271 deletions at `b3ac5b2`; 67 files, 870 insertions and 271 deletions at `02caf1a`, the extra 6 files being these PR pages.
+This page lists the branch's commits against `main` and what each one changed. The diff is `git diff origin/main...HEAD`: 61 files, 687 insertions and 271 deletions at `b3ac5b2`; 67 files, 870 insertions and 271 deletions at `02caf1a`, the extra 6 files being these PR pages; 72 files, 911 insertions and 307 deletions at `16d3b35`, before this page update.
 
 | Commit | Subject | What it changed |
 | --- | --- | --- |
@@ -12,3 +12,7 @@ This page lists the branch's commits against `main` and what each one changed. T
 | `d84b17f` | `docs(pr): describe the cli restructure, pr-report and commit handling change` | Adds the PR description pages. |
 | `072f598` | `docs(pr): move the PR pages to .agentville/pr/21` | Moves the PR pages from `pending/` to `.agentville/pr/21/`. |
 | `02caf1a` | `chore(merge): merge origin/main into feat/pr-report` | Merges `main` at `0ab7181` (PR #19, documentation site). The one conflict, in `CLAUDE.md`, keeps both sides: main's `docs-site`, `website/` and docs workflow rows, and this branch's `pr-report` and installer rows. No file under `plugins/agentville/` changed on `main`; plugin stays 0.10.0, above main's 0.9.2. |
+| `d5ffffe` | `docs(pr): record the merge of main in the PR pages` | Records the `02caf1a` merge in these pages. |
+| `17df5f6` | `chore(merge): merge origin/main into feat/pr-report` | Merges `main` at `8d5d4a3` (PRs #22 and #23: Pages path and the canonical `Agentville` repository name in the installers, `pyproject.toml`, `README.md` and `website/`). No conflict: git carried main's edits to `agentville/targets/claude_code.py` and `tests/test_cli.py` onto their moved paths under `agentville/cli/` and `tests/cli/`. No file under `plugins/agentville/` changed on `main`; plugin stays 0.10.0. |
+| `0769ea1` | `docs(claude): commit and push automatically, merge waits for the owner` | `CLAUDE.md:93`: agents commit and push automatically in this repository; only merging a PR waits for the owner's review and approval. `CLAUDE.md:112`: the `pr-report` push rule matches it. |
+| `16d3b35` | `docs(skill-smith): align the maintainer example name with the shipped copy` | `.claude/skills/skill-smith` uses `acme-code-review` as the shipped copy does; version 2.1.1. |

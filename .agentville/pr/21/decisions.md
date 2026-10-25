@@ -1,15 +1,15 @@
-# Open decisions
+# Decisions
 
-This page lists the decisions the owner can make before or at merge. Each gives the current choice and the alternative.
+This page records the three decisions raised on this PR. The owner has settled all three; none is open.
 
-## 1. State the pr-report push rule as an exception
+## 1. Commit and push rule (settled)
 
-The current choice leaves `CLAUDE.md:109` as written (`b3ac5b2`): it lets `pr-report` push the working branch and open or update its PR, but it does not say it is an exception to `CLAUDE.md:90`, which says to commit, push and merge only when the user asks. The alternative adds that clause to `CLAUDE.md:109`, so the precedence is written down. The round 2 review raised this as a note, not a blocker.
+The round 2 review noted that the `pr-report` push rule did not say it was an exception to the `CLAUDE.md` rule to commit, push and merge only when the user asks. The owner settled it: "commit and push automatically for this repository. Only merge awaits my manuall approval & review." `CLAUDE.md:93` now says that agents commit and push their work automatically in this repository, and only merging a pull request waits for the owner's manual review and approval. The `pr-report` rule at `CLAUDE.md:112` matches it: it pushes the current working branch after the pre-publish gate, never pushes `main`, `beta` or `release`, never force-pushes and never merges. No exception clause is needed (`0769ea1`).
 
-## 2. Keep orchestrate's worktree-combining step
+## 2. Keep orchestrate's worktree-combining step (settled)
 
-The current choice keeps the step in `orchestrate` that combines the worktrees of parallel workers. The alternative removes it, now that shipped agents and skills no longer handle commits.
+The owner answered yes: the step in `orchestrate` that combines the worktrees of parallel workers stays as it is. Nothing changed.
 
-## 3. Align the smith example names
+## 3. Align the smith example names (settled)
 
-The maintainer copy `.claude/skills/skill-smith` still uses the example name `acme-pr-review`, while the shipped copy `plugins/agentville/skills/skill-smith` says `acme-code-review`. The current choice leaves the maintainer copy for a later change; the alternative aligns it now. The two copies share no code, so each fix is made by hand.
+The owner answered yes. The maintainer copy `.claude/skills/skill-smith` now uses `acme-code-review` and "a skill that reviews code changes", as the shipped copy `plugins/agentville/skills/skill-smith` does, in `SKILL.md`, its workflow references and `scripts/test_scripts.py`; its version moves to 2.1.1 (`16d3b35`).
