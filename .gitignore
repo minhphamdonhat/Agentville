@@ -1,9 +1,6 @@
 __pycache__/
 *.pyc
 /tmp/
-townhall/.venv/
-townhall/.pytest_cache/
-townhall/.ruff_cache/
 .claude/settings.local.json
 CLAUDE.local.md
 .env
@@ -23,6 +20,7 @@ build/
 *.egg-info/
 .venv/
 .pytest_cache/
+.ruff_cache/
 
 # Agentville workspace: topic documents stay local
 .agentville/topics/*

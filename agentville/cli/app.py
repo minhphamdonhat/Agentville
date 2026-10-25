@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from agentville import __version__
 from agentville.cli.console import Console
 from agentville.cli.targets import DEFAULT_TARGET, TARGETS, get_target
-from agentville.cli.targets.base import CHANNELS, EXIT_OK, EXIT_USAGE, SCOPES, InstallOptions
+from agentville.cli.targets.base import (
+    CHANNELS,
+    EXIT_OK,
+    EXIT_USAGE,
+    SCOPES,
+    InstallOptions,
+)
 
 EXIT_CODES = "exit codes: 0 success, 1 an install step failed, 2 usage error"
 
@@ -59,7 +66,28 @@ def build_parser() -> argparse.ArgumentParser:
     )
     install.add_argument("--dry-run", action="store_true", help="print the actions without running or writing anything")
     install.set_defaults(handler=run_install)
+
+    # Listed for --help only: main() hands `agentville townhall ...` to Townhall before parsing.
+    commands.add_parser(
+        "townhall",
+        add_help=False,
+        help="run Townhall, the board-and-ticket engine (see `agentville townhall --help`)",
+    )
     return parser
+
+
+def run_townhall(argv: list[str]) -> int:
+    """Run Townhall's command tree with the arguments after `townhall`."""
+    from agentville.townhall.cli.main import app as townhall_app
+
+    try:
+        townhall_app(args=argv, prog_name="agentville townhall")
+    except SystemExit as exit_:
+        code = exit_.code
+        if code is None:
+            return EXIT_OK
+        return code if isinstance(code, int) else 1
+    return EXIT_OK
 
 
 def run_install(args: argparse.Namespace, console: Console) -> int:
@@ -92,8 +120,11 @@ def run_install(args: argparse.Namespace, console: Console) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    args_in = sys.argv[1:] if argv is None else argv
+    if args_in[:1] == ["townhall"]:
+        return run_townhall(args_in[1:])
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(args_in)
     handler = getattr(args, "handler", None)
     if handler is None:
         parser.print_help()

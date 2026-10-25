@@ -178,13 +178,13 @@ Each base agent except `pod-lead` also ships in nine variants, one per model and
 
 ## Townhall
 
-Townhall is a Python package in `townhall/` that keeps tickets on boards under `.agentville/` in your project (tracked in git) and moves them through a fixed set of stages. The plugin starts its MCP server for you through `plugins/agentville/.mcp.json`, so the tools below appear as `mcp__plugin_agentville_agentville__townhall_*` with no setup.
+Townhall is the `agentville/townhall/` part of the `agentville` package, run as `agentville townhall ...`. It keeps tickets on boards under `.agentville/` in your project (tracked in git) and moves them through a fixed set of stages. The plugin starts its MCP server for you through `plugins/agentville/.mcp.json`, so the tools below appear as `mcp__plugin_agentville_agentville__townhall_*` with no setup.
 
-The server launches with `uvx` from a pinned commit SHA of this repository, with Python 3.15, so it runs on any OS whatever Python the host has. On `main` and `beta`, `.mcp.json` pins the SHA of the last released commit, so development and beta run the last released server; the release step moves the pin, never a tag, because tags can move. Version 0.10.0 introduces the package, so until it is released `.mcp.json` pins the commit that adds the package, and the server starts once that commit is on GitHub.
+The server launches with `uvx` from a pinned commit SHA of this repository, with Python 3.15, so it runs on any OS whatever Python the host has. On `main` and `beta`, `.mcp.json` pins the SHA of the last released commit, so development and beta run the last released server; the release step moves the pin, never a tag, because tags can move. Version 0.10.0 introduces the package, so until it is released `.mcp.json` pins the commit that adds the package, and the server starts once that commit is on GitHub. That commit predates the move into `agentville/townhall/`, so the pin still starts it with its old command, `agentville engine mcp`; the next re-pin switches to `agentville townhall engine mcp`.
 
 Townhall keeps its files beside the workspace: `.agentville/config.toml`, `.agentville/.gitignore` for its lock and temporary files, and the boards under `.agentville/townhall/`.
 
-Requirements: `git`, network access on the first run, and `uv` new enough to offer Python 3.15.1 (0.13.5 does). Developing the package needs `uv` 0.13.5 or newer (`[tool.uv] required-version` in `townhall/pyproject.toml`); `uvx` may not enforce `required-version` for `--from` sources, so check your version yourself.
+Requirements: `git`, network access on the first run, and `uv` new enough to offer Python 3.15.1 (0.13.5 does). Developing the package needs `uv` 0.13.5 or newer (`[tool.uv] required-version` in the root `pyproject.toml`); `uvx` may not enforce `required-version` for `--from` sources, so check your version yourself.
 
 The first start downloads Python and the dependencies and builds PyYAML from source, because Python 3.15 has no prebuilt wheel yet. It can be slow. If Claude Code times out while starting the server, raise the limit, for example `MCP_TIMEOUT=60000 claude` in bash on Linux and macOS, or `$env:MCP_TIMEOUT = "60000"; claude` in PowerShell on Windows (milliseconds).
 
@@ -194,7 +194,7 @@ Behaviour to know:
 * The decisions-table check (`TABLE001`) is a warning, not an error.
 * Complete-stage auto-merge needs `[plugins.claude].enabled = true` and `[plugins.claude].auto_merge = true` (both off by default), plus `branch` and `target_branch` in the ticket's `index.md`. A merge cannot be undone, so it never guesses branches. Turning `auto_merge` on merges, on the first poller pass, every existing Complete ticket that has branch keys and no `.merge` marker.
 * A failed triage leaves the ticket in Execute (not Todo) and unclaimed. Each `claude -p` run is limited by `[engine].claude_timeout_seconds` (default 1800).
-* The plugin starts only the MCP server, which never starts Temporal. `agentville engine worker` starts the dev server, which keeps its data under `${CLAUDE_PLUGIN_DATA}/temporal/` when that variable is set, else in the per-user data folder.
+* The plugin starts only the MCP server, which never starts Temporal. `agentville townhall engine worker` starts the dev server, which keeps its data under `${CLAUDE_PLUGIN_DATA}/temporal/` when that variable is set, else in the per-user data folder.
 
 | Tool | Purpose |
 | --- | --- |
@@ -237,7 +237,7 @@ The workspace (agents' topic documents, evidence and run folders) writes only un
     <agent>/scratch/         # throwaway files, deleted before the report: ignored
 ```
 
-The workspace writes its `.gitignore` on first use when it is missing. Townhall owns `.agentville/config.toml`, `.agentville/.gitignore` and `.agentville/townhall/`, created by `agentville init`; the workspace and Townhall never read each other's files.
+The workspace writes its `.gitignore` on first use when it is missing. Townhall owns `.agentville/config.toml`, `.agentville/.gitignore` and `.agentville/townhall/`, created by `agentville townhall init`; the workspace and Townhall never read each other's files.
 
 ## External dependencies
 
