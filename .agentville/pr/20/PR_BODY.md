@@ -21,7 +21,7 @@ Townhall is a file-based board-and-ticket engine for agents, released here as pl
 
 ## Changes
 
-At `26c43c8` the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,633 insertions and 4 deletions; most of it is the new package and its lock file.
+At `26c43c8` (the later commits touch only the PR pages) the diff against `main` (`git diff --stat origin/main...HEAD`) is 57 files, 12,633 insertions and 4 deletions; most of it is the new package and its lock file.
 
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ At `26c43c8` the diff against `main` (`git diff --stat origin/main...HEAD`) is 5
 | Pin the MCP server (`f5577f2`) | `plugins/agentville/.mcp.json` | The plugin starts Townhall from `652451a` by full SHA | REQ-1-CHK-6 |
 | Merge `main` (`5273bc9`) | `CLAUDE.md`, `README.md`, `plugin.json` | Keeps both sides; plugin version 0.10.0 | REQ-1-CHK-1, REQ-1-CHK-2, REQ-1-CHK-5 |
 | Move to `townhall/` (`138433f`, `4471879`) | `townhall/`, `CLAUDE.md`, `README.md`, `.gitignore` | Townhall no longer shares a folder with the installer | REQ-2-CHK-9, REQ-2-CHK-11 |
-| Describe the PR (`7a9125e`, `74dc5c1`, `26c43c8`) | `.agentville/pr/pending/` | No runtime change | REQ-3-CHK-1, REQ-3-CHK-4 |
+| Describe the PR (`7a9125e`, `74dc5c1`, `26c43c8`, `8923fc8`, `4e542f9`, `3c87e29` and the page-move commit) | `.agentville/pr/20/` | No runtime change | REQ-3-CHK-1, REQ-3-CHK-4 |
 | Record the PR folder (`26c43c8`) | `CLAUDE.md` | Adds an `.agentville/pr/` row to the layout table | REQ-2-CHK-1..10 |
 
 Two excerpts carry the decisions above. The pinned launch in `.mcp.json`:
@@ -58,7 +58,7 @@ The plugin's `.mcp.json` runs `uvx` at commit `652451a` with `subdirectory=agent
 
 ## Tests and evidence
 
-The validator ran every check at `26c43c8` (run-2) on Linux, in a clean clone where possible. All passed, and each control check failed as required.
+The validator ran every check at `26c43c8` (run-2) on Linux, in a clean clone where possible. All passed, and each control check failed as required. Later commits change only the PR pages; evidence run-4 at `3c87e29` re-checked the review findings R1 to R3.
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
@@ -94,11 +94,11 @@ Head: <HEAD_SHA>
 
 | Evidence | Where |
 | --- | --- |
-| Decisions | [Decisions page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/decisions.md) |
-| Per-commit changes | [Changes page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/changes.md) |
-| Diagrams | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/architecture.md) |
-| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/tests.md) |
-| Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/<PR_NUMBER>/risks.md) |
+| Decisions | [Decisions page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/decisions.md) |
+| Per-commit changes | [Changes page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/changes.md) |
+| Diagrams | [Architecture page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/architecture.md) |
+| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/tests.md) |
+| Risks and rollback | [Risks page](https://github.com/minhphamdonhat/Agentville/blob/<HEAD_SHA>/.agentville/pr/20/risks.md) |
 | Validator evidence | Folder `run-2` at `26c43c8`, `SHA256SUMS` hash `810454535056` |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

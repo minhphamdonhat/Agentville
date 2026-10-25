@@ -1,6 +1,6 @@
 # Tests and evidence
 
-This page lists every check the validator ran at `26c43c8` (evidence folder `run-2`, `SHA256SUMS` hash `810454535056`; run-1 at `4471879` is superseded) and its result. All ran on 2026-10-25, on Linux, in a clean clone except the two scans, which read all refs in the checkout.
+This page lists every check the validator ran at `26c43c8` (evidence folder `run-2`, `SHA256SUMS` hash `810454535056`; run-1 at `4471879` is superseded) and its result. All ran on 2026-10-25, on Linux, in a clean clone except the two scans, which read all refs in the checkout. The commits after `26c43c8` (`8923fc8`, `4e542f9`, `3c87e29` and the page move) change only the PR pages, so those results stand. Evidence run-4 at `3c87e29` re-checked the review findings R1 to R3.
 
 ## Verify before you finish
 
