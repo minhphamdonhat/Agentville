@@ -10,21 +10,20 @@ Every request you send goes through some or all of six stages, always in the sam
 
 ## The six stages
 
-<figure className="pp-figure">
-
-![Flow chart of the six stages. Agentville sorts your request by how much care it needs: a large or unclear request goes to Discuss, then to Plan once you say go, then to Execute; a small and clear request goes straight to Execute; a quick question goes straight to Report. Execute leads to Validate, then Review, then Report. Dotted arrows lead back from Validate and from Review to Execute.](/img/diagrams/six-stages.svg)
-
-<figcaption>The six stages, from your request to the report.</figcaption>
-</figure>
-
-The same flow, step by step:
-
-1. Agentville decides how much care your request needs.
-2. A large or unclear request starts in Discuss. Once you say go, it moves to Plan and then to Execute.
-3. A small and clear request goes straight to Execute.
-4. A quick question goes straight to Report.
-5. After Execute, the work goes through Validate and Review, then to Report.
-6. When a check fails in Validate, or Review asks for changes, the work goes back to Execute.
+```mermaid
+flowchart LR
+  request([Your request]) --> triage{How much care<br/>does it need?}
+  triage -- "large or unclear" --> discuss[Discuss]
+  triage -- "small and clear" --> execute
+  triage -- "a quick question" --> report
+  discuss -- "you say go" --> plan[Plan]
+  plan --> execute[Execute]
+  execute --> validate[Validate]
+  validate --> review[Review]
+  review --> report[Report]
+  validate -. "a check failed" .-> execute
+  review -. "changes needed" .-> execute
+```
 
 The dotted arrows are loop-backs: when a check fails or the review asks for changes, the work goes back to Execute and is checked again. After three rounds, Agentville stops and reports what is still open, rather than going round forever.
 
