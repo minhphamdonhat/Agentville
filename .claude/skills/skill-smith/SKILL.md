@@ -2,7 +2,7 @@
 name: "skill-smith"
 description: "Agentville maintainer copy of skill-smith, for building skills in this repository: the canonical way to create, improve or convert a Claude skill, installing into the Agentville plugin or the project. Use when maintaining Agentville and asked to create, write or compile a skill or SKILL.md, to fix or re-test an existing one, or to convert an older skill to the current format."
 metadata:
-  version: 2.1.0
+  version: 2.1.1
 ---
 
 # Role
@@ -32,7 +32,7 @@ You are a skill compiler. skill-smith is the canonical route for authoring any s
 
 # Input
 
-* **request:** required - default: none - What the user wants, in their words: "a skill that reviews pull requests", "fix my acme-pr-review skill so it flags security issues", "convert my release-notes skill". Free text or a named form such as `/skill-smith compile request="..." scope=project`.
+* **request:** required - default: none - What the user wants, in their words: "a skill that reviews code changes", "fix my acme-code-review skill so it flags security issues", "convert my release-notes skill". Free text or a named form such as `/skill-smith compile request="..." scope=project`.
 * **mode:** optional - default: inferred from the request - One of `compile` (new skill), `improve` (change an installed skill) or `convert` (rewrite an older SKILL.md into the current format). Infer it from the wording and from whether `path` exists.
 * **path:** optional - default: none - Folder of an existing skill for improve and convert. Required for those two modes. It must sit in the Agentville plugin's skills folder or the project's skills folder.
 * **source-material:** optional - default: none - Files, links or pasted text the skill should be built from, such as a checklist, an old SKILL.md or a style guide.
@@ -82,7 +82,7 @@ Do:
 * An installed skill whose body opens with a `Start here` entry block and a `# Workflows` heading becomes mode convert, type process.
 
 Don't:
-* Improve or convert a skill under `{{ PROJECT_ROOT }}/plugins/acme/skills/acme-pr-review` or `{{ USER_ROOT }}/.claude/skills/acme-pr-review`; return `blocked` with the reason, because only the Agentville plugin and the project are in scope.
+* Improve or convert a skill under `{{ PROJECT_ROOT }}/plugins/acme/skills/acme-code-review` or `{{ USER_ROOT }}/.claude/skills/acme-code-review`; return `blocked` with the reason, because only the Agentville plugin and the project are in scope.
 * Pick the type from a word in the title; "style-guide" can be steering (rules to apply) or knowledge (a lookup of approved terms), so classify from what the skill does, as the Do items show.
 * Compile one skill that needs two types; split it into one skill per type.
 
@@ -103,7 +103,7 @@ Don't:
 Choose the install folder and check whether a skill is already there, following `{{ SKILL_ROOT }}/references/workflows/resolve-target.md`; it owns the scope question, the existing-target question and the no-person returns. This step only reads; step 9 writes.
 
 Do:
-* Compile "acme-pr-review" with scope `plugin` into `{{ PROJECT_ROOT }}/plugins/agentville/skills/acme-pr-review`, and "naming-rules" with scope `project` into `{{ PROJECT_ROOT }}/.claude/skills/naming-rules`.
+* Compile "acme-code-review" with scope `plugin` into `{{ PROJECT_ROOT }}/plugins/agentville/skills/acme-code-review`, and "naming-rules" with scope `project` into `{{ PROJECT_ROOT }}/.claude/skills/naming-rules`.
 * For improve and convert, use `path` as the target, take `scope` from the skills folder it sits in and set `replace` to yes.
 
 Don't:
@@ -230,7 +230,7 @@ original: [INSTALLED_SKILL_FOLDER]/references/original-SKILL.md
 Print the `change:` claim only for improve and the `original:` line only for convert; drop the line otherwise. Write `none` in an empty tag.
 
 Do:
-* `<status>completed</status>`, `skill-md: {{ PROJECT_ROOT }}/plugins/agentville/skills/acme-pr-review/SKILL.md` in `<artefacts>`, and `- type: process. verified: measure.py printed failures: none` in `<claims>`.
+* `<status>completed</status>`, `skill-md: {{ PROJECT_ROOT }}/plugins/agentville/skills/acme-code-review/SKILL.md` in `<artefacts>`, and `- type: process. verified: measure.py printed failures: none` in `<claims>`.
 * `- eval-result: 9/10 vs 6/10 on Haiku and Sonnet, standalone: pass. verified: the /skill-creator run` in `<claims>`, or `eval-result: not run, standalone: pass` with `package: not packaged` when both were declined.
 
 Don't:

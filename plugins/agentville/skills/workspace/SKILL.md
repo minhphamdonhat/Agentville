@@ -2,7 +2,7 @@
 name: "workspace"
 description: "Returns a run's folders: the topic folder '{workspace}/{topic-id}/' and the artefacts and scratch paths under '{workspace}/{topic-id}/{agent-name}/', with the cleanup rule and git-ignore status, and creates them. Workspace is a 'workspace-folder: {path}' steering line, else '{project-root}/.agentville/topics/', where it keeps a '.gitignore' for run folders and evidence; with no folder at all it returns none. Use before writing any artefact, evidence or scratch file, or to locate a run's folders read-only."
 metadata:
-  version: 3.0.1
+  version: 3.0.2
 ---
 
 # Role
@@ -64,7 +64,7 @@ Don't:
 
 ### 4. Keep the workspace ignore file
 
-The workspace's ignore file is `<workspace>/.gitignore`, and it holds exactly these three lines, so run folders and evidence stay out of commits while topic-level documents stay tracked:
+The workspace's ignore file is `<workspace>/.gitignore`, and it holds exactly these three lines, so run folders and evidence stay untracked while topic-level documents stay tracked:
 
 ```text
 */evidence/

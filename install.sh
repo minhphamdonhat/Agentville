@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Puts a persistent `agentville` command on PATH with uv, on Linux and macOS.
 #
-#   curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/agentville/main/install.sh | bash
+#   curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/minhphamdonhat/Agentville/main/install.sh | bash
 #   ... | bash -s 0.1.0            # one version from PyPI
 #   ... | bash -s -- --from-source # the GitHub repository instead of PyPI
 #
@@ -13,7 +13,7 @@ set -euo pipefail
 
 PYTHON_VERSION="3.15"
 PACKAGE="agentville"
-REPO_URL="https://github.com/minhphamdonhat/agentville"
+REPO_URL="https://github.com/minhphamdonhat/Agentville"
 UV_VERSION="0.13.5"
 UV_INSTALLER_URL="https://astral.sh/uv/${UV_VERSION}/install.sh"
 CURL_FLAGS=(--proto '=https' --tlsv1.2 -LsSf)
@@ -23,7 +23,7 @@ usage() {
 Usage: install.sh [VERSION] [--from-source] [--yes]
 
   VERSION        latest (default) or a release such as 0.1.0
-  --from-source  install from git+https://github.com/minhphamdonhat/agentville instead of PyPI;
+  --from-source  install from git+https://github.com/minhphamdonhat/Agentville instead of PyPI;
                  with VERSION, from the tag agentville-cli--vVERSION
   --yes, -y      do not ask before installing uv
 
