@@ -12,7 +12,7 @@ from agentville.cli.files import FileEditError, append_lines, merge_json_object,
 from agentville.cli.targets.base import EXIT_FAILED, EXIT_OK, InstallOptions
 
 MARKETPLACE_NAME = "minhphamdo"
-MARKETPLACE_REPO = "minhphamdonhat/agentville"
+MARKETPLACE_REPO = "minhphamdonhat/Agentville"
 PLUGIN_IDS = {
     "stable": f"agentville@{MARKETPLACE_NAME}",
     "beta": f"agentville-beta@{MARKETPLACE_NAME}",

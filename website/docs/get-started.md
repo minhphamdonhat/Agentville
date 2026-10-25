@@ -25,8 +25,8 @@ Claude is merging Chat and Cowork into one experience. This is rolling out now, 
 1. In the left sidebar, click **Customize**. In Cowork, open the **Cowork** tab first.
 2. Open the **Plugins** tab.
 3. Click **Add**, then **Add marketplace**, then **Add from a repository**.
-4. Enter `minhphamdonhat/agentville` and confirm.
-5. Open the **Discover** tab, find `agentville` (the Stable version) and click **Add**.
+4. Enter `minhphamdonhat/Agentville` and confirm.
+5. Open the **Discover** tab, find **Agentville** (the Stable version) and click **Add**.
 
 :::info[Screenshot coming soon: Customize → Plugins]
 :::
@@ -34,7 +34,7 @@ Claude is merging Chat and Cowork into one experience. This is rolling out now, 
 :::info[Screenshot coming soon: Add → Add marketplace → Add from a repository]
 :::
 
-:::info[Screenshot coming soon: Discover → agentville → Add]
+:::info[Screenshot coming soon: Discover → Agentville → Add]
 :::
 
 :::tip[Pick Stable]

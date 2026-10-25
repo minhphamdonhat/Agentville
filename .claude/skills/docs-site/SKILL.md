@@ -2,7 +2,7 @@
 name: docs-site
 description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts or package.json there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # docs-site
@@ -20,7 +20,7 @@ Every page is a Markdown file under `{{ PROJECT_ROOT }}/website/docs/`, and `{{ 
 | `website/docs/technical/` | `index.md` (the category page) plus `claude-code.md`, `command-line.md`, `channels.md` | Claude Code and terminal users |
 | `website/src/pages/index.tsx`, `website/src/css/custom.css` | The landing page and the theme styles | Everyone |
 | `website/static/` | `img/favicon.svg` and `.nojekyll`, served as they are | Everyone |
-| `website/docusaurus.config.ts` | Site URL, `baseUrl: '/agentville/'`, locale `en-GB`, navbar, footer, link checks | Maintainers |
+| `website/docusaurus.config.ts` | Site URL, `baseUrl: '/Agentville/'`, locale `en-GB`, navbar, footer, link checks | Maintainers |
 
 - Add a page in the folder of its reader, then add its doc id (the path under `docs/` without `.md`, such as `guides/updating`) to `sidebars.ts` in the same change.
 - Keep the two categories as they are: `Guides` links `guides/index` and `For technical users` links `technical/index`; a new page in either folder goes into that category's `items` list.
@@ -99,7 +99,7 @@ The site deploys only from `{{ PROJECT_ROOT }}/.github/workflows/docs.yml`, on a
 - Create, push or delete a docs tag only when the user names that tag and asks for it, and never on your own; the docs tag is separate from the plugin tag `agentville--vX.Y.Z`.
 - Set the repository's Pages source to GitHub Actions under **Settings**, then **Pages**, then **Source**; a branch source ignores the workflow.
 - Allow the docs tags on the `github-pages` environment under **Settings**, then **Environments**, then **github-pages**, then **Deployment branches and tags**, with a tag rule `agentville-docs--v*`; without it the `deploy` job is rejected for a tag-triggered run.
-- Check a deploy by the workflow run's result and by opening the published site under `/agentville/`; a green build job alone does not prove the deploy ran.
+- Check a deploy by the workflow run's result and by opening the published site under `/Agentville/`; a green build job alone does not prove the deploy ran.
 
 Correct: "The user asked for `agentville-docs--v1.2.0`; create that tag on the commit they named and report the workflow run."
 
