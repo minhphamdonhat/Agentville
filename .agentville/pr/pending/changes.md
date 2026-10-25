@@ -1,6 +1,6 @@
-# Tasks done
+# Changes
 
-This page lists the branch's commits against `main` and what each one changed. The diff is `git diff origin/main...HEAD`: 51 files, 12,336 insertions and 4 deletions.
+This page lists the branch's commits against `main` and what each one changed. The diff is `git diff origin/main...HEAD`: 57 files, 12,568 insertions and 4 deletions at `4471879`.
 
 ## Commits
 
@@ -13,6 +13,8 @@ The commits appear in the order they were made.
 | `78c6620` | `docs(townhall): describe Townhall's files beside the workspace` | Describes `.agentville/config.toml` and `.agentville/townhall/` in `CLAUDE.md` and `README.md`, beside the workspace's `.agentville/topics/`. |
 | `5273bc9` | `chore(merge): merge origin/main into the Townhall branch` | Merges `origin/main` at `5c0986f` with a merge commit; sets plugin version 0.10.0. |
 | `138433f` | `fix(townhall): move the package to townhall/ so it no longer shares agentville/ with the installer` | Moves the package to `townhall/` and updates the paths in `CLAUDE.md`, `README.md`, `.gitignore` and the release-flow checks. |
+| `7a9125e` | `docs(pr): add the Townhall PR description and detail pages` | Adds the PR description and its detail pages under `.agentville/pr/pending/`. |
+| `4471879` | `docs(townhall): point the docs at townhall/ and version 0.10.0` | Updates `README.md` and `townhall/README.md` to the new folder and version. |
 
 ## Merge resolution
 

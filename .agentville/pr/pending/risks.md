@@ -1,4 +1,4 @@
-# Risks and known limits
+# Risks, limits and rollback
 
 This page lists the risks this PR brings and what limits or mitigates each one.
 
@@ -17,3 +17,11 @@ This page lists the risks this PR brings and what limits or mitigates each one.
 * The files on disk are the ground truth; Temporal mirrors them on a best-effort basis.
 * The viewer imports a private Textual module, as #13 reports; the `textual>=8.2.8,<9` cap in `townhall/pyproject.toml` protects it for now.
 * Townhall is not wired into any agent or skill yet.
+
+## Rollback
+
+Each step can be undone with one revert:
+
+* Whole PR: `git revert -m 1 <merge-sha>` on `main`, where `<merge-sha>` is this PR's merge commit.
+* The merge with `main`: `git revert -m 1 5273bc9`.
+* The move to `townhall/`: `git revert 138433f`, together with `4471879`, which points the docs at the new folder.

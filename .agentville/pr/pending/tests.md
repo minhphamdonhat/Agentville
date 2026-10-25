@@ -1,6 +1,6 @@
-# Tests done and details
+# Tests and evidence
 
-This page lists every check run on `138433f` and its result. All ran from the repository root on 2026-10-25, on Linux.
+This page lists every check the validator ran at `4471879` (evidence folder `run-1`) and its result. All ran on 2026-10-25, on Linux, in a clean clone except the two scans, which read all refs in the checkout.
 
 ## Verify before you finish
 
@@ -33,6 +33,6 @@ uvx --from 'uv>=0.13.5' uv run --directory townhall ruff check
 uvx --from 'uv>=0.13.5' uv run pytest -q
 ```
 
-## Not tested in this round
+## Not tested or not verifiable
 
-The MCP server was not started from the pinned `.mcp.json`, and no live Temporal run was made. #13 reports earlier validation against MCP over stdio, a live Temporal dev server and the headless viewer; those results were not repeated on this branch.
+The MCP server was not started from the pinned `.mcp.json`, and no live Temporal run was made. No check ran on macOS or Windows, or with `uv` older than 0.13.5. #13 reports earlier validation against MCP over stdio, a live Temporal dev server and the headless viewer; those results were not repeated on this branch.
