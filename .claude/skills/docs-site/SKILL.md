@@ -1,8 +1,8 @@
 ---
 name: docs-site
-description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the Press & Paper magazine design and Excalidraw diagrams, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
+description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the theme and Excalidraw diagrams, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
 metadata:
-  version: 1.2.1
+  version: 1.3.1
 ---
 
 # docs-site
@@ -18,10 +18,9 @@ Every page is a Markdown file under `{{ PROJECT_ROOT }}/website/docs/`, and `{{ 
 | `website/docs/intro.md`, `get-started.md`, `how-it-works.md`, `faq.md` | The main pages, in that sidebar order with `faq` last | Chat and Cowork users |
 | `website/docs/guides/` | `index.md` (the category page) plus `good-requests.md`, `following-along.md`, `updating.md` | Chat and Cowork users |
 | `website/docs/technical/` | `index.md` (the category page) plus `claude-code.md`, `command-line.md`, `channels.md` | Claude Code and terminal users |
-| `website/src/pages/index.tsx`, `website/src/pages/index.module.css` | The home page, a magazine front page | Everyone |
-| `website/src/css/custom.css` | The Press & Paper tokens and the theme styles for every page | Everyone |
-| `website/static/` | `img/favicon.svg` (the AV badge), `.nojekyll`, `diagrams/` (Excalidraw sources) and `img/diagrams/` (compiled SVGs), served as they are | Everyone |
-| `website/scripts/build-diagrams.mjs` | The diagram compiler (§8); not part of the site bundle | Maintainers |
+| `website/src/pages/index.tsx`, `website/src/css/custom.css` | The landing page and the theme styles | Everyone |
+| `website/static/` | `img/favicon.svg`, `.nojekyll`, `diagrams/` (Excalidraw sources) and `img/diagrams/` (compiled SVGs), served as they are | Everyone |
+| `website/scripts/build-diagrams.mjs` | The diagram compiler (§7); not part of the site bundle | Maintainers |
 | `website/docusaurus.config.ts` | Site URL, `baseUrl: '/Agentville/'`, locale `en-GB`, navbar, footer, link checks | Maintainers |
 
 - Add a page in the folder of its reader, then add its doc id (the path under `docs/` without `.md`, such as `guides/updating`) to `sidebars.ts` in the same change.
@@ -125,76 +124,17 @@ Correct: "support.claude.com now names the tab **Connectors**; step 2 and its sc
 
 Wrong: "Moved `Last checked` to today on every page without opening the sources."
 
-## 7. Press & Paper design
+## 7. Theme and diagrams
 
-The site wears the Press & Paper magazine edition: a white sheet with a soft shadow on a lavender-grey mat, ink type, grey hairlines, four pastel tints, one brick accent for kickers and hover, black buttons, light only and square corners.
+The site uses the Docusaurus classic theme with a green primary colour, follows the reader's light or dark setting and draws diagrams as Excalidraw scenes compiled to SVG.
 
-The tokens live once, on `:root` in `website/src/css/custom.css`, and every style uses them by name.
-
-| Token | Value | Use |
-|---|---|---|
-| `--pp-mat` | `#E9E8EE` | The ground around the sheet, on desktop only |
-| `--pp-paper` | `#FFFFFF` | The sheet: every page, the navbar and the footer |
-| `--pp-panel` | `#F4F3F0` | Code, table heads, example requests, the note admonition |
-| `--pp-ink` | `#222020` | Text, headings, links, rules under the active item, ink cards |
-| `--pp-ink-soft`, `--pp-ink-muted` | `#5A5856`, `#6E6B68` | Secondary text: navigation, TOC, captions, datelines |
-| `--pp-ink-body` | `#3A3836` | Short body text on the home page, on white or a pastel |
-| `--pp-standfirst` | `#4A4846` | The Caslon standfirst under the H1 and the lead story |
-| `--pp-rule` | `#D9D6D0` | Every hairline: navbar, frames, tables, sidebar |
-| `--pp-rule-double` | `#C9C7C5` | The short double rule beside the dateline; decorative |
-| `--pp-pink`, `--pp-pink-strong` | `#FAD4E6`, `#F2A6C8` | Ticker band, active item, highlighter, link underline, chips |
-| `--pp-yellow`, `--pp-mint`, `--pp-sky` | `#F3E3B5`, `#E2F4EA`, `#D4E9F7` | Hero and warning; tip; info and sidebar box |
-| `--pp-yellow-ink` | `#6B4F35` | Small labels on the yellow hero only (the kicker and the rail) |
-| `--pp-yellow-ghost` | `#E6CF8F` | The hero's ghost numeral; never text |
-| `--pp-brick`, `--pp-brick-dark` | `#A32A22`, `#86221B` | Text on white, or the near-white panel of a hovered menu row, only: kickers, breadcrumbs, TOC active and hover; never a fill, never on a pastel |
-| `--pp-black` | `#000000` | Buttons, with white label text |
-| `--pp-on-ink`, `--pp-on-ink-rule` | `#F3F2F0`, `rgba(243, 242, 240, 0.4)` | Text, hover underline and focus ring on an ink card; its hairline |
-| `--pp-ink-divider`, `--pp-ink-ghost` | `rgba(34, 32, 32, 0.15)`, `rgba(34, 32, 32, 0.14)` | Dividers inside the ticker band; the step cards' ghost numerals, never text |
-
-Set type in five families from exact-pinned `@fontsource` packages, imported as Latin subsets at the top of `custom.css`; never load a font from Google Fonts or another CDN.
-
-| Family | Weights | Use |
-|---|---|---|
-| Libre Franklin | 400, 400 italic, 600, 800 | Body, the page H1 (800), H2 and H3, lead headlines |
-| Oswald | 300 to 600 | Navigation, labels, kickers, masthead, buttons, in tracked uppercase |
-| Playfair Display | 400 upright, italic 400 and 700 | The accent tail of a headline (`pp-accent`, italic 400) and section titles (upright 400 with an italic 700 lead word) |
-| Libre Caslon Text | 400, 700 | The standfirst under the H1, the price line and the drop cap |
-| Caveat | 500 | One short script note per view, decorative and `aria-hidden` |
-
-Build every page from these components:
-
-- **Sheet and navigation:** `#__docusaurus` is the sheet, up to 1280px wide on the mat from 997px; the navbar is a white row under a hairline with the round AV badge, and the active link sits on pink with a 2px ink rule beneath.
-- **Article:** the breadcrumbs read as a brick kicker, the H1 is Libre Franklin 800, the first paragraph is a Caslon standfirst, tables and code sit on the panel between hairlines, and admonitions are pastel panels with an Oswald heading.
-- **Home page:** in mobile reading order, the masthead (badge, nameplate with dateline, price), the pink ticker band, the light uppercase section row, the yellow hero with one black Get started button, the three-column front (short stories with the black promo card, the lead with a drop cap, the sidebar with the sky box, guides and the note), the stages as an archive grid, the three step cards and a folio.
-- **Ornaments:** only a ghost numeral, the pink highlighter (`pp-highlight`) and the Caveat note; each is decorative, `aria-hidden` and repeats nothing that is not live text nearby, and rotation stays in the desktop media query.
-
-Do:
-
-- Use a pastel as a ground for ink text, give text and focus rings on an ink card `--pp-on-ink` (hover adds an underline, never a pastel colour), check every new text and ground pair at 4.5:1 or more (3:1 for large text) with a WCAG contrast script, and keep circles for the badge and arrow buttons only.
-- Keep every word live text, keep `colorMode` at `defaultMode: 'light'` with `disableSwitch: true`, and keep the code theme `pressPaperCode` in `docusaurus.config.ts` light only.
-
-Don't:
-
-- Set brick text on anything but white (brick text sits on white only, never on a pastel), set pastel text on white, round a box or button, or add a grey shadow other than the sheet's.
-- Add a display face outside the five families, a heavy double or thick rule, or an image that carries words a reader needs.
-
-Correct: "Add a guide card to the front as an Oswald title with a Playfair italic tail under a hairline, with a brick kicker on white."
-
-Wrong: "Set the kicker in brick on the yellow hero, round the code blocks and put the step list in a picture."
-
-## 8. Diagrams
-
-Draw each diagram as an Excalidraw scene in ink on white with one pastel tint (pink for the boxes), and compile it to SVG with Excalidraw's own `exportToSvg`, so the fonts are embedded and the page makes no font request.
-
-| Path | Holds |
-|---|---|
-| `website/static/diagrams/<name>.excalidraw` | The source scene, editable at excalidraw.com or in the Excalidraw app |
-| `website/static/img/diagrams/<name>.svg` | The compiled SVG the page shows |
-| `website/scripts/build-diagrams.mjs` | The compiler: it bundles Excalidraw with esbuild, opens it in headless Chromium through Playwright, aborts every request outside 127.0.0.1 and writes one SVG per scene |
-
-- Install the compiler's packages outside `website/`, at exact versions, so the site's lock file and bundle stay as they are: `npm install --prefix <deps> --save-exact @excalidraw/excalidraw@0.18.1 react@19.3.1 react-dom@19.3.1 esbuild@0.28.2`, plus `playwright@1.63.0` in the same folder and its Chromium (`npx --prefix <deps> playwright install chromium`); the compiler loads Playwright from `<deps>` only. Then run `node website/scripts/build-diagrams.mjs --deps <deps>` from the repository root and commit the scene and the SVG together.
-- Show a diagram in a page as `<figure className="pp-figure">` holding a Markdown image with alt text that states the whole flow, a `<figcaption>`, and, right after the figure, a plain numbered list of the same steps.
-- Keep diagram text in ink on white or on the one tint, at 4.5:1 or more, and set `"source"` in the scene to `https://excalidraw.com`, never a local address with a port.
+- Set colours only through the `--ifm-color-primary` variables on `:root` and `[data-theme='dark']` in `website/src/css/custom.css`, and keep both modes, with `respectPrefersColorScheme: true` and the Prism `github` and `dracula` themes in `docusaurus.config.ts`.
+- Use the theme's default fonts; add no font package and load no font from Google Fonts or another CDN.
+- Draw each diagram as an Excalidraw scene in ink on white with one pastel tint, and compile it to SVG with Excalidraw's own `exportToSvg`, so the fonts are embedded and the page makes no font request.
+- Keep the source scene in `website/static/diagrams/<name>.excalidraw` and the compiled SVG in `website/static/img/diagrams/<name>.svg`, and commit both together; set `"source"` in the scene to `https://excalidraw.com`, never a local address with a port.
+- Compile with `website/scripts/build-diagrams.mjs`, which bundles Excalidraw with esbuild, opens it in headless Chromium through Playwright, aborts every request outside 127.0.0.1 and writes one SVG per scene. Install its packages outside `website/`, at exact versions, so the site's lock file and bundle stay as they are: `npm install --prefix <deps> --save-exact @excalidraw/excalidraw@0.18.1 react@19.3.1 react-dom@19.3.1 esbuild@0.28.2`, plus `playwright@1.63.0` in the same folder and its Chromium (`npx --prefix <deps> playwright install chromium`); the compiler loads Playwright from `<deps>` only. Then run `node website/scripts/build-diagrams.mjs --deps <deps>` from the repository root.
+- Show a diagram in a page as `<figure className="diagram-figure">` holding a Markdown image with alt text that states the whole flow, a `<figcaption>`, and, right after the figure, a plain numbered list of the same steps, then explain each loop-back or branch in plain sentences.
+- Keep the `.diagram-figure img` rule in `custom.css` (white background and padding), because the SVG is ink on white and would be unreadable on the dark page.
 
 Correct: "Edit `six-stages.excalidraw`, run the compiler, commit both files, and update the alt text and the step list in `how-it-works.md` to match."
 
@@ -211,5 +151,4 @@ Run each item before saving or handing over a docs change. The section holds the
 5. `npm ci && npm run build` exits 0, `npm audit` shows 0 critical and 0 high with fixes in `overrides`, and the security scan shows no critical or high finding (§4).
 6. No docs tag was created or pushed unless the user asked for that tag, and every action in `docs.yml` is pinned to a commit SHA (§5).
 7. `Last checked` moved only on pages whose steps were compared with their sources today (§6).
-8. Styles use the Press & Paper tokens, light only and square, every text pair is 4.5:1 or more, fonts come from pinned `@fontsource` packages, and every ornament is decorative, `aria-hidden` and flat on mobile (§7).
-9. Every diagram is an Excalidraw scene compiled to SVG with embedded fonts, committed with its source, and shown with alt text and a plain list of its steps (§8).
+8. Colours go through the `--ifm` variables in both light and dark modes, no font is added, and every diagram is an Excalidraw scene compiled to SVG with embedded fonts, committed with its source, readable in dark mode and shown with alt text and a plain list of its steps (§7).

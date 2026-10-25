@@ -1,20 +1,6 @@
-import type {PrismTheme} from 'prism-react-renderer';
+import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-
-// Press & Paper code colours: ink, brick and green on the grey panel, each at 4.5:1 or more.
-const pressPaperCode: PrismTheme = {
-  plain: {color: '#222020', backgroundColor: '#F4F3F0'},
-  styles: [
-    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#5A5856', fontStyle: 'italic'}},
-    {types: ['punctuation', 'operator', 'entity', 'url'], style: {color: '#4A4846'}},
-    {types: ['property', 'tag', 'boolean', 'number', 'constant', 'symbol', 'deleted'], style: {color: '#A32A22'}},
-    {types: ['selector', 'attr-name', 'string', 'char', 'builtin', 'inserted'], style: {color: '#2F5D3A'}},
-    {types: ['atrule', 'attr-value', 'keyword'], style: {color: '#86221B'}},
-    {types: ['function', 'class-name'], style: {color: '#222020', fontWeight: 'bold'}},
-    {types: ['regex', 'important', 'variable'], style: {color: '#6B4F35'}},
-  ],
-};
 
 const config: Config = {
   title: 'Agentville',
@@ -58,11 +44,8 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Press & Paper is a light edition only: a white sheet on a lavender-grey mat.
     colorMode: {
-      defaultMode: 'light',
-      disableSwitch: true,
-      respectPrefersColorScheme: false,
+      respectPrefersColorScheme: true,
     },
     navbar: {
       title: 'Agentville',
@@ -82,7 +65,7 @@ const config: Config = {
       ],
     },
     footer: {
-      style: 'light',
+      style: 'dark',
       links: [
         {
           title: 'Docs',
@@ -104,7 +87,8 @@ const config: Config = {
       copyright: 'Agentville is released under the MIT licence. Built with Docusaurus.',
     },
     prism: {
-      theme: pressPaperCode,
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
       additionalLanguages: ['bash', 'powershell'],
     },
   } satisfies Preset.ThemeConfig,

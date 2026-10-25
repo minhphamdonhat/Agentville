@@ -10,7 +10,7 @@ Every request you send goes through some or all of six stages, always in the sam
 
 ## The six stages
 
-<figure className="pp-figure">
+<figure className="diagram-figure">
 
 ![Flow chart of the six stages. Agentville sorts your request by how much care it needs: a large or unclear request goes to Discuss, then to Plan once you say go, then to Execute; a small and clear request goes straight to Execute; a quick question goes straight to Report. Execute leads to Validate, then Review, then Report. Dotted arrows lead back from Validate and from Review to Execute.](/img/diagrams/six-stages.svg)
 
