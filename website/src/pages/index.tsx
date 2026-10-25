@@ -164,7 +164,7 @@ export default function Home(): ReactNode {
               <Heading as="h3" id="inside-heading" className={styles.boxHeading}>
                 Inside this edition
               </Heading>
-              <ol className={styles.insideList}>
+              <ol className={styles.insideList} role="list">
                 {inside.map((item) => (
                   <li key={item.to}>
                     <Link to={item.to}>{item.title}</Link>
