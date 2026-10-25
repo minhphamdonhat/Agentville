@@ -8,7 +8,12 @@ import subprocess
 from pathlib import Path
 
 from agentville.cli.console import Console
-from agentville.cli.files import FileEditError, append_lines, merge_json_object, read_json_object
+from agentville.cli.files import (
+    FileEditError,
+    append_lines,
+    merge_json_object,
+    read_json_object,
+)
 from agentville.cli.targets.base import EXIT_FAILED, EXIT_OK, InstallOptions
 
 MARKETPLACE_NAME = "minhphamdo"
