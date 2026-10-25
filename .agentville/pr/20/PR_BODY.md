@@ -1,6 +1,6 @@
 This PR adds Townhall to the root `agentville` package in `agentville/townhall/`, runs it as `agentville townhall ...`, and starts its MCP server from the plugin through a SHA-pinned `uvx` launch. It supersedes #13 and is synced with `main` after #21 merged.
 
-Verdict: Review round 1 fixes pushed; re-review pending. Blocking items: 0. Decisions needed: 1.
+Verdict: Review round 2 fixes pushed; re-review pending. Blocking items: 0. Decisions needed: 1.
 
 ## Decisions needed
 
@@ -23,7 +23,7 @@ Townhall is a file-based board-and-ticket engine for agents. PR #13 added it in 
 | Add the package (`652451a`) and pin the MCP server (`f5577f2`) | `agentville/`, `plugins/agentville/.mcp.json` | New CLI, 11 `townhall_*` MCP tools, viewer and Temporal workflows; plugin starts Townhall from `652451a` | run-1 |
 | Sync with `main` after #21 (`3541038`) | `CLAUDE.md`, `README.md`, `plugin.json` | Keeps both sides | run-1 |
 | Move into `agentville/townhall/` (`e674f0a`) | `agentville/townhall/`, `agentville/cli/app.py`, `pyproject.toml`, `uv.lock`, `tests/townhall/` | One distribution; `agentville townhall ...` subcommand; plugin 0.11.0 | run-1 |
-| Fix two stale docs (review round 1) | `CLAUDE.md`, `agentville/townhall/README.md` | Docs only | gate, pytest |
+| Fix two stale docs (review round 1, `69da92e`) | `CLAUDE.md`, `agentville/townhall/README.md` | Docs only | none sealed; checked by the worker's own pytest and gate runs before push |
 | Describe the PR | `.agentville/pr/20/` | No runtime change | none |
 
 The pinned launch in `.mcp.json`:
@@ -50,7 +50,7 @@ The plugin's `.mcp.json` still runs `uvx` at `652451a` with `subdirectory=agentv
 
 ## Tests and evidence
 
-The validator ran every check on Linux; evidence run-1 for this topic, `SHA256SUMS` hash `38014ab84263`.
+The validator ran every check on Linux at `e674f0a`; evidence run-1 for this topic, taken before the docs fix in `69da92e`, `SHA256SUMS` hash `38014ab84263`.
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
@@ -78,8 +78,8 @@ The main risks are the breaking CLI rename, a heavier `uvx agentville install` n
 
 | Round | Verdict | Findings | Status |
 | --- | --- | --- | --- |
-| 1 | needs-changes | Two stale docs: `CLAUDE.md` Townhall section and `agentville/townhall/README.md` | Fixed in this push |
-| 2 | Pending | none | Re-review next |
+| 1 | needs-changes | Two stale docs: `CLAUDE.md` Townhall section and `agentville/townhall/README.md` | Fixed in `69da92e` |
+| 2 | needs-changes | Evidence attribution: the docs-fix row cited sealed evidence taken before it, and the test paragraph did not name the commit | Fixed in this commit |
 
 ## Evidence index
 
