@@ -24,6 +24,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `townhall/` | The Townhall Python package (Townhall and the umbrella for later parts), with its own `pyproject.toml`: `src/agentville/{core,cli,mcp,townhall,rag,memory}` and `tests/`. Python 3.15 or later, managed with `uv`. It lives apart from `agentville/` so the two never share a folder. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
+| `.agentville/pr/<pr-number>/` | Tracked PR description pages: the detail pages a PR body links to, under `pending/` until the PR has a number. |
 | `.agentville/config.toml`, `.agentville/townhall/` | Townhall's config and its boards and tickets in a project, created by `agentville init` and tracked in git, beside the workspace; `agentville init` also writes `.agentville/.gitignore` for Townhall's lock and temporary files. Neither exists in this repository. |
 
 ## Agent format
