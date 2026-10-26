@@ -18,7 +18,7 @@ The site used the plain Docusaurus classic theme. This PR gives it a pixel-art f
 | --- | --- | --- | --- |
 | Pixel farm theme (`6c89141`) | `website/src/css/custom.css`, `website/src/pages/index.tsx` | New day and night look; home page gains decorative sky, farm and card icons, with the copy unchanged | CHK-1 to CHK-5 |
 | Self-hosted pixel fonts (`57dc4b6`) | `website/docusaurus.config.ts`, `website/package.json`, `website/package-lock.json`, `website/src/css/custom.css`, `.claude/skills/docs-site/SKILL.md` | Press Start 2P and VT323 served from the build; body text 22px; docs-site 1.4.0 allows the fonts | CHK-1 to CHK-7 |
-| Describe the PR, with screenshots | `.agentville/pr/pending/` | No runtime change | CHK-5 |
+| Describe the PR, with screenshots | `.agentville/pr/28/` | No runtime change | CHK-5 |
 
 ## Architecture changes
 
@@ -47,12 +47,12 @@ The two pinned fontsource packages feed the site build, which bundles the font f
 
 Not tested or not verifiable: Safari and Firefox rendering, a screen reader pass, and the live GitHub Pages deploy.
 
-Screenshots: 56 full-page PNGs, covering all 14 pages of the built site (the 13 sitemap routes and the 404 page) in day and night, at desktop 1280px and mobile 390px. The [screenshot gallery](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/screenshots.md) holds one table per page, and the [screenshots folder](https://github.com/minhphamdonhat/Agentville/tree/ccr-fe3b21c9-3tt218/.agentville/pr/pending/screenshots) holds the files. Home page preview:
+Screenshots: 56 full-page PNGs, covering all 14 pages of the built site (the 13 sitemap routes and the 404 page) in day and night, at desktop 1280px and mobile 390px. The [screenshot gallery](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/28/screenshots.md) holds one table per page, and the [screenshots folder](https://github.com/minhphamdonhat/Agentville/tree/ccr-fe3b21c9-3tt218/.agentville/pr/28/screenshots) holds the files. Home page preview:
 
 | | Day | Night |
 | --- | --- | --- |
-| Desktop | ![Home page by day on desktop](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/pending/screenshots/home-light-desktop.png) | ![Home page by night on desktop](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/pending/screenshots/home-dark-desktop.png) |
-| Mobile | ![Home page by day on mobile](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/pending/screenshots/home-light-mobile.png) | ![Home page by night on mobile](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/pending/screenshots/home-dark-mobile.png) |
+| Desktop | ![Home page by day on desktop](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-light-desktop.png) | ![Home page by night on desktop](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-dark-desktop.png) |
+| Mobile | ![Home page by day on mobile](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-light-mobile.png) | ![Home page by night on mobile](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-dark-mobile.png) |
 
 ## Risks, limits and rollback
 
@@ -75,8 +75,8 @@ Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
-| Checks and limits | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/tests.md) |
-| Screenshot gallery | [Gallery page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/screenshots.md), one table per page |
-| Screenshots | Folder `.agentville/pr/pending/screenshots/` at `{head-sha}`, 56 PNG files for 14 pages, each 222 KB or less |
+| Checks and limits | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/28/tests.md) |
+| Screenshot gallery | [Gallery page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/28/screenshots.md), one table per page |
+| Screenshots | Folder `.agentville/pr/28/screenshots/` at `{head-sha}`, 56 PNG files for 14 pages, each 222 KB or less |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
