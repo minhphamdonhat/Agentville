@@ -47,12 +47,7 @@ The two pinned fontsource packages feed the site build, which bundles the font f
 
 Not tested or not verifiable: Safari and Firefox rendering, a screen reader pass, and the live GitHub Pages deploy.
 
-Screenshots: 56 full-page PNGs, covering all 14 pages of the built site (the 13 sitemap routes and the 404 page) in day and night, at desktop 1280px and mobile 390px. The [screenshot gallery](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/28/screenshots.md) holds one table per page, and the [screenshots folder](https://github.com/minhphamdonhat/Agentville/tree/ccr-fe3b21c9-3tt218/.agentville/pr/28/screenshots) holds the files. The gallery page embeds every image; this description links the home page views directly:
-
-| | Day | Night |
-| --- | --- | --- |
-| Desktop | [Home, day, desktop](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-light-desktop.png) | [Home, night, desktop](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-dark-desktop.png) |
-| Mobile | [Home, day, mobile](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-light-mobile.png) | [Home, night, mobile](https://raw.githubusercontent.com/minhphamdonhat/Agentville/{head-sha}/.agentville/pr/28/screenshots/home-dark-mobile.png) |
+Screenshots: 56 full-page PNGs, covering all 14 pages of the built site (the 13 sitemap routes and the 404 page) in day and night, at desktop 1280px and mobile 390px. The [screenshot gallery](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/28/screenshots.md) holds one table per page, and the [screenshots folder](https://github.com/minhphamdonhat/Agentville/tree/ccr-fe3b21c9-3tt218/.agentville/pr/28/screenshots) holds the files. The gallery page embeds every image, pinned to commit `43e89ca`.
 
 ## Risks, limits and rollback
 
