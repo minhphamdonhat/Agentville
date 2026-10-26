@@ -1,30 +1,746 @@
-/* Site-wide colours. Docusaurus reads the --ifm variables. */
+/*
+ * Agentville pixel farm theme.
+ *
+ * An 8-bit, cosy farming-game look: wooden signs, parchment panels, grass and
+ * sky. Every colour is a token on :root (day) and [data-theme='dark'] (night);
+ * the rules below only read tokens. Docusaurus reads the --ifm variables.
+ * Fonts stay the theme defaults: headings use the theme's monospace stack.
+ */
+
+/* ---------- Day palette ---------- */
 :root {
-  --ifm-color-primary: #2f6f5e;
-  --ifm-color-primary-dark: #2a6455;
-  --ifm-color-primary-darker: #285e50;
-  --ifm-color-primary-darkest: #214e42;
-  --ifm-color-primary-light: #347a67;
-  --ifm-color-primary-lighter: #36806c;
-  --ifm-color-primary-lightest: #3d907a;
+  --ifm-color-primary: #3d6647;
+  --ifm-color-primary-dark: #375c40;
+  --ifm-color-primary-darker: #34573c;
+  --ifm-color-primary-darkest: #2b4732;
+  --ifm-color-primary-light: #43704e;
+  --ifm-color-primary-lighter: #467552;
+  --ifm-color-primary-lightest: #4f855d;
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(83, 65, 31, 0.14);
+
+  /* Pixel sizes */
+  --px: 4px;
+  --px-half: 2px;
+  --px-font-heading: var(--ifm-font-family-monospace);
+
+  /* Ink, text and paper */
+  --px-ink: #2b1d0c;
+  --px-text: #584f3c;
+  --px-heading: #33240f;
+  --px-page: #f3e4bd;
+  --px-page-alt: #efdcb0;
+  --px-paper: #fff8e6;
+  --px-paper-2: #f6e6bf;
+  --px-paper-light: #ffffff;
+  --px-paper-shade: #e2c88f;
+  --px-drop: rgba(43, 29, 12, 0.32);
+
+  /* Wood */
+  --px-wood: #53411f;
+  --px-wood-2: #5f4a24;
+  --px-wood-mid: #9c7845;
+  --px-wood-light: #caa162;
+  --px-wood-lighter: #dcb97d;
+  --px-wood-trim: #b58d53;
+  --px-wood-deep: #2f240f;
+  --px-cream: #fff3d6;
+  --px-gold: #ffd75e;
+  --px-orange: #da9539;
+  --px-on-light-wood: #2b1d0c;
+
+  /* Grass and soil */
+  --px-grass-light: #8fc95a;
+  --px-grass: #6c9579;
+  --px-grass-bright: #5fa83a;
+  --px-grass-dark: #3f7a2b;
+  --px-leaf: #4c8a34;
+  --px-leaf-dark: #2f5f22;
+  --px-dirt: #8a6236;
+  --px-dirt-dark: #6e4b27;
+  --px-soil: #3d2c14;
+  --px-soil-dark: #33240f;
+
+  /* Sky and its lights */
+  --px-sky-1: #5ab4e5;
+  --px-sky-2: #79c5ee;
+  --px-sky-3: #9dd6f4;
+  --px-sky-4: #c4e8fa;
+  --px-cloud: #ffffff;
+  --px-cloud-shade: #cfe6f3;
+  --px-sun: #ffd23f;
+  --px-sun-shade: #f5a623;
+  --px-moon: #f4f0d6;
+  --px-moon-shade: #cfc9a5;
+  --px-star: #fff6c2;
+
+  /* Farmhouse and plants */
+  --px-roof: #a83a2e;
+  --px-roof-dark: #7c2a22;
+  --px-wall: #e9d3a0;
+  --px-wall-shade: #c9ad73;
+  --px-window: #bfe8ff;
+  --px-fruit: #d9412b;
+  --px-flower: #ffcf2e;
+  --px-flower-heart: #7a4a1c;
+
+  /* Admonition dialogue boxes */
+  --px-note-bg: #f4ead3;
+  --px-note-ink: #6b5a3a;
+  --px-info-bg: #e2f1fa;
+  --px-info-ink: #2a6390;
+  --px-tip-bg: #e6f2d8;
+  --px-tip-ink: #2f6a22;
+  --px-warn-bg: #fff0c8;
+  --px-warn-ink: #8a5a00;
+  --px-danger-bg: #fbe1db;
+  --px-danger-ink: #9c3326;
+
 }
 
-[data-theme='dark'] {
-  --ifm-color-primary: #5cc4a6;
-  --ifm-color-primary-dark: #43bb98;
-  --ifm-color-primary-darker: #3eb08f;
-  --ifm-color-primary-darkest: #339176;
-  --ifm-color-primary-light: #75cdb4;
-  --ifm-color-primary-lighter: #82d2bb;
-  --ifm-color-primary-lightest: #a6dfcf;
+/* ---------- Infima tokens, read from the palette in both modes ---------- */
+:root,
+html[data-theme='dark'] {
+  --ifm-global-radius: 0;
+  --ifm-button-border-radius: 0;
+  --ifm-code-border-radius: 0;
+  --ifm-pagination-nav-border-radius: 0;
+  --ifm-breadcrumb-border-radius: 0;
+  --ifm-alert-border-radius: 0;
+  --ifm-background-color: var(--px-page);
+  --ifm-background-surface-color: var(--px-paper);
+  --ifm-font-color-base: var(--px-text);
+  --ifm-heading-color: var(--px-heading);
+  --ifm-link-color: var(--ifm-color-primary);
+  --ifm-link-hover-color: var(--ifm-color-primary-darkest);
+  --ifm-color-content-secondary: var(--px-text);
+  --ifm-navbar-background-color: var(--px-wood);
+  --ifm-navbar-link-color: var(--px-cream);
+  --ifm-navbar-link-hover-color: var(--px-gold);
+  --ifm-navbar-link-active-color: var(--px-gold);
+  --ifm-navbar-shadow: none;
+  --ifm-menu-color: var(--px-text);
+  --ifm-menu-color-active: var(--px-cream);
+  --ifm-menu-color-background-active: var(--px-leaf-dark);
+  --ifm-menu-color-background-hover: var(--px-paper-shade);
+  --ifm-toc-border-color: var(--px-wood-light);
+  --ifm-hr-border-color: var(--px-wood-light);
+  --ifm-code-background: var(--px-paper-2);
+  --ifm-table-border-color: var(--px-wood);
+  --ifm-table-border-width: 2px;
+  --ifm-table-head-background: var(--px-wood);
+  --ifm-table-head-color: var(--px-cream);
+  --ifm-table-background: var(--px-paper);
+  --ifm-table-stripe-background: var(--px-paper-2);
+  --ifm-breadcrumb-item-background-active: var(--px-paper-2);
+  --ifm-color-emphasis-700: var(--px-text);
+  --ifm-footer-background-color: var(--px-soil);
+}
+
+/* ---------- Night palette ---------- */
+html[data-theme='dark'] {
+  --ifm-color-primary: #a6d98a;
+  --ifm-color-primary-dark: #94d173;
+  --ifm-color-primary-darker: #8bcd68;
+  --ifm-color-primary-darkest: #70be46;
+  --ifm-color-primary-light: #b8e1a1;
+  --ifm-color-primary-lighter: #c1e5ac;
+  --ifm-color-primary-lightest: #dbf0ce;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+
+  --px-ink: #0c0b16;
+  --px-text: #f2e6c8;
+  --px-heading: #fff4d6;
+  --px-page: #1f2238;
+  --px-page-alt: #232741;
+  --px-paper: #2e2a3f;
+  --px-paper-2: #383349;
+  --px-paper-light: #463f5a;
+  --px-paper-shade: #221f30;
+  --px-drop: rgba(0, 0, 0, 0.55);
+
+  --px-wood: #53411f;
+  --px-wood-2: #5c4823;
+  --px-wood-mid: #7a5f33;
+  --px-wood-light: #9c7845;
+  --px-wood-lighter: #b58d53;
+  --px-wood-trim: #7a5f33;
+  --px-wood-deep: #241b0b;
+  --px-cream: #fff0cf;
+  --px-gold: #ffd75e;
+  --px-orange: #da9539;
+  --px-on-light-wood: #1b1307;
+
+  --px-grass-light: #5b8a46;
+  --px-grass: #456e52;
+  --px-grass-bright: #3f7032;
+  --px-grass-dark: #2a5022;
+  --px-leaf: #335e2a;
+  --px-leaf-dark: #2b5a22;
+  --px-dirt: #4f3820;
+  --px-dirt-dark: #3e2b18;
+  --px-soil: #2a1f10;
+  --px-soil-dark: #21180c;
+
+  --px-sky-1: #0e1433;
+  --px-sky-2: #151d45;
+  --px-sky-3: #1d2758;
+  --px-sky-4: #26336c;
+  --px-cloud: #4a5785;
+  --px-cloud-shade: #36406a;
+  --px-sun: #ffd23f;
+  --px-sun-shade: #f5a623;
+  --px-moon: #f4f0d6;
+  --px-moon-shade: #c9c29b;
+  --px-star: #fff6c2;
+
+  --px-roof: #6e2a24;
+  --px-roof-dark: #4f1e1a;
+  --px-wall: #7d6c50;
+  --px-wall-shade: #5f513b;
+  --px-window: #ffd75e;
+  --px-fruit: #a5352a;
+  --px-flower: #c9a12a;
+  --px-flower-heart: #4a2e12;
+
+  --px-note-bg: #34304a;
+  --px-note-ink: #d8c9a6;
+  --px-info-bg: #22304d;
+  --px-info-ink: #8fcdf2;
+  --px-tip-bg: #233626;
+  --px-tip-ink: #a6d98a;
+  --px-warn-bg: #3b3118;
+  --px-warn-ink: #ffcf4a;
+  --px-danger-bg: #3d2226;
+  --px-danger-ink: #ff9a8a;
+
+  --ifm-menu-color-background-hover: var(--px-paper-2);
+  --ifm-link-hover-color: var(--ifm-color-primary-lightest);
+  --ifm-table-head-background: var(--px-wood);
 }
 
+/* ---------- Page ---------- */
+body {
+  background-color: var(--px-page);
+  background-image: repeating-conic-gradient(var(--px-page) 0 25%, var(--px-page-alt) 0 50%);
+  background-size: 32px 32px;
+  color: var(--px-text);
+}
+
+::selection {
+  background: var(--px-gold);
+  color: var(--px-ink);
+}
+
+:focus-visible {
+  outline: 3px dashed var(--px-orange);
+  outline-offset: 3px;
+}
+
+/* ---------- Navbar: a wooden sign board ---------- */
+.navbar {
+  background-color: var(--px-wood);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--px-wood) 0 14px,
+    var(--px-wood-2) 14px 16px
+  );
+  box-shadow:
+    0 var(--px) 0 0 var(--px-wood-deep),
+    0 calc(var(--px) * 2) 0 0 var(--px-grass-dark),
+    0 calc(var(--px) * 3) 0 0 var(--px-grass-bright);
+  margin-bottom: calc(var(--px) * 3);
+}
+
+.navbar__title {
+  font-family: var(--px-font-heading);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: var(--px-half) var(--px-half) 0 var(--px-wood-deep);
+}
+
+.navbar__logo img {
+  image-rendering: pixelated;
+}
+
+.navbar__link {
+  font-weight: 700;
+}
+
+.navbar__link--active {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+}
+
+.navbar__toggle,
+.navbar .clean-btn {
+  color: var(--px-cream);
+}
+
+.navbar .clean-btn:hover {
+  background: var(--px-wood-2);
+}
+
+.navbar-sidebar {
+  background-color: var(--px-paper);
+}
+
+.navbar-sidebar__brand {
+  background-color: var(--px-wood);
+  box-shadow: 0 var(--px) 0 0 var(--px-wood-deep);
+}
+
+.navbar-sidebar__back {
+  background: var(--px-paper-2);
+  color: var(--px-text);
+}
+
+/* ---------- Headings ---------- */
+.markdown h1,
+.markdown h2 {
+  font-family: var(--px-font-heading);
+  letter-spacing: 0.01em;
+  text-shadow: var(--px-half) var(--px-half) 0 var(--px-paper-shade);
+}
+
+.markdown h1 {
+  --ifm-h1-font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.5rem);
+}
+
+.markdown h2 {
+  --ifm-h2-font-size: clamp(1.5rem, 1.25rem + 0.8vw, 1.85rem);
+  padding-bottom: 0.6rem;
+  background: repeating-linear-gradient(
+      90deg,
+      var(--px-wood-light) 0 12px,
+      transparent 12px 18px
+    )
+    left bottom / 100% var(--px) no-repeat;
+}
+
+/* ---------- Doc page panels: parchment on a wooden frame ---------- */
+.theme-doc-markdown {
+  background: var(--px-paper);
+  padding: 1.75rem 2rem;
+  margin: var(--px) var(--px) 2rem;
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood),
+    0 var(--px) 0 0 var(--px-wood),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood),
+    var(--px) 0 0 0 var(--px-wood),
+    inset var(--px) var(--px) 0 0 var(--px-paper-light),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 0 var(--px-paper-shade),
+    calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--px-drop);
+}
+
+.markdown a {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.markdown a:hover {
+  text-decoration-color: var(--px-orange);
+}
+
+.markdown hr {
+  border: 0;
+  height: var(--px);
+  background: repeating-linear-gradient(90deg, var(--px-wood-light) 0 8px, transparent 8px 12px);
+}
+
+.markdown blockquote {
+  border-left: var(--px) solid var(--px-wood-light);
+  background: var(--px-paper-2);
+  color: var(--px-text);
+}
+
+.markdown ul {
+  list-style-type: square;
+}
+
+.markdown li::marker {
+  color: var(--px-wood-mid);
+}
+
+/* Inline code: a small seed packet */
+.markdown :not(pre) > code {
+  border: 0;
+  background: var(--px-paper-2);
+  box-shadow: 0 0 0 var(--px-half) var(--px-wood-light);
+  color: var(--px-heading);
+  padding: 0.05rem 0.3rem;
+  margin: 0 0.15rem;
+}
+
+/* Code blocks: an inventory chest */
+div.theme-code-block {
+  border-radius: 0;
+  margin-left: var(--px);
+  margin-right: var(--px);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood),
+    0 var(--px) 0 0 var(--px-wood),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood),
+    var(--px) 0 0 0 var(--px-wood),
+    calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--px-drop);
+}
+
+.theme-code-block pre,
+.theme-code-block [class*='codeBlockTitle'] {
+  border-radius: 0;
+}
+
+.theme-code-block [class*='codeBlockTitle'] {
+  font-family: var(--px-font-heading);
+  border-bottom: var(--px) solid var(--px-wood);
+}
+
+/* Tables: a market price board */
+.markdown table {
+  border-collapse: collapse;
+  margin-left: var(--px);
+  box-shadow:
+    0 0 0 var(--px) var(--px-wood),
+    calc(var(--px) * 3) calc(var(--px) * 3) 0 0 var(--px-drop);
+}
+
+.markdown table thead tr {
+  border-bottom: var(--px) solid var(--px-wood-deep);
+}
+
+.markdown table th {
+  font-family: var(--px-font-heading);
+  background: var(--ifm-table-head-background);
+  color: var(--ifm-table-head-color);
+}
+
+.markdown table td {
+  color: var(--px-text);
+}
+
+/* ---------- Admonitions: a farmhand's dialogue box ---------- */
+.theme-admonition.alert {
+  --px-adm-ink: var(--px-note-ink);
+  --ifm-alert-background-color: var(--px-note-bg);
+  --ifm-alert-background-color-highlight: var(--px-paper-shade);
+  --ifm-alert-foreground-color: var(--px-text);
+  --ifm-alert-border-color: var(--px-adm-ink);
+  border: 0;
+  border-left: 0;
+  margin: var(--px) var(--px) 1.5rem;
+  padding: 1rem 1.25rem;
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood),
+    0 var(--px) 0 0 var(--px-wood),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood),
+    var(--px) 0 0 0 var(--px-wood),
+    inset 0 0 0 var(--px-half) var(--px-adm-ink),
+    inset var(--px) var(--px) 0 var(--px-half) var(--px-paper-light),
+    calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--px-drop);
+}
+
+.theme-admonition.alert--secondary {
+  --px-adm-ink: var(--px-note-ink);
+  --ifm-alert-background-color: var(--px-note-bg);
+}
+
+.theme-admonition.alert--info {
+  --px-adm-ink: var(--px-info-ink);
+  --ifm-alert-background-color: var(--px-info-bg);
+}
+
+.theme-admonition.alert--success {
+  --px-adm-ink: var(--px-tip-ink);
+  --ifm-alert-background-color: var(--px-tip-bg);
+}
+
+.theme-admonition.alert--warning {
+  --px-adm-ink: var(--px-warn-ink);
+  --ifm-alert-background-color: var(--px-warn-bg);
+}
+
+.theme-admonition.alert--danger {
+  --px-adm-ink: var(--px-danger-ink);
+  --ifm-alert-background-color: var(--px-danger-bg);
+}
+
+.theme-admonition.alert [class*='admonitionHeading'] {
+  font-family: var(--px-font-heading);
+  color: var(--px-adm-ink);
+  letter-spacing: 0.04em;
+}
+
+.theme-admonition.alert [class*='admonitionIcon'] svg {
+  fill: var(--px-adm-ink);
+}
+
+.theme-admonition.alert a {
+  color: var(--px-adm-ink);
+}
+
+/* ---------- Sidebar, breadcrumbs, table of contents ---------- */
+.theme-doc-sidebar-container {
+  border-right: 0 !important;
+  background: var(--px-paper-2);
+  box-shadow: inset calc(var(--px) * -1) 0 0 0 var(--px-wood-light);
+}
+
+.theme-doc-sidebar-menu .menu__link {
+  border-radius: 0;
+}
+
+.theme-doc-sidebar-menu .menu__link--active:not(.menu__link--sublist) {
+  font-weight: 700;
+  box-shadow:
+    inset var(--px-half) var(--px-half) 0 0 var(--px-grass-dark),
+    inset calc(var(--px-half) * -1) calc(var(--px-half) * -1) 0 0 var(--px-ink);
+}
+
+.theme-doc-sidebar-menu .menu__link--sublist.menu__link--active {
+  color: var(--px-heading);
+  background: transparent;
+  font-weight: 700;
+}
+
+[class*='collapseSidebarButton'] {
+  border-radius: 0;
+  background: var(--px-paper-shade);
+}
+
+.breadcrumbs__link {
+  border-radius: 0;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  color: var(--px-heading);
+  box-shadow: 0 0 0 var(--px-half) var(--px-wood-light);
+}
+
+.table-of-contents__left-border {
+  border-left: var(--px) solid var(--ifm-toc-border-color);
+}
+
+.table-of-contents__link--active {
+  font-weight: 700;
+}
+
+div.theme-doc-toc-mobile {
+  border-radius: 0;
+  background: var(--px-paper-2);
+  margin: var(--px);
+  box-shadow: 0 0 0 var(--px) var(--px-wood-light);
+}
+
+/* Pagination: two signposts */
+.pagination-nav__link {
+  border: 0;
+  border-radius: 0;
+  background: var(--px-paper);
+  margin: var(--px);
+  box-shadow:
+    0 0 0 var(--px) var(--px-wood),
+    inset var(--px) var(--px) 0 0 var(--px-paper-light),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 0 var(--px-paper-shade),
+    calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--px) var(--px-drop);
+  transition: transform 80ms steps(2);
+}
+
+.pagination-nav__link:hover {
+  transform: translate(-2px, -2px);
+}
+
+.pagination-nav__sublabel {
+  color: var(--px-text);
+}
+
+.pagination-nav__label {
+  font-family: var(--px-font-heading);
+}
+
+/* ---------- Buttons: wooden signs that press in ---------- */
+.button {
+  border: 0;
+  border-radius: 0;
+  font-family: var(--px-font-heading);
+  font-weight: 700;
+  margin: var(--px);
+  transition: transform 60ms steps(2), box-shadow 60ms steps(2);
+}
+
+.button.button--secondary {
+  background: var(--px-wood-light);
+  color: var(--px-on-light-wood);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood-deep),
+    0 var(--px) 0 0 var(--px-wood-deep),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood-deep),
+    var(--px) 0 0 0 var(--px-wood-deep),
+    inset var(--px) var(--px) 0 0 var(--px-wood-lighter),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 0 var(--px-wood-trim),
+    0 calc(var(--px) * 2) 0 0 var(--px-wood-deep);
+}
+
+.button.button--secondary.button--outline {
+  background: var(--px-paper);
+  color: var(--px-heading);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood-deep),
+    0 var(--px) 0 0 var(--px-wood-deep),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood-deep),
+    var(--px) 0 0 0 var(--px-wood-deep),
+    inset var(--px) var(--px) 0 0 var(--px-paper-light),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 0 var(--px-paper-shade),
+    0 calc(var(--px) * 2) 0 0 var(--px-wood-deep);
+}
+
+.button.button--secondary:hover {
+  background: var(--px-wood-lighter);
+  color: var(--px-on-light-wood);
+}
+
+.button.button--secondary.button--outline:hover {
+  background: var(--px-paper-light);
+  color: var(--px-heading);
+}
+
+.button.button--secondary:active {
+  transform: translateY(var(--px));
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood-deep),
+    0 var(--px) 0 0 var(--px-wood-deep),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood-deep),
+    var(--px) 0 0 0 var(--px-wood-deep);
+}
+
+.button:focus-visible {
+  outline: 3px dashed var(--px-orange);
+  outline-offset: calc(var(--px) * 2);
+}
+
+/* ---------- Footer: tilled soil under a strip of grass ---------- */
+.footer--dark {
+  --ifm-footer-background-color: var(--px-soil);
+  --ifm-footer-color: var(--px-cream);
+  --ifm-footer-link-color: var(--px-cream);
+  --ifm-footer-link-hover-color: var(--px-gold);
+  --ifm-footer-title-color: var(--px-gold);
+  position: relative;
+  margin-top: calc(var(--px) * 4);
+  background-color: var(--px-soil);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--px-soil) 0 12px,
+    var(--px-soil-dark) 12px 16px
+  );
+}
+
+.footer--dark::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--px) * -4);
+  height: calc(var(--px) * 4);
+  background:
+    linear-gradient(var(--px-grass-dark), var(--px-grass-dark)) left bottom / 100% var(--px) no-repeat,
+    repeating-linear-gradient(90deg, var(--px-grass-bright) 0 12px, transparent 12px 16px) left bottom /
+      100% calc(var(--px) * 3) no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 4px, var(--px-grass-light) 4px 8px, transparent 8px 24px) left
+      top / 100% var(--px) no-repeat;
+}
+
+.footer__title {
+  font-family: var(--px-font-heading);
+  letter-spacing: 0.05em;
+}
+
+.footer__link-item {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Home: pixel sky, farm and wooden sign ---------- */
 .hero-agentville {
-  padding: 4rem 0;
+  position: relative;
+  overflow: hidden;
+  padding: 3.5rem 0 13rem;
   text-align: center;
+  color: var(--px-heading);
+  background: linear-gradient(
+    to bottom,
+    var(--px-sky-1) 0 25%,
+    var(--px-sky-2) 25% 50%,
+    var(--px-sky-3) 50% 72%,
+    var(--px-sky-4) 72% 100%
+  );
+  margin-top: calc(var(--px) * -3);
+}
+
+.hero-agentville .container {
+  position: relative;
+  z-index: 2;
+}
+
+.px-sign {
+  display: inline-block;
+  max-width: 40rem;
+  padding: 1.5rem 2rem 1.25rem;
+  margin: 1rem var(--px) 0;
+  color: var(--px-cream);
+  background-color: var(--px-wood);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--px-wood) 0 22px,
+    var(--px-wood-2) 22px 26px
+  );
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood-deep),
+    0 var(--px) 0 0 var(--px-wood-deep),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood-deep),
+    var(--px) 0 0 0 var(--px-wood-deep),
+    inset var(--px) var(--px) 0 0 var(--px-wood-mid),
+    calc(var(--px) * 2) calc(var(--px) * 3) 0 0 var(--px-drop);
+  position: relative;
+}
+
+/* Two nails at the top corners of the sign */
+.px-sign::before,
+.px-sign::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  background: var(--px-wood-light);
+  box-shadow: var(--px-half) var(--px-half) 0 0 var(--px-wood-deep);
+}
+
+.px-sign::before {
+  left: 12px;
+}
+
+.px-sign::after {
+  right: 14px;
+}
+
+.px-sign .hero__title {
+  font-family: var(--px-font-heading);
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
+  letter-spacing: 0.04em;
+  color: var(--px-cream);
+  text-shadow:
+    3px 3px 0 var(--px-wood-deep),
+    -1px -1px 0 var(--px-wood-mid);
+  margin-bottom: 0.75rem;
+}
+
+.px-sign .hero__subtitle {
+  color: var(--px-cream);
+  font-size: 1.25rem;
+  margin: 0;
 }
 
 .hero-agentville__buttons {
@@ -32,15 +748,257 @@
   flex-wrap: wrap;
   gap: 1rem;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
 
+.px-sky,
+.px-farm {
+  position: absolute;
+  pointer-events: none;
+}
+
+.px-sky {
+  inset: 0;
+  z-index: 0;
+}
+
+.px-sky svg,
+.px-farm svg,
+.px-icon {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+  display: block;
+}
+
+.px-sun,
+.px-moon {
+  position: absolute;
+  top: 1.5rem;
+  right: 8%;
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+/* Day shows the sun, night shows the moon and stars */
+.px-sky .px-moon,
+.px-sky .px-stars {
+  display: none;
+}
+
+[data-theme='dark'] .px-sky .px-sun {
+  display: none;
+}
+
+[data-theme='dark'] .px-sky .px-moon,
+[data-theme='dark'] .px-sky .px-stars {
+  display: block;
+}
+
+.px-cloud {
+  position: absolute;
+  width: 6rem;
+  height: 2.5rem;
+  animation: px-drift 24s steps(12) infinite alternate;
+}
+
+.px-cloud--1 {
+  top: 2.5rem;
+  left: 6%;
+}
+
+.px-cloud--2 {
+  top: 8rem;
+  left: 70%;
+  width: 4.5rem;
+  height: 1.875rem;
+  animation-duration: 30s;
+}
+
+.px-cloud--3 {
+  top: 13rem;
+  left: 18%;
+  width: 4.5rem;
+  height: 1.875rem;
+  animation-duration: 36s;
+}
+
+@keyframes px-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(48px);
+  }
+}
+
+.px-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  background: var(--px-star);
+  box-shadow:
+    60px 30px 0 var(--px-star), 140px 90px 0 var(--px-star), 230px 40px 0 var(--px-star),
+    320px 120px 0 var(--px-star), 410px 24px 0 var(--px-star), 520px 80px 0 var(--px-star),
+    610px 150px 0 var(--px-star), 700px 36px 0 var(--px-star), 790px 110px 0 var(--px-star),
+    880px 20px 0 var(--px-star), 980px 70px 0 var(--px-star), 1080px 140px 0 var(--px-star),
+    1170px 44px 0 var(--px-star), 1260px 100px 0 var(--px-star), 1350px 28px 0 var(--px-star),
+    1450px 84px 0 var(--px-star), 1540px 130px 0 var(--px-star), 1640px 50px 0 var(--px-star),
+    90px 200px 0 var(--px-star), 380px 230px 0 var(--px-star), 860px 210px 0 var(--px-star),
+    1120px 240px 0 var(--px-star), 1500px 220px 0 var(--px-star);
+}
+
+/* The farm stands on a strip of grass and tilled soil */
+.px-farm {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 12rem;
+  z-index: 1;
+}
+
+.px-farm svg {
+  position: absolute;
+  left: 0;
+  bottom: 3.5rem;
+  width: 100%;
+  height: 9rem;
+}
+
+.px-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3.75rem;
+  background:
+    repeating-linear-gradient(90deg, var(--px-grass-light) 0 8px, transparent 8px 24px) left top / 100% var(--px)
+      no-repeat,
+    linear-gradient(var(--px-grass-bright), var(--px-grass-bright)) left var(--px) / 100% 12px no-repeat,
+    linear-gradient(var(--px-grass-dark), var(--px-grass-dark)) left 16px / 100% var(--px) no-repeat,
+    repeating-linear-gradient(to bottom, var(--px-dirt) 0 10px, var(--px-dirt-dark) 10px 14px) left 20px / 100%
+      100% no-repeat;
+}
+
+/* Scene colours, read by the inline SVG */
+.px-c-sun { fill: var(--px-sun); }
+.px-c-sun-shade { fill: var(--px-sun-shade); }
+.px-c-moon { fill: var(--px-moon); }
+.px-c-moon-shade { fill: var(--px-moon-shade); }
+.px-c-cloud { fill: var(--px-cloud); }
+.px-c-cloud-shade { fill: var(--px-cloud-shade); }
+.px-c-leaf { fill: var(--px-leaf); }
+.px-c-leaf-dark { fill: var(--px-leaf-dark); }
+.px-c-leaf-light { fill: var(--px-grass-light); }
+.px-c-trunk { fill: var(--px-wood); }
+.px-c-wood { fill: var(--px-wood-mid); }
+.px-c-wood-light { fill: var(--px-wood-light); }
+.px-c-wood-dark { fill: var(--px-wood-deep); }
+.px-c-roof { fill: var(--px-roof); }
+.px-c-roof-dark { fill: var(--px-roof-dark); }
+.px-c-wall { fill: var(--px-wall); }
+.px-c-wall-shade { fill: var(--px-wall-shade); }
+.px-c-window { fill: var(--px-window); }
+.px-c-fruit { fill: var(--px-fruit); }
+.px-c-flower { fill: var(--px-flower); }
+.px-c-flower-heart { fill: var(--px-flower-heart); }
+.px-c-ink { fill: var(--px-ink); }
+.px-c-paper { fill: var(--px-paper); }
+.px-c-check { fill: var(--px-tip-ink); }
+
+/* Feature cards: inventory slots */
 .features-agentville {
-  padding: 2rem 0 3rem;
+  padding: 3rem 0 3.5rem;
+}
+
+.features-agentville .row {
+  row-gap: 2rem;
+}
+
+.px-slot {
+  height: 100%;
+  padding: 1.5rem 1.5rem 1rem;
+  margin: var(--px);
+  background: var(--px-paper);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--px-wood),
+    0 var(--px) 0 0 var(--px-wood),
+    calc(var(--px) * -1) 0 0 0 var(--px-wood),
+    var(--px) 0 0 0 var(--px-wood),
+    inset var(--px-half) var(--px-half) 0 0 var(--px-paper-light),
+    inset calc(var(--px-half) * -1) calc(var(--px-half) * -1) 0 0 var(--px-paper-shade),
+    inset 0 0 0 calc(var(--px) * 2) var(--px-paper-2),
+    calc(var(--px) * 2) calc(var(--px) * 2) 0 0 var(--px-drop);
+}
+
+.px-slot .px-icon {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1rem;
+  padding: 0.375rem;
+  background: var(--px-paper-2);
+  box-shadow:
+    inset var(--px-half) var(--px-half) 0 0 var(--px-paper-shade),
+    inset calc(var(--px-half) * -1) calc(var(--px-half) * -1) 0 0 var(--px-paper-light),
+    0 0 0 var(--px-half) var(--px-wood-light);
 }
 
 .features-agentville h2 {
+  font-family: var(--px-font-heading);
   font-size: 1.25rem;
+  text-shadow: var(--px-half) var(--px-half) 0 var(--px-paper-shade);
+}
+
+.features-agentville p {
+  color: var(--px-text);
+}
+
+@media (max-width: 996px) {
+  .theme-doc-markdown {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .hero-agentville {
+    padding-bottom: 11rem;
+  }
+
+  .px-farm svg {
+    height: 7rem;
+  }
+
+  .px-cloud--2 {
+    left: 62%;
+  }
+}
+
+@media (max-width: 576px) {
+  .px-sign {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .px-sun,
+  .px-moon {
+    width: 3rem;
+    height: 3rem;
+    top: 0.75rem;
+    right: 4%;
+  }
+
+  .px-cloud--3 {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-cloud {
+    animation: none;
+  }
+
+  .button,
+  .pagination-nav__link {
+    transition: none;
+  }
 }
 
 /* Diagram figures: the compiled SVG is ink on white, so it keeps a white sheet in dark mode. */
@@ -51,10 +1009,11 @@
 
 .diagram-figure img {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 0;
   max-width: 100%;
   height: auto;
   padding: 1rem;
+  box-shadow: 0 0 0 var(--px) var(--px-wood);
 }
 
 .diagram-figure figcaption {
