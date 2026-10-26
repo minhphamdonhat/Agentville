@@ -37,7 +37,9 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          // Pixel fonts, self-hosted from the site build (OFL-1.1): no CDN request.
+          // VT323 loads from its package CSS; custom.css declares Press Start 2P.
+          customCss: [require.resolve('@fontsource/vt323/400.css'), './src/css/custom.css'],
         },
       } satisfies Preset.Options,
     ],
