@@ -1,3 +1,5 @@
+<p align="center"><img src="website/static/img/wordmark.png" alt="Agentville" width="480"></p>
+
 # Agentville
 
 Agentville is a plugin of skills and agents for running work through agents: a workflow that triages each request and runs the stages it needs, a procedure that delegates one task at a time, writing standards for what agents and people read, standing rules for a delegating agent, and five swappable slots that each agent resolves for itself. It installs as one versioned unit; skills are namespaced `agentville:<skill>` and agents `agentville:<agent>`.
@@ -196,8 +198,8 @@ Agents write only under `.agentville/topics/` in the project root:
 
 ```text
 .agentville/topics/
-  .gitignore                 # */evidence/, */*/artefacts/, */*/scratch/
-  <topic-id>/                # topic documents: tracked
+  .gitignore                 # tracked: */evidence/, */*/artefacts/, */*/scratch/
+  <topic-id>/                # topic documents: local, ignored by the root .gitignore
     evidence/run-<N>/        # validator evidence with SHA256SUMS: ignored
     <agent>/artefacts/       # what an agent keeps: ignored
     <agent>/scratch/         # throwaway files, deleted before the report: ignored
