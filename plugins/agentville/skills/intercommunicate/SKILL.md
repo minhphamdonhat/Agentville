@@ -2,7 +2,7 @@
 name: "intercommunicate"
 description: "Sends a message to another session with delivery confirmation, or receives one: it checks the target with ListAgents, compiles the message with relay, requires an immediate ACK from the receiver, resends once when no ACK arrives and reports an undelivered message; a cross-session send returns a pending awaiting-ack report and resumes in mode await on the next turn, and a spawned subagent with no later turn cannot send cross-session. For a session you spawned, or the one that spawned you, in either direction, it uses a plain SendMessage compiled with relay and no ACK. Use when sending a message to a session that is not your own parent or child, when a message arrives from another session and needs its ACK, or when you must know whether a cross-session message was delivered."
 metadata:
-  version: 1.2.1
+  version: 1.2.2
 ---
 
 # Role
@@ -108,15 +108,30 @@ Don't:
 
 ### 6. Resend once or mark undelivered
 
-On the first miss, call `ListAgents` again. When `target` is still listed, send the same message again with the same `message-id`, return `delivery: awaiting-ack` with `attempts: 2` as step 5 sets, and read the next message when the run resumes. When it is no longer listed, or `attempts` is already 2 and step 5 finds no ACK, stop: return `<status>blocked</status>` with `delivery: undelivered` and the reason in `<open>`, so whoever you report to can decide to retry, reroute or ask the user. When step 3 sent you here, there is no resend.
+On the first miss, call `ListAgents` again. When `target` is still listed, send the same message again with the same `message-id`, rebuild the step 4 header (`from:`, `to:`, `message-id:`, `ack-required: yes`) and the ACK requirement exactly as in the first send, so that only `attempts` changes, in your report, return `delivery: awaiting-ack` with `attempts: 2` as step 5 sets, and read the next message when the run resumes. When it is no longer listed, or `attempts` is already 2 and step 5 finds no ACK, stop: return `<status>blocked</status>` with `delivery: undelivered` and the reason in `<open>`, so whoever you report to can decide to retry, reroute or ask the user. When step 3 sent you here, there is no resend.
 
 Do:
 * Resend `msg-acme-api-retries-01` once after the re-check, then report `undelivered` if the next message from the target again holds no ACK.
+* Resend with the same `message-id` and a rebuilt header, as the example below shows.
 * Report `undelivered` at once, with `target not listed`, when step 3 found no such agent.
 
 Don't:
 * Resend a third time or change the `message-id`; a second ACK on the same id is enough.
+* Mint a new `message-id` for the resend, or send the raw text without a header; the receiver matches the ACK and drops a repeat by the id.
 * Mark the message delivered because the target is still listed; only an ACK confirms delivery.
+
+Example: first send and identical resend. Only `attempts` differs, and it appears in the sender's report, not in the message.
+
+```text
+from: acme-web-lead
+to: acme-api-lead
+message-id: acme-web-rebase-2026-10-27-01
+ack-required: yes
+Requirement: send an ACK to acme-web-lead at once, before any other work, as `ack: acme-web-rebase-2026-10-27-01`.
+Rebase apps/web on the retry change in apps/api.
+```
+
+The resend repeats the same six lines unchanged; the report changes from `attempts: 1` to `attempts: 2`.
 
 ### 7. Receive and acknowledge
 
