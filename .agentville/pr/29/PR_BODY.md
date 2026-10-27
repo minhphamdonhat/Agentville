@@ -1,12 +1,11 @@
 Adds the skill `agentville:intercommunicate` for messaging between persistent sessions with an ACK, and builds it into `pod-lead` and `root-agent`. It supersedes no earlier PR.
 
-Verdict: Pending review. Blocking items: 0. Decisions needed: 2.
+Verdict: Pending review. Blocking items: 0. Decisions needed: 1.
 
 ## Decisions needed
 
 | Question | Options | Agent default | Consequence if unanswered |
 | --- | --- | --- | --- |
-| Fix two review notes before merge? (`pod-lead.md:89` delivery output omits "sent (plain)"; `SKILL.md:111` step 6 resume should say it recompiles the step 4 header with the same message-id) | Fix now, or merge and fix later | Merge as is (`7da0f7b`) | Both wording gaps stay; behaviour is unaffected. |
 | Run a live two-session ACK test and the with-skill vs baseline evals before merge? | Run them, or accept wording checks only | Accept wording checks only | Behaviour is checked by reading, not by a live run. |
 
 ## Context
@@ -21,6 +20,7 @@ Agents had no safe way to message a session that is not their parent or child. `
 | Relay for parent and child, no ACK timer (`0fd0060`) | same skill | No timer or `ScheduleWakeup` | run-4 |
 | Awaiting-ack state and resume mode (`3bad2d3`) | same skill | Sender returns `partial` `awaiting-ack` with message-id, attempts and text; resumes in mode `await` | run-4 |
 | Resume line carries the text (`7da0f7b`) | skill, `plugins/agentville/agents/pod-lead.md`, `plugins/agentville/skills/root-agent/SKILL.md` | Resume line holds the full message; pod-lead 1.5.0; root-agent 2.3.1 | run-4 |
+| Review notes fixed (`83f14df`) | `plugins/agentville/skills/intercommunicate/SKILL.md`, `plugins/agentville/agents/pod-lead.md` | pod-lead 1.5.1 lists `delivery: sent (plain)` for own parent and child links, with Do and Don't; intercommunicate 1.2.2 step 6 resend rebuilds the step 4 header with the same message-id (Acme example `acme-web-rebase-2026-10-27-01`, Do and Don't) | run-5 |
 | Registry (`ef224e7`) | `README.md`, `plugins/agentville/.claude-plugin/plugin.json` | README rows; plugin 0.11.0 | run-4 |
 
 Behaviour in short:
@@ -48,12 +48,12 @@ The sender checks the target, sends a relay message with a message-id and return
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
-| Skill and agent measure | `measure.py` (shipped and maintainer) on all three files | exit 0 | `02cd20c053c9` |
-| Verify commands | the 8 commands under "Verify before you finish" in `CLAUDE.md` | all exit 0 | `02cd20c053c9` |
-| Pre-publish gate | `scan.py --fail-on medium` with the project accepts | exit 0 (critical 0, high 0, medium 0) | `02cd20c053c9` |
-| Versions and trailers | version fields, one trailer, no session line | confirmed | `02cd20c053c9` |
+| Skill and agent measure | `measure.py` (shipped and maintainer) on `intercommunicate/SKILL.md` and `pod-lead.md` | exit 0 | `41a94f94d54f` |
+| Verify commands | the 8 commands under "Verify before you finish" in `CLAUDE.md` | all exit 0 | `41a94f94d54f` |
+| Pre-publish gate | `scan.py --fail-on medium` with the project accepts | exit 0 (critical 0, high 0, medium 0) | `41a94f94d54f` |
+| Versions and trailers | intercommunicate 1.2.2, pod-lead 1.5.1, plugin 0.11.0; one trailer, no session line; `origin` equals `83f14df` | confirmed | `41a94f94d54f` |
 
-Not tested or not verifiable: a live two-session ACK run; with-skill vs baseline evals (a worker holds no `Agent` tool); standalone eval cases were hand-run only, self-graded and are stale for mode `await`. These are wording checks only.
+Not tested or not verifiable: a live two-session ACK run; with-skill vs baseline evals (not run); standalone eval cases were hand-run only, self-graded and are stale for mode `await`. These are wording checks only.
 
 ## Risks, limits and rollback
 
@@ -63,12 +63,12 @@ Known limit: an idle sender never declares a message undelivered, because there 
 
 - [ ] The ACK-first rule and the one-resend rule suit how your sessions work.
 - [ ] Leaving an idle sender without an undelivered verdict is acceptable.
-- [ ] The two wording notes may wait or must be fixed now.
-- [ ] Plugin 0.11.0 is the right bump.
+- [ ] Plugin 0.11.0 is the right bump; it stays unreleased on this branch.
+- [ ] The long resend sentence at `SKILL.md:111` may stay as one sentence or should be split in two.
 
 ## Review verdicts
 
-Round 1: pass-with-notes. Round 2: needs-changes (no awaiting-ack state). Round 3: needs-changes (resume line lacked text; pod-lead bump level). Round 4: pass-with-notes, with the two notes listed under Decisions needed.
+Round 1: pass-with-notes. Round 2: needs-changes (no awaiting-ack state). Round 3: needs-changes (resume line lacked text; pod-lead bump level). Round 4: pass-with-notes (two wording notes, since fixed in `83f14df`). Round 5: pass-with-notes. Notes: the resend sentence at `SKILL.md:111` is a long chain and could be split in two; `plugin.json` stays 0.11.0 (unreleased on this branch).
 
 ## Evidence index
 
@@ -77,6 +77,6 @@ Head: {head-sha}
 | Evidence | Where |
 | --- | --- |
 | Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/29/tests.md) |
-| Validator evidence | Folder `run-4` at `7da0f7b` (runs 1 to 4 kept locally), `SHA256SUMS` hash `02cd20c053c9` |
+| Validator evidence | Folder `run-5` at `83f14df` (runs 1 to 5 kept locally; 43 files sealed), `SHA256SUMS` hash `41a94f94d54f` |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
