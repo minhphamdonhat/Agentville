@@ -1,11 +1,28 @@
-import {themes as prismThemes} from 'prism-react-renderer';
+import type {PrismTheme} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+
+// Code theme built from the site palette: cream text on dark brown (#3b2416).
+// Every colour is at least 7:1 on the background.
+const agentvilleCode: PrismTheme = {
+  plain: {color: '#fbf0d2', backgroundColor: '#3b2416'},
+  styles: [
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#d4bd98', fontStyle: 'italic'}},
+    {types: ['punctuation', 'operator'], style: {color: '#e8d5b0'}},
+    {types: ['keyword', 'selector', 'important', 'atrule'], style: {color: '#f2b92e'}},
+    {types: ['string', 'char', 'inserted', 'regex'], style: {color: '#b5d99c'}},
+    {types: ['builtin', 'class-name', 'boolean'], style: {color: '#9fd18b'}},
+    {types: ['number', 'tag', 'deleted', 'symbol', 'constant'], style: {color: '#f4a597'}},
+    {types: ['function', 'variable'], style: {color: '#ffd98a'}},
+    {types: ['attr-name', 'property'], style: {color: '#e6c36a'}},
+    {types: ['attr-value', 'url'], style: {color: '#b5d99c'}},
+  ],
+};
 
 const config: Config = {
   title: 'Agentville',
   tagline: 'A team of helpers for Claude that plans, checks and reports its work',
-  favicon: 'img/favicon.svg',
+  favicon: 'img/favicon.png',
 
   url: 'https://minhphamdonhat.github.io',
   baseUrl: '/Agentville/',
@@ -37,6 +54,8 @@ const config: Config = {
         },
         blog: false,
         theme: {
+          // Fonts are self-hosted from the site build (OFL-1.1): no CDN request.
+          // custom.css declares Pixelify Sans and Nunito from their @fontsource files.
           customCss: './src/css/custom.css',
         },
       } satisfies Preset.Options,
@@ -44,14 +63,18 @@ const config: Config = {
   ],
 
   themeConfig: {
+    // Light mode only: the cosy 8-bit palette has no night variant.
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'light',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Agentville',
       logo: {
-        alt: 'Agentville',
-        src: 'img/favicon.svg',
+        alt: 'Agentville home',
+        src: 'img/wordmark-letters.png',
+        width: 211,
+        height: 40,
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
@@ -65,7 +88,7 @@ const config: Config = {
       ],
     },
     footer: {
-      style: 'dark',
+      style: 'light',
       links: [
         {
           title: 'Docs',
@@ -87,8 +110,9 @@ const config: Config = {
       copyright: 'Agentville is released under the MIT licence. Built with Docusaurus.',
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      // Code blocks sit on the dark brown panel (--av-code-bg), so both modes use the palette theme.
+      theme: agentvilleCode,
+      darkTheme: agentvilleCode,
       additionalLanguages: ['bash', 'powershell'],
     },
   } satisfies Preset.ThemeConfig,

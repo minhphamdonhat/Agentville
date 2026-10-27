@@ -1,49 +1,675 @@
-/* Site-wide colours. Docusaurus reads the --ifm variables. */
+/*
+ * Agentville cosy 8-bit theme, light mode only.
+ *
+ * A small pixel town on cream paper: wood brown frames, roof red, leaf green and
+ * sun yellow accents, dark brown text instead of black, hard pixel borders and
+ * shadows. Every colour is a token on :root; the rules below only read tokens.
+ * Docusaurus reads the --ifm variables.
+ *
+ * Fonts are self-hosted from @fontsource (OFL-1.1) and declared here from the
+ * packages' own files: Pixelify Sans for headings only, Nunito for body text,
+ * navigation and buttons. No CDN request at runtime. Name each family literally
+ * and unquoted in font-family: the CSS minifier drops an @font-face whose family
+ * appears only inside a custom property, or in quotes that differ from its
+ * @font-face rule. Pixelify Sans is therefore declared under the bare name
+ * PixelifySans.
+ */
+
+@font-face {
+  font-family: PixelifySans;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src:
+    url('~@fontsource/pixelify-sans/files/pixelify-sans-latin-ext-700-normal.woff2') format('woff2'),
+    url('~@fontsource/pixelify-sans/files/pixelify-sans-latin-ext-700-normal.woff') format('woff');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: PixelifySans;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src:
+    url('~@fontsource/pixelify-sans/files/pixelify-sans-latin-700-normal.woff2') format('woff2'),
+    url('~@fontsource/pixelify-sans/files/pixelify-sans-latin-700-normal.woff') format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Nunito;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src:
+    url('~@fontsource/nunito/files/nunito-latin-ext-400-normal.woff2') format('woff2'),
+    url('~@fontsource/nunito/files/nunito-latin-ext-400-normal.woff') format('woff');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Nunito;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src:
+    url('~@fontsource/nunito/files/nunito-latin-400-normal.woff2') format('woff2'),
+    url('~@fontsource/nunito/files/nunito-latin-400-normal.woff') format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: Nunito;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src:
+    url('~@fontsource/nunito/files/nunito-latin-ext-700-normal.woff2') format('woff2'),
+    url('~@fontsource/nunito/files/nunito-latin-ext-700-normal.woff') format('woff');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: Nunito;
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src:
+    url('~@fontsource/nunito/files/nunito-latin-700-normal.woff2') format('woff2'),
+    url('~@fontsource/nunito/files/nunito-latin-700-normal.woff') format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- Palette (light mode only) ---------- */
+
 :root {
-  --ifm-color-primary: #2f6f5e;
-  --ifm-color-primary-dark: #2a6455;
-  --ifm-color-primary-darker: #285e50;
-  --ifm-color-primary-darkest: #214e42;
-  --ifm-color-primary-light: #347a67;
-  --ifm-color-primary-lighter: #36806c;
-  --ifm-color-primary-lightest: #3d907a;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  /* Town palette */
+  --av-ink: #3b2416; /* dark brown text, 12.76:1 on cream */
+  --av-ink-soft: #6b4a33; /* secondary text, 6.97:1 on cream */
+  --av-cream: #fbf0d2; /* page */
+  --av-card: #fff8e4; /* cards, sidebar, panels */
+  --av-sand: #f3dfae; /* navbar */
+  --av-wood: #8a5a33; /* frames, footer, shadows */
+  --av-roof: #b3392b; /* roof red: primary buttons, active marks */
+  --av-link: #8f2f22; /* links, 7.12:1 on cream */
+  --av-leaf: #3f7d34; /* leaf green */
+  --av-sun: #f2b92e; /* sun yellow */
+  --av-note: #fdf1c4; /* note panels */
+  --av-tip: #e3f0d6; /* tip panels */
+  --av-warn: #fbe2c4; /* warning panels */
+  --av-danger: #f7d6cf; /* danger panels */
+  --av-code-bg: #3b2416;
+  --av-code-ink: #fbf0d2;
+  --av-px: 4px;
+  --av-border: var(--av-px) solid var(--av-ink);
+  --av-shadow: 0 6px 0 var(--av-wood);
+  --av-shadow-ink: 0 6px 0 var(--av-ink);
+
+  /* Docusaurus */
+  --ifm-color-primary: #8f2f22;
+  --ifm-color-primary-dark: #812a1f;
+  --ifm-color-primary-darker: #7a281d;
+  --ifm-color-primary-darkest: #642118;
+  --ifm-color-primary-light: #9d3425;
+  --ifm-color-primary-lighter: #a43627;
+  --ifm-color-primary-lightest: #b9412f;
+  --ifm-background-color: var(--av-cream);
+  --ifm-background-surface-color: var(--av-card);
+  --ifm-font-color-base: var(--av-ink);
+  --ifm-heading-color: var(--av-ink);
+  --ifm-color-content: var(--av-ink);
+  --ifm-color-content-secondary: var(--av-ink-soft);
+  --ifm-link-color: var(--av-link);
+  --ifm-link-hover-color: var(--av-ink);
+  --ifm-font-family-base: Nunito, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ifm-heading-font-family: PixelifySans, Nunito, system-ui, sans-serif;
+  --ifm-font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --ifm-font-size-base: 1.125rem;
+  --ifm-line-height-base: 1.7;
+  --ifm-heading-font-weight: 700;
+  --ifm-code-font-size: 90%;
+  --ifm-global-radius: 0;
+  --ifm-navbar-background-color: var(--av-sand);
+  --ifm-navbar-height: 4.5rem;
+  --ifm-navbar-link-color: var(--av-ink);
+  --ifm-navbar-link-hover-color: var(--av-link);
+  --ifm-menu-color: var(--av-ink);
+  --ifm-menu-color-active: var(--av-ink);
+  --ifm-menu-color-background-active: var(--av-sun);
+  --ifm-menu-color-background-hover: var(--av-sand);
+  --ifm-toc-border-color: var(--av-wood);
+  --ifm-hr-background-color: var(--av-wood);
+  --ifm-table-border-color: var(--av-ink);
+  --ifm-table-stripe-background: var(--av-card);
+  --ifm-code-background: var(--av-sand);
+  --ifm-color-emphasis-700: var(--av-ink-soft);
+  --ifm-breadcrumb-item-background-active: var(--av-sand);
+  --docusaurus-highlighted-code-line-bg: rgba(242, 185, 46, 0.25);
 }
 
-[data-theme='dark'] {
-  --ifm-color-primary: #5cc4a6;
-  --ifm-color-primary-dark: #43bb98;
-  --ifm-color-primary-darker: #3eb08f;
-  --ifm-color-primary-darkest: #339176;
-  --ifm-color-primary-light: #75cdb4;
-  --ifm-color-primary-lighter: #82d2bb;
-  --ifm-color-primary-lightest: #a6dfcf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+/* ---------- Base ---------- */
+
+body {
+  background: var(--av-cream);
+  color: var(--av-ink);
+  font-family: Nunito, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.hero-agentville {
-  padding: 4rem 0;
-  text-align: center;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: PixelifySans, Nunito, system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--av-ink);
+  letter-spacing: 0.01em;
 }
 
-.hero-agentville__buttons {
+::selection {
+  background: var(--av-sun);
+  color: var(--av-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--av-roof);
+  outline-offset: 2px;
+}
+
+/* Pixel art stays crisp when the browser scales it. */
+.av-pixel-art,
+.navbar__logo img,
+.footer__logo {
+  image-rendering: pixelated;
+}
+
+/* ---------- Navbar ---------- */
+
+.navbar {
+  border-bottom: var(--av-border);
+  box-shadow: 0 var(--av-px) 0 var(--av-wood);
+}
+
+.navbar__logo {
+  height: 2.5rem;
+  margin-right: 1rem;
+}
+
+.navbar__logo img {
+  height: 2.5rem;
+  width: auto;
+}
+
+.navbar__link {
+  font-weight: 700;
+  padding: 0.5rem 0.875rem;
+  border-bottom: var(--av-px) solid transparent;
+}
+
+.navbar__link--active {
+  color: var(--av-ink);
+  border-bottom-color: var(--av-roof);
+}
+
+.navbar__items--right .navbar__link[href^='http'] {
+  background: var(--av-card);
+  border: 3px solid var(--av-ink);
+  box-shadow: 0 3px 0 var(--av-ink);
+  margin-left: 0.5rem;
+}
+
+.navbar-sidebar,
+.navbar-sidebar__brand {
+  background: var(--av-cream);
+}
+
+/* ---------- Docs: article ---------- */
+
+.markdown h1:first-child {
+  --ifm-h1-font-size: 2.5rem;
+  line-height: 1.15;
+}
+
+.markdown h2 {
+  --ifm-h2-font-size: 1.75rem;
+  margin-top: 2.5rem;
+}
+
+.markdown h3 {
+  --ifm-h3-font-size: 1.375rem;
+}
+
+.markdown a {
+  color: var(--av-link);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 2px;
+}
+
+.markdown a:hover {
+  color: var(--av-ink);
+}
+
+.markdown hr {
+  height: var(--av-px);
+}
+
+.markdown blockquote {
+  background: var(--av-card);
+  border-left: var(--av-border);
+  color: var(--av-ink);
+}
+
+.markdown li::marker {
+  color: var(--av-roof);
+}
+
+.markdown :not(pre) > code {
+  background: var(--av-sand);
+  border: 2px solid var(--av-wood);
+  color: var(--av-ink);
+  padding: 0.05rem 0.3rem;
+}
+
+/* Code block: dark wood panel with cream text. */
+div.theme-code-block {
+  border: var(--av-border);
+  box-shadow: var(--av-shadow);
+  margin-bottom: 1.75rem;
+}
+
+.theme-code-block pre,
+.theme-code-block pre code {
+  background: var(--av-code-bg) !important;
+  color: var(--av-code-ink);
+}
+
+.theme-code-block [class*='codeBlockTitle'] {
+  background: var(--av-wood);
+  color: var(--av-card);
+  border-bottom: var(--av-border);
+  font-weight: 700;
+}
+
+.theme-code-block button {
+  background: var(--av-card);
+  border: 2px solid var(--av-ink);
+  color: var(--av-ink);
+  opacity: 1;
+}
+
+.markdown table {
+  border: var(--av-border);
+  box-shadow: var(--av-shadow);
+  display: table;
+  width: 100%;
+}
+
+.markdown table thead tr {
+  background: var(--av-sand);
+}
+
+.markdown table th,
+.markdown table td {
+  border: 2px solid var(--av-ink);
+}
+
+/* Admonitions: note panels with a hard frame and a coloured shadow. */
+.theme-admonition.alert {
+  --ifm-alert-border-width: 0;
+  --ifm-alert-foreground-color: var(--av-ink);
+  background: var(--av-note);
+  border: var(--av-border);
+  box-shadow: 0 6px 0 var(--av-sun);
+  color: var(--av-ink);
+}
+
+.theme-admonition.alert--info,
+.theme-admonition.alert--secondary {
+  background: var(--av-note);
+  box-shadow: 0 6px 0 var(--av-sun);
+}
+
+.theme-admonition.alert--success {
+  background: var(--av-tip);
+  box-shadow: 0 6px 0 var(--av-leaf);
+}
+
+.theme-admonition.alert--warning {
+  background: var(--av-warn);
+  box-shadow: 0 6px 0 var(--av-wood);
+}
+
+.theme-admonition.alert--danger {
+  background: var(--av-danger);
+  box-shadow: 0 6px 0 var(--av-roof);
+}
+
+.theme-admonition.alert [class*='admonitionHeading'] {
+  font-family: PixelifySans, Nunito, system-ui, sans-serif;
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  color: var(--av-ink);
+}
+
+.theme-admonition.alert [class*='admonitionIcon'] svg {
+  fill: var(--av-ink);
+  stroke: none;
+}
+
+.theme-admonition.alert a {
+  color: var(--av-link);
+  text-decoration-color: var(--av-link);
+}
+
+/* ---------- Docs: sidebar, breadcrumbs, table of contents, pagination ---------- */
+
+.theme-doc-sidebar-container {
+  border-right: none !important;
+}
+
+.theme-doc-sidebar-menu {
+  background: var(--av-card);
+  border: var(--av-border);
+  box-shadow: var(--av-shadow);
+  margin: 1.5rem 0.75rem 2rem;
+  padding: 0.75rem;
+}
+
+.theme-doc-sidebar-menu .menu__link {
+  border: 3px solid transparent;
+  font-weight: 600;
+}
+
+.theme-doc-sidebar-menu .menu__link--active:not(.menu__link--sublist) {
+  background: var(--av-sun);
+  border-color: var(--av-ink);
+  color: var(--av-ink);
+  font-weight: 700;
+}
+
+.theme-doc-sidebar-menu .menu__link--sublist.menu__link--active {
+  color: var(--av-ink);
+  font-weight: 700;
+}
+
+.breadcrumbs__link {
+  color: var(--av-ink-soft);
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  background: var(--av-sand);
+  color: var(--av-ink);
+  font-weight: 700;
+}
+
+.table-of-contents__left-border {
+  border-left: 3px solid var(--av-wood);
+}
+
+.table-of-contents__link--active {
+  color: var(--av-link);
+  font-weight: 700;
+}
+
+div.theme-doc-toc-mobile {
+  background: var(--av-card);
+  border: var(--av-border);
+}
+
+.pagination-nav__link {
+  background: var(--av-card);
+  border: var(--av-border);
+  box-shadow: var(--av-shadow);
+  transition: transform 0.1s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--av-ink);
+  transform: translateY(-2px);
+}
+
+.pagination-nav__sublabel {
+  color: var(--av-ink-soft);
+}
+
+.pagination-nav__label {
+  font-family: PixelifySans, Nunito, system-ui, sans-serif;
+  color: var(--av-ink);
+}
+
+/* ---------- Buttons ---------- */
+
+.button {
+  border: var(--av-border);
+  border-radius: 0;
+  box-shadow: var(--av-shadow-ink);
+  color: var(--av-ink);
+  font-family: Nunito, system-ui, sans-serif;
+  font-weight: 700;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.button.button--lg {
+  font-size: 1.125rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.button.button--primary {
+  background: var(--av-roof);
+  border-color: var(--av-ink);
+  color: #ffffff;
+}
+
+.button.button--secondary {
+  background: var(--av-card);
+  border-color: var(--av-ink);
+  color: var(--av-ink);
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+.button.button--primary:hover {
+  background: #a3342a;
+  color: #ffffff;
+}
+
+.button.button--secondary:hover {
+  background: var(--av-sun);
+  color: var(--av-ink);
+}
+
+.button:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--av-ink);
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  background: var(--av-wood);
+  border-top: var(--av-border);
+  color: var(--av-card);
+}
+
+.footer__title {
+  font-family: PixelifySans, Nunito, system-ui, sans-serif;
+  color: var(--av-card);
+}
+
+.footer__link-item,
+.footer__copyright {
+  color: var(--av-card);
+}
+
+.footer__link-item:hover {
+  color: var(--av-card);
+  text-decoration: underline;
+}
+
+/* ---------- Home: hero ---------- */
+
+.av-hero {
+  background: var(--av-cream);
+  padding: 3.5rem 0 2.5rem;
+}
+
+.av-hero__inner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+
+.av-hero__text {
+  display: flex;
+  flex: 1 1 26rem;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.av-hero__title {
+  margin: 0;
+}
+
+.av-hero__wordmark {
+  display: block;
+  height: auto;
+  max-width: 32.5rem;
+  width: 100%;
+}
+
+.av-hero__subtitle {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 32.5rem;
+}
+
+.av-hero__buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.av-hero__art {
+  display: flex;
+  flex: 1 1 18rem;
   justify-content: center;
-  margin-top: 1.5rem;
+  min-width: 0;
 }
 
-.features-agentville {
-  padding: 2rem 0 3rem;
+.av-hero__house {
+  height: auto;
+  max-width: 26.25rem;
+  width: 100%;
 }
 
-.features-agentville h2 {
-  font-size: 1.25rem;
+/* ---------- Home: feature cards ---------- */
+
+.av-features {
+  padding: 1rem 0 4rem;
 }
 
-/* Diagram figures: the compiled SVG is ink on white, so it keeps a white sheet in dark mode. */
+.av-features__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.av-card {
+  background: var(--av-card);
+  border: var(--av-border);
+  box-shadow: var(--av-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+.av-card h2 {
+  font-size: 1.375rem;
+  margin: 0;
+}
+
+.av-card p {
+  margin: 0;
+}
+
+.av-card__bar {
+  border: 3px solid var(--av-ink);
+  display: block;
+  height: 0.75rem;
+  width: 4rem;
+}
+
+.av-card__bar--leaf {
+  background: var(--av-leaf);
+}
+
+.av-card__bar--sun {
+  background: var(--av-sun);
+}
+
+.av-card__bar--roof {
+  background: var(--av-roof);
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 996px) {
+  .navbar__logo,
+  .navbar__logo img {
+    height: 2.25rem;
+  }
+
+  .theme-doc-sidebar-menu {
+    border: none;
+    box-shadow: none;
+    margin: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .av-hero {
+    padding-top: 2rem;
+  }
+
+  .markdown h1:first-child {
+    --ifm-h1-font-size: 2rem;
+  }
+
+  .av-hero__buttons .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .pagination-nav__link {
+    transition: none;
+  }
+
+  .button:hover,
+  .pagination-nav__link:hover {
+    transform: none;
+  }
+}
+
+/* Diagram figures: the compiled SVG is ink on white, shown on a white sheet in a wood frame. */
 .diagram-figure {
   margin: 1.5rem 0;
   text-align: center;
@@ -51,14 +677,15 @@
 
 .diagram-figure img {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 0;
   max-width: 100%;
   height: auto;
   padding: 1rem;
+  box-shadow: 0 0 0 var(--av-px) var(--av-wood);
 }
 
 .diagram-figure figcaption {
-  color: var(--ifm-color-emphasis-700);
-  font-size: 0.875rem;
+  color: var(--av-ink-soft);
+  font-size: 1rem;
   margin-top: 0.5rem;
 }
