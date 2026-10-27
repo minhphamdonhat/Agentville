@@ -19,7 +19,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
-| `.claude/skills/pr-report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and creates or updates that one PR (see Security and publishing). |
+| `.claude/skills/report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and creates or updates that one PR (see Security and publishing). |
 | `.claude/skills/docs-site/` | Maintainer-only standard for the documentation site in `website/`: page layout and sidebar, writing a page, build and audit checks, deploy and refresh; not shipped. |
 | `.claude/skills/blueprint/` | Maintainer-only playbook that runs Discuss and Plan for a request, records the plan, then stops; not shipped. |
 | `.claude/skills/build/` | Maintainer-only playbook that runs Execute, Validate, Review and Report from a recorded plan; not shipped. |
@@ -29,7 +29,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `website/` | Docusaurus documentation site for Claude Chat and Cowork users, with technical pages for Claude Code and the command-line installer; not shipped with the plugin. |
 | `.github/workflows/docs.yml` | Builds `website/` and deploys it to GitHub Pages. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
-| `.agentville/pr/<pr-number>/` | Tracked PR description pages, written by `pr-report`: `PR_BODY.md` and the detail pages a PR body links to, under `pending/` until the PR has a number. |
+| `.agentville/pr/<pr-number>/` | Tracked PR description pages, written by `report`: `PR_BODY.md` and the detail pages a PR body links to, under `pending/` until the PR has a number. |
 
 ## Agent format
 
@@ -64,10 +64,12 @@ A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `wo
 
 Slots (`workspace`, `toolbelt`, `draft`, `plan`, `report`) work like dependency injection. `Skill(agentville:context-injection)` owns the two-step use, the binding syntax and the resolution order, and each slot's default skill owns its contract. Both pairs of smiths enforce the two-step use (agent rule A18, skill rule 22); `measure.py` holds the slots in one `SLOTS` constant and owns the exemption grammar. Add a future slot to `SLOTS` in all four `measure.py` files.
 
-This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`, and the `report` slot to the maintainer `pr-report` skill, which publishes the report as the PR for the current branch and its base:
+This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`, and the `report` slot to the maintainer `report` project skill, which publishes the report as the PR for the current branch and its base:
 
 * `workspace: Skill(agentville:workspace)`
-* `report: Skill(pr-report)`
+* `report: Skill(report)`
+
+This repository's `report` is a project skill in `.claude/skills/report/` that publishes the report as the PR; it is distinct from the plugin's `agentville:report`, which the explicit binding overrides. The owner's standing instruction is "let claude automatically open the PR for me": the `report` slot opens or updates the PR automatically, without asking.
 
 ## Two pairs of smiths
 
@@ -109,10 +111,10 @@ Do:
 * Write paths as `{{ PROJECT_ROOT }}`, `{{ SKILL_ROOT }}` and `{{ USER_ROOT }}`, and use `localhost` or `127.0.0.1` for a local address.
 * Use Acme in every few-shot example: one project with applications under it (`apps/web`, `apps/api`) or documentation work (`docs/`).
 * Keep exactly one `Co-Authored-By:` trailer per commit, and write Conventional Commits as set under Working in this repository.
-* Keep the plugin's components least-privilege: a tool list names only what the agent needs (the one exception is `worker`, with its generated variants: it omits `tools` and inherits every tool, MCP included, with its `disallowedTools` list as the control; PS-09, accepted by design for worker files only), MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control), and the maintainer-only `pr-report` skill, which does not ship either, pushes only the current working branch, never with force and only after the pre-publish gate (PS-06, accepted by design: that push rule is the control).
+* Keep the plugin's components least-privilege: a tool list names only what the agent needs (the one exception is `worker`, with its generated variants: it omits `tools` and inherits every tool, MCP included, with its `disallowedTools` list as the control; PS-09, accepted by design for worker files only), MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control), and the maintainer-only `report` skill, which does not ship either, pushes only the current working branch, never with force and only after the pre-publish gate (PS-06, accepted by design: that push rule is the control).
 * Write for any OS, Claude Code first: shell steps default to bash on Linux and macOS and to PowerShell on Windows unless the user's project `CLAUDE.md` or steering says otherwise; run `python3` on Linux and macOS and `py -3` on Windows; in Python use `pathlib`, `tempfile` and `encoding="utf-8"`; keep LF line endings, which `.gitattributes` pins.
-* Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`. It covers all refs and fixes every finding at medium or above. Until the history squash it fails on PII-02 and PS-52 in history; the squash removes both. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
-* Let the `pr-report` skill commit and push the current working branch automatically, as every agent here does, after the pre-publish gate passes, create or update its one PR for that branch and its base, and commit its own PR pages under `.agentville/pr/` on that working branch. It never pushes `main`, `beta` or `release`, never force-pushes and never merges; merging waits for the owner.
+* Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*.claude/skills/report/SKILL.md' --accept 'PS-06:*.claude/skills/pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`. It covers all refs and fixes every finding at medium or above. The `PS-06:*.claude/skills/pr-report/SKILL.md` flag is transitional, for the old path that `main` still holds after the rename to `report`; remove it once `main` no longer holds `.claude/skills/pr-report/`. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
+* Let the `report` skill commit and push the current working branch automatically, as every agent here does, after the pre-publish gate passes, create or update its one PR for that branch and its base, and commit its own PR pages under `.agentville/pr/` on that working branch. It never pushes `main`, `beta` or `release`, never force-pushes and never merges; merging waits for the owner.
 
 Don't:
 
@@ -150,7 +152,7 @@ python3 .claude/skills/skill-smith/scripts/test_scripts.py
 git diff --no-index --quiet plugins/agentville/agents/worker.md plugins/agentville/skills/agent-smith/assets/base/worker.md
 git diff --no-index --quiet plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
 python3 scripts/gen_agent_variants.py --check
-python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
+python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*.claude/skills/report/SKILL.md' --accept 'PS-06:*.claude/skills/pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
 ```
 
 On Windows run `py -3` for `python3`; the commands are otherwise the same in PowerShell. `git diff --no-index --quiet` exits 0 when the two files are identical, so it replaces `cmp` everywhere in this file. The scan is read-only and must show no critical or high finding. The everyday run keeps the default gate; the pre-publish gate is the `--fail-on medium` command under Security and publishing.

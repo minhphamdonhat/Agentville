@@ -1,8 +1,8 @@
 ---
-name: "pr-report"
+name: "report"
 description: "Publishes a topic's final report as the GitHub pull request for the current head branch and its base: a Verdict line, nine fixed sections (decisions, context, changes, architecture in Mermaid, tests and evidence, risks and rollback, reviewer checklist, review verdicts, evidence index) and overflow pages in '.agentville/pr/{number}/'. One PR per head and base pair: it updates the open PR in place and opens a ready PR only when none is open; it pushes only the working branch, after the pre-publish gate. Modes create, append, update, locate (read-only) and prepare-evidence, which creates the next '{topic-folder}/evidence/run-{N}/' folder; with no GitHub tool it writes a local report.md instead. Use to publish or refresh a PR description from a report, to update a PR after new results, to find the PR of the current branch, or to get a fresh evidence folder."
 metadata:
-  version: 1.0.1
+  version: 2.0.0
 ---
 
 # Role
