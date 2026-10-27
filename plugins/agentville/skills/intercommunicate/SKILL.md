@@ -1,8 +1,8 @@
 ---
 name: "intercommunicate"
-description: "Sends a message to another session with delivery confirmation, or receives one: it checks the target with ListAgents, compiles the message with relay, requires an immediate ACK from the receiver, resends once when no ACK arrives and reports an undelivered message. For a session you spawned, or the one that spawned you, in either direction, it uses a plain SendMessage compiled with relay and no ACK. Use when sending a message to a session that is not your own parent or child, when a message arrives from another session and needs its ACK, or when you must know whether a cross-session message was delivered."
+description: "Sends a message to another session with delivery confirmation, or receives one: it checks the target with ListAgents, compiles the message with relay, requires an immediate ACK from the receiver, resends once when no ACK arrives and reports an undelivered message; a cross-session send returns a pending awaiting-ack report and resumes in mode await on the next turn, and a spawned subagent with no later turn cannot send cross-session. For a session you spawned, or the one that spawned you, in either direction, it uses a plain SendMessage compiled with relay and no ACK. Use when sending a message to a session that is not your own parent or child, when a message arrives from another session and needs its ACK, or when you must know whether a cross-session message was delivered."
 metadata:
-  version: 1.2.0
+  version: 1.2.1
 ---
 
 # Role
@@ -144,11 +144,11 @@ The reply is the six report tags below. Each field names the tag it goes in:
 * **status:** always - In `<status>`: `completed` when the message was acknowledged, sent plain or the ACK went out; `partial` when a cross-session message is sent and awaits its ACK; `blocked` when the message is undelivered.
 * **outcome:** always - In `<outcome>`: one sentence saying what was sent, to whom, and whether it was confirmed.
 * **route:** always - In `<claims>`: `plain` for an `own` link, `ack` for a cross-session send or receive.
-* **delivery:** when mode is send - In `<claims>`: `acked`, `awaiting-ack`, `undelivered` or `sent (plain)`, with the `ListAgents` result and the ACK line as evidence.
-* **attempts:** when route is ack and mode is send - In `<claims>`: the number of sends, 1 or 2.
+* **delivery:** when mode is send or await - In `<claims>`: `acked`, `awaiting-ack`, `undelivered` or `sent (plain)`, with the `ListAgents` result and the ACK line as evidence.
+* **attempts:** when route is ack and mode is send or await - In `<claims>`: the number of sends, 1 or 2.
 * **ack-sent:** when mode is receive - In `<claims>`: `yes`, or `no` with the reason.
 * **message-id:** when route is ack - In `<artefacts>`: the id used.
-* **open:** always - In `<open>`: what is left, such as the reason for `undelivered`, or for `awaiting-ack` the line `resume: mode: await, target, message, message-id, attempts`, or none.
+* **open:** always - In `<open>`: what is left, such as the reason for `undelivered`, or for `awaiting-ack` the line `resume: mode: await, target, message (the full text sent), message-id, attempts`, or none.
 * **deviations:** always - In `<deviations>`: changes outside scope and assumptions made, or none.
 
 Use the first template on every run that completes a send or an acknowledgement, the second for the pending report after a cross-session send, and the last template when the run cannot start.
@@ -179,7 +179,7 @@ message-id: msg-acme-api-retries-01
 <artefacts>
 message-id: msg-acme-api-retries-01
 </artefacts>
-<open>resume: mode: await, target: acme-api-lead, message, message-id: msg-acme-api-retries-01, attempts: 1</open>
+<open>resume: mode: await, target: acme-api-lead, message: Rebase apps/web on the retry change in apps/api, message-id: msg-acme-api-retries-01, attempts: 1</open>
 <deviations>none</deviations>
 ```
 
