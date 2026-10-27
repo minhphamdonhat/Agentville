@@ -1,8 +1,8 @@
 ---
 name: "intercommunicate"
-description: "Sends a message to another session with delivery confirmation, or receives one: it checks the target with ListAgents, compiles the message with relay, requires an immediate ACK from the receiver, resends once when no ACK arrives and reports an undelivered message. For a session you spawned, or the one that spawned you, it uses a plain relay SendMessage with no ACK. Use when sending a message to a session that is not your own parent or child, when a message arrives from another session and needs its ACK, or when you must know whether a cross-session message was delivered."
+description: "Sends a message to another session with delivery confirmation, or receives one: it checks the target with ListAgents, compiles the message with relay, requires an immediate ACK from the receiver, resends once when no ACK arrives and reports an undelivered message. For a session you spawned, or the one that spawned you, in either direction, it uses a plain SendMessage compiled with relay and no ACK. Use when sending a message to a session that is not your own parent or child, when a message arrives from another session and needs its ACK, or when you must know whether a cross-session message was delivered."
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # Role
@@ -13,11 +13,12 @@ You are a message courier between sessions. You take a message and a target, or 
 
 * Name no skill, agent or thread that runs this skill, and state every hand-back as an output field, because the skill must run when invoked on its own.
 * Ask the user when a person is reachable; otherwise return `<status>needs-input</status>` with `<open>` beginning `missing:` naming each fact, because an unattended run cannot answer.
-* Use the ACK protocol for a message to another session only, and send a plain relay `SendMessage` to a session you spawned or the session that spawned you, because that link already returns reports and the extra round trip adds cost without adding certainty.
+* Use the ACK protocol for a message to another session only, and send a plain `SendMessage` with no ACK to a session you spawned or the session that spawned you, in either direction, because that link already returns reports and the extra round trip adds cost without adding certainty.
 * Send a cross-session message only to a target that `ListAgents` lists, because an unlisted target cannot receive it and the send would look delivered when it was not.
-* Compile every message with `Skill(agentville:relay)` before sending, because the receiver is a model that reads only the message.
+* Compile every message with `Skill(agentville:relay)` before sending, including a message to a child you spawned and a message to the session that spawned you, because the receiver is a model that reads only the message.
 * State the ACK requirement inside every cross-session message, because a receiver that was never told to confirm will not.
 * Treat only an ACK from the target as delivery confirmation, never the return of `SendMessage`, because that return says the message left, not that anyone read it.
+* Count an ACK as missing by sequence, never by a timer: after the send, end your turn, and the ACK is the next message from the target; a next message from the target without the ACK, or a next turn of yours that begins with no ACK, counts as no ACK, because the skill sets no clock and the sequence is all a model can observe.
 * Resend at most once, because a second resend floods a session that may only be busy.
 * As receiver, send the ACK before any other work, and never send an ACK in answer to an ACK, because the sender needs the confirmation first and ACKs sent back and forth never end.
 
@@ -26,9 +27,8 @@ You are a message courier between sessions. You take a message and a target, or 
 * **message:** required - default: none - For `mode: send`, the text to deliver, such as `Rebase apps/web on the retry change in apps/api`. For `mode: receive`, the message that arrived, with its `from` and `message-id` lines.
 * **mode:** optional - default: send - `send` to deliver a message, or `receive` to acknowledge one that arrived.
 * **target:** optional - default: none - The session or agent to message, such as `acme-api-lead`. Required when `mode` is send.
-* **link:** optional - default: cross - `own` when the target is a session you spawned or the session that spawned you, otherwise `cross`.
+* **link:** optional - default: cross - `own` when the other session is one you spawned or the one that spawned you, in either direction, otherwise `cross`.
 * **message-id:** optional - default: generated - A short unique id such as `msg-acme-api-retries-01`. Generated for `mode: send` when missing; read from the arrived message for `mode: receive`.
-* **ack-wait:** optional - default: 60 seconds - How long to wait for the ACK before counting it missing.
 
 # Process
 
@@ -46,14 +46,15 @@ Don't:
 
 ### 2. Choose the route
 
-Read `link`. For `own`, load `Skill(agentville:relay)`, compile the message as a follow-up, send it with `SendMessage` to `target`, return `<status>completed</status>` with the claim `route: plain` and stop. For `cross`, go on to step 3.
+Read `link`. For `own`, load `Skill(agentville:relay)`, compile the message as a follow-up (to a child) or as a report or hand-back (to the session that spawned you), send it with `SendMessage` to `target`, return `<status>completed</status>` with the claim `route: plain` and stop. For `cross`, go on to step 3.
 
 Do:
 * Send a plain relay follow-up to a worker you spawned and report `route: plain`.
+* Compile a message to the session that spawned you under relay too, as the report shape sets, and send it with no ACK.
 * Treat a session that neither spawned you nor was spawned by you as `cross`, even when it works on the same repository.
 
 Don't:
-* Wait for an ACK from an `own` link; the report that child returns is the answer.
+* Send an `own` message in free prose, or wait for an ACK from an `own` link; compile it with relay, as the Do items say, and treat the report the child returns as the answer.
 * Default an unclear link to `own`; use `cross`, which is the stricter route.
 
 ### 3. Check the target
@@ -87,23 +88,25 @@ Don't:
 * Leave out `from:`; the receiver has nowhere to send the ACK, so always name your own address.
 * Bury the ACK requirement below the task; keep it in the first lines, as the Do item shows.
 
-### 5. Wait for the ACK
+### 5. Read the ACK
 
-Wait up to `ack-wait` for a message from `target` that holds `ack:` and the same `message-id`. When one arrives, the message is delivered: return `<status>completed</status>` with `delivery: acked`. When none arrives, go to step 6. Use `ScheduleWakeup` for the wait when you hold it.
+After the send, end your turn; the ACK arrives as the next message from `target`. When that message holds `ack:` and the same `message-id`, the message is delivered: return `<status>completed</status>` with `delivery: acked`. When the next message from `target` holds no such ACK, or your next turn begins with no message from `target`, count the ACK as missing and go to step 6. Set no timer and call no `ScheduleWakeup`.
 
 Do:
-* Accept `ack: msg-acme-api-retries-01` from `acme-api-lead` as delivery confirmation.
+* Accept `ack: msg-acme-api-retries-01` from `acme-api-lead` as delivery confirmation when it is the next message from that session.
+* Count the ACK as missing when your next turn begins with nothing from `acme-api-lead`.
 
 Don't:
-* Treat a reply that holds work but no `ack:` line as the ACK; keep waiting until `ack-wait` ends, then count it missing.
-* Treat the return of `SendMessage` as the ACK; wait, as this step says.
+* Treat a reply that holds work but no `ack:` line as the ACK; count it missing, then go to step 6.
+* Treat the return of `SendMessage` as the ACK; read the next message, as this step says.
+* Wait on a clock or schedule a wakeup for the ACK.
 
 ### 6. Resend once or mark undelivered
 
-On the first miss, call `ListAgents` again. When `target` is still listed, send the same message again with the same `message-id` and wait once more as step 5 says. When it is no longer listed, or the second wait ends without an ACK, stop: return `<status>blocked</status>` with `delivery: undelivered` and the reason in `<open>`, so whoever you report to can decide to retry, reroute or ask the user. When step 3 sent you here, there is no wait and no resend.
+On the first miss, call `ListAgents` again. When `target` is still listed, send the same message again with the same `message-id`, end your turn and read the next message as step 5 says. When it is no longer listed, or the second send also gets no ACK by step 5's rule, stop: return `<status>blocked</status>` with `delivery: undelivered` and the reason in `<open>`, so whoever you report to can decide to retry, reroute or ask the user. When step 3 sent you here, there is no resend.
 
 Do:
-* Resend `msg-acme-api-retries-01` once after the re-check, then report `undelivered` if the second wait ends with no ACK.
+* Resend `msg-acme-api-retries-01` once after the re-check, then report `undelivered` if the next message from the target again holds no ACK.
 * Report `undelivered` at once, with `target not listed`, when step 3 found no such agent.
 
 Don't:
@@ -112,7 +115,7 @@ Don't:
 
 ### 7. Receive and acknowledge
 
-For `mode: receive`, read `from` and `message-id` from `message`. Before any other work, call `SendMessage` to the `from` address with the ACK, then return `<status>completed</status>` with `ack-sent: yes`, so the work in the message follows. When `message` is itself an ACK, send nothing and return `ack-sent: no (message is an ACK)`. The ACK is a short relay line:
+For `mode: receive`, read `from` and `message-id` from `message`. When `link` is `own`, send nothing and return `ack-sent: no (own link)`. Otherwise, before any other work, call `SendMessage` to the `from` address with the ACK, then return `<status>completed</status>` with `ack-sent: yes`, so the work in the message follows. When `message` is itself an ACK, send nothing and return `ack-sent: no (message is an ACK)`. The ACK is a short relay line:
 
 ```text
 from: acme-api-lead

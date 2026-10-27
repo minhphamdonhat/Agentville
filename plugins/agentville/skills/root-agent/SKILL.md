@@ -1,8 +1,8 @@
 ---
 name: "root-agent"
-description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. Use when the steering names this skill or imports this file."
+description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK, delivery stated only from an ACK). Use when the steering names this skill or imports this file."
 metadata:
-  version: 2.2.0
+  version: 2.3.0
 ---
 
 # root-agent
@@ -11,7 +11,7 @@ Goal: the agent that holds this skill routes every request to `Skill(agentville:
 
 ## 1. Routing
 
-* Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it. Load it before anything else in the request, and again for each new request.
+* Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it. Load it before anything else in the request, and again for each new request; the one exception is the ACK for a message that arrives from another session (section 7), which goes out first.
 * Orchestrate owns the stages, every spawn and the dispatch of each child. You spawn nothing on your own, and you read nothing yourself.
 
 Do:
@@ -91,14 +91,14 @@ Don't:
 ## 7. Cross-session messages
 
 * Follow `Skill(agentville:intercommunicate)` for every message to, or from, a session that is not a child you spawned or the session that started you: check the target with `ListAgents`, compile the message under `Skill(agentville:relay)`, require an immediate ACK and treat only the ACK as delivery confirmation.
-* Send a plain relay `SendMessage` to a child you spawned or to the session that started you, with no ACK.
-* When a message arrives from another session, send its ACK to the `from` address first, then work on it.
+* Send a plain `SendMessage` with no ACK to a child you spawned or to the session that started you, compiled under `Skill(agentville:relay)` in both directions.
+* When a message arrives from another session, send its ACK to the `from` address first, before loading orchestrate (the one exception to the order in section 1), then work on it.
 
 Do:
-* Load `Skill(agentville:intercommunicate)` before you message the `acme-api-lead` session, and tell the user the message is undelivered when no ACK arrives after one resend.
+* Load `Skill(agentville:intercommunicate)` before you message the `acme-api-lead` session, and tell the user the message is undelivered when the next message from the target holds no ACK after one resend.
 
 Don't:
-* Report a cross-session message as delivered because `SendMessage` returned without error; wait for the ACK, as the Do item shows.
+* Report a cross-session message as delivered because `SendMessage` returned without error; read the next message from the target for the ACK, as the Do item shows.
 
 ## Pre-send check
 
