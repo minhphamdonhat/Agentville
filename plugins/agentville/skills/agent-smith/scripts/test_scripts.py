@@ -338,11 +338,17 @@ class TestMeasure(Base):
                 "* **request:** required - default: none - The request.\n\n### Process\n\n"
                 "1. **Route.** Load `Skill(agentville:orchestrate)`.\n\n### Output\n\n"
                 "* **reply:** always - The reply.\n\n# Exception handler\n\n* **Unclear:** ask.\n")
+        # standalone skips A5, A6 and A16 only: holding Agent fails A3 unless --allow-agent is given
         rc, out = self.measure(text)
+        self.assertEqual(rc, 1, out)
+        self.assertEqual(fails(out), {"A3"}, out)
+        rc, out = self.measure(text, "--allow-agent")
         self.assertEqual(rc, 0, out)
         self.assertIn("standalone", kv(out))
-        rc, out = self.measure(text.replace("name: pod-lead", "name: other"))
-        self.assertTrue({"A3", "A5", "A6", "A16"} <= fails(out), out)
+        # standalone comes from declaring no base and holding no core block, not from the name
+        rc, out = self.measure(text.replace("name: pod-lead", "name: other"), "--allow-agent")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("standalone", kv(out))
         rc, out = self.measure(text.replace("model", "x").replace("---\n\n", "model: opus\n---\n\n", 1))
         self.assertIn("A2", fails(out))
 
@@ -358,7 +364,135 @@ class TestMeasure(Base):
         self.assertEqual(rc, 0, out)
         self.assertIn("standalone", kv(out))
         rc, out = self.measure(text.replace("name: conductor", "name: other"))
-        self.assertTrue({"A5", "A6", "A16"} <= fails(out), out)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("standalone", kv(out))
+        # a single core marker makes it a worker fork again, held to the core-block checks
+        rc, out = self.measure(text.replace("# Constraints\n\n", "# Constraints\n\n<!-- core:begin constraints -->\n", 1))
+        self.assertTrue({"A5", "A16"} <= fails(out), out)
+
+    STANDALONE_BASE = ("---\nname: pod-lead\ndescription: Standalone lead of a pod's agents.\n"
+                       "tools: Skill, Agent(worker)\nmetadata:\n  version: 1.0.0\n---\n\n# Role\n\nYou are pod-lead.\n\n"
+                       "# Constraints\n\n1. **Orchestrate:** route every request through `Skill(agentville:orchestrate)`.\n\n"
+                       "   Do:\n   * Route the question `Which file sets the retry limit?` too.\n\n"
+                       "2. **Delegate:** do no work yourself.\n\n"
+                       "# Workflows\n\n## Conduct\n\nRole: pod-lead\n\n### Input\n\n"
+                       "* **request:** required - default: none - The request.\n\n### Process\n\n"
+                       "1. **Route.** Load `Skill(agentville:orchestrate)`.\n\n### Output\n\n"
+                       "* **reply:** always - The reply.\n\n# Exception handler\n\n* **Unclear:** ask.\n")
+
+    def measure_isolated(self, path, *flags):
+        """Measure `path` with the project and home folders inside the test folder, so only fixtures resolve."""
+        rc, out, err = run(MEASURE, path, *flags, env={"CLAUDE_PROJECT_DIR": self.tmp, "HOME": self.tmp})
+        self.assertIn(rc, (0, 1), err)
+        return rc, out
+
+    def fork_from(self, base_path, name):
+        """Fork the template from `base_path` with stage.py and fill it as `filled` does."""
+        out = os.path.join(self.tmp, f"{name}.md")
+        rc, o, err = run(STAGE, "fork", TEMPLATE, base_path, out, name)
+        self.assertEqual(rc, 0, err)
+        text = read(out)
+        for k, v in FILLED.items():
+            text = text.replace(k, v)
+        start = text.index("<!-- Drafting")
+        text = text[:start] + text[text.index("-->", start) + 4:]
+        with open(out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        return out, o
+
+    def test_23_default_worker_fork_passes(self):
+        text = self.filled()
+        self.assertNotIn("base:", text.split("\n---\n", 1)[0])
+        rc, out = self.measure(text)
+        self.assertEqual(rc, 0, out)
+        self.assertTrue(kv(out)["base"][0].startswith("worker (default)"), out)
+        rc, out = self.measure(text.replace("  version: 1.0.0\n", "  version: 1.0.0\n  base: worker\n", 1))
+        self.assertEqual(rc, 0, out)
+        self.assertNotIn("standalone", kv(out))
+
+    def test_24_standalone_without_base_passes(self):
+        text = self.STANDALONE_BASE.replace("name: pod-lead", "name: acme-lead")
+        # a standalone agent holding Agent fails A3 without the flag and passes with it
+        rc, out = self.measure(text)
+        self.assertEqual(rc, 1, out)
+        self.assertEqual(fails(out), {"A3"}, out)
+        rc, out = self.measure(text, "--allow-agent")
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(kv(out)["base"], ["none"])
+        self.assertIn("standalone", kv(out))
+
+    def test_25_fork_of_standalone_base(self):
+        base = self.write(self.STANDALONE_BASE, "pod-lead.md")
+        path, o = self.fork_from(base, "acme-lead")
+        self.assertIn("core: base pod-lead", o)
+        self.assertEqual(kv(o)["next-rule"], ["3"])
+        text = read(path)
+        self.assertIn("  base: pod-lead\n", text)
+        self.assertIn("\n3. **Logs first:**", text)
+        self.assertNotIn("core:begin", text)
+        rc, out = self.measure_isolated(path)
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(kv(out)["core"], ["base pod-lead | identical"])
+        self.assertNotIn("standalone", kv(out))
+        # a changed copy fails A5
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text.replace("do no work yourself.", "do some work yourself."))
+        rc, out = self.measure_isolated(path)
+        self.assertEqual(rc, 1, out)
+        self.assertEqual(fails(out), {"A5"})
+        self.assertEqual(kv(out)["core"], ["base pod-lead | differs"])
+        # a missing copy and an extending rule before the copy fail A5 too
+        lo, hi = text.index("<!-- base:begin pod-lead -->"), text.index("<!-- base:end pod-lead -->") + 26
+        for bad, state in ((text[:lo] + "1. **Talk plainly.**" + text[hi:], "missing"),
+                           (text.replace("# Constraints\n\n", "# Constraints\n\n0. **Extra:** first.\n\n", 1),
+                            "not first in Constraints")):
+            with open(path, "w", encoding="utf-8", newline="\n") as f:
+                f.write(bad)
+            rc, out = self.measure_isolated(path)
+            self.assertIn("A5", fails(out), out)
+            self.assertEqual(kv(out)["core"], [f"base pod-lead | {state}"])
+        # the base's Agent tool is not inherited: A3 still needs --allow-agent
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text.replace("tools: Read, Grep", "tools: Agent(worker), Read, Grep", 1))
+        self.assertIn("A3", fails(self.measure_isolated(path)[1]))
+        self.assertEqual(self.measure_isolated(path, "--allow-agent")[0], 0)
+
+    def test_25b_inline_metadata_declares_base_and_version(self):
+        base = self.write(self.STANDALONE_BASE, "pod-lead.md")
+        path, o = self.fork_from(base, "acme-lead")
+        text = read(path)
+        head, body = text.split("\n---\n", 1)
+        block = re.search(r"metadata:\n(?:[ \t]+\S.*\n?)+", head + "\n").group(0)
+        for inline in ("metadata: {version: 1.0.0, base: pod-lead}\n", "metadata: {base: pod-lead, version: 1.0.0}\n"):
+            with open(path, "w", encoding="utf-8", newline="\n") as f:
+                f.write((head + "\n").replace(block, inline, 1).rstrip("\n") + "\n---\n" + body)
+            rc, out = self.measure_isolated(path)
+            self.assertEqual(rc, 0, out)
+            self.assertEqual(kv(out)["core"], ["base pod-lead | identical"], out)
+            self.assertTrue(kv(out)["base"][0].startswith("pod-lead |"), out)
+
+    def test_26_fork_of_a_worker_fork_keeps_core_check(self):
+        base = self.write(self.filled().replace("name: acme-triage", "name: acme-base", 1), "acme-base.md")
+        path, o = self.fork_from(base, "acme-child")
+        self.assertIn("core: constraints, identity", o)
+        self.assertIn("  base: acme-base\n", read(path))
+        rc, out = self.measure_isolated(path)
+        self.assertEqual(rc, 0, out)
+        self.assertTrue(kv(out)["base"][0].endswith("| worker fork"), out)
+        changed = read(path).replace("Do not address the human.", "Address the human.")
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(changed)
+        rc, out = self.measure_isolated(path)
+        self.assertEqual(fails(out), {"A5"})
+
+    def test_27_unknown_base_fails_a19(self):
+        for value, message in (("no-such-base", "not found"), ("../pod-lead", "kebab-case")):
+            text = TOOLS_TEXT.replace("  version: ", "  base: " + value + "\n  version: ", 1)
+            self.assertIn("base: " + value, text)
+            rc, out = self.measure_isolated(self.write(text, "acme-x.md"))
+            self.assertEqual(rc, 1, out)
+            self.assertIn("A19", fails(out))
+            self.assertIn(message, kv(out)["base_error"][0])
 
     def test_slot_direct_call_fails_a18(self):
         _, out = self.measure(TOOLS_TEXT + "\n* Resolve with `Skill(agentville:toolbelt)` now.\n")
