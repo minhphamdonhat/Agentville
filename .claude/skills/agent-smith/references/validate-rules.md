@@ -28,4 +28,4 @@ Read by SKILL.md step 7 after measure.py. Report each problem as `rule <id>: <pr
 
 ## Exemptions
 
-An agent named `pod-lead` is standalone, not a worker fork: measure.py skips A3, A5, A6 and A16 for it and runs every other rule. The `scout` core variant under A5 is the only other exemption.
+Agents named `pod-lead`, `conductor` and the maintainer-only `lookout` are standalone, not a worker fork: measure.py skips A3, A5, A6 and A16 for them and runs every other rule. The `scout` core variant under A5 is the only other exemption.

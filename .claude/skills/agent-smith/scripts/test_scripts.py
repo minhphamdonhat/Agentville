@@ -347,6 +347,23 @@ class TestMeasure(Base):
         rc, out = self.measure(text.replace("model", "x").replace("---\n\n", "model: opus\n---\n\n", 1))
         self.assertIn("A2", fails(out))
 
+    def test_22_conductor_is_standalone(self):
+        text = ("---\nname: conductor\ndescription: Standalone conductor over several pod-leads.\n"
+                "tools: Skill, ListAgents, SendMessage\nmetadata:\n  version: 1.0.0\n---\n\n# Role\n\nYou are conductor.\n\n"
+                "# Constraints\n\n1. **Never spawn:** move work only by message.\n\n"
+                "# Workflows\n\n## Triage-Alert\n\nRole: conductor\n\n### Input\n\n"
+                "* **alert:** required - default: none - The alert.\n\n### Process\n\n"
+                "1. **Hand off.** Message a pod-lead.\n\n### Output\n\n"
+                "* **assignment:** always - The assignment.\n\n# Exception handler\n\n* **Unclear:** ask.\n")
+        rc, out = self.measure(text)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("standalone", kv(out))
+        rc, out = self.measure(text.replace("name: conductor", "name: other"))
+        self.assertTrue({"A5", "A6", "A16"} <= fails(out), out)
+        rc, out = self.measure(text.replace("name: conductor", "name: lookout"))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("standalone", kv(out))
+
     def test_slot_direct_call_fails_a18(self):
         _, out = self.measure(TOOLS_TEXT + "\n* Resolve with `Skill(agentville:toolbelt)` now.\n")
         self.assertIn("A18", fails(out))

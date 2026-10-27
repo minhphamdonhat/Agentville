@@ -26,7 +26,7 @@ MAX_LINES = 500
 FOREIGN_NS = "anthropic-skills" + ":"
 HEAD_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
-STANDALONE_AGENTS = {"pod-lead"}
+STANDALONE_AGENTS = {"pod-lead", "conductor", "lookout"}
 # Core variant: an agent with no file or shell tool may omit these constraints-core items. Nothing else differs.
 CORE_VARIANTS = {"scout": (1, 2)}
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
@@ -406,7 +406,7 @@ def measure(path, base_path, allow_agent):
     if len(lines) > MAX_LINES:
         fails.add("A11")
 
-    # The pod-lead is a standalone agent, not a worker fork: it skips the core-block checks (A5, A16),
+    # The pod-lead, the conductor and the lookout are standalone agents, not worker forks: they skip the core-block checks (A5, A16),
     # the spawning check (A3) and the workflow-role check (A6) only.
     if name in STANDALONE_AGENTS:
         out.append("standalone: yes (skips A3, A5, A6, A16)")

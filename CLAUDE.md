@@ -1,6 +1,6 @@
 # Agentville steering file
 
-Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent except `pod-lead` is a fork of one base worker with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. The root-agent policy is imported at the end.
+Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent except `pod-lead` and `conductor` is a fork of one base worker with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. The root-agent policy is imported at the end.
 
 The plugin ships from `plugins/agentville/` and installs as one versioned unit. Its skills are namespaced `agentville:<skill>` and its agents `agentville:<agent>`. `README.md` owns the skill and agent tables and the three ways to run the plugin.
 
@@ -8,7 +8,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 | Path | Holds |
 | --- | --- |
-| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md`, `validator.md`, `reviewer.md` and `pod-lead.md` (standalone, not a worker fork). |
+| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md`, `validator.md`, `reviewer.md`, `pod-lead.md` (standalone, not a worker fork) and `conductor.md` (standalone root agent, not a worker fork). |
 | `plugins/agentville/agents/<base>-<model>-<effort>.md` | Generated variants of `worker`, `validator`, `reviewer` and `scout` (for example `worker-sonnet-high.md`), 36 in all. The only agents that set `model` and `effort`. Never hand-edited; `scripts/gen_agent_variants.py` writes them from their base, and its `--check` flag reports drift. |
 | `scripts/gen_agent_variants.py` | Maintainer script that generates and checks the variants. Run `python3 scripts/gen_agent_variants.py` after any base agent edit. |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
@@ -21,6 +21,9 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
 | `.claude/skills/pr-report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and creates or updates that one PR (see Security and publishing). |
 | `.claude/skills/docs-site/` | Maintainer-only standard for the documentation site in `website/`: page layout and sidebar, writing a page, build and audit checks, deploy and refresh; not shipped. |
+| `.claude/skills/blueprint/` | Maintainer-only playbook that runs Discuss and Plan for a request, records the plan, then stops; not shipped. |
+| `.claude/skills/build/` | Maintainer-only playbook that runs Execute, Validate, Review and Report from a recorded plan; not shipped. |
+| `.claude/agents/lookout.md` | Maintainer-only root agent that watches a task source and alerts `conductor`; not shipped. |
 | `agentville/`, `agentville/cli/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` distribution and console script. `agentville/__init__.py` holds `__version__` and `agentville/__main__.py` runs `python -m agentville`; the installer code is in `agentville/cli/` (`app.py` the command, `console.py`, `files.py`, `targets/`), its tests in `tests/cli/`. Later parts of the package, such as `agentville/townhall/`, sit beside `cli/`. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `website/` | Docusaurus documentation site for Claude Chat and Cowork users, with technical pages for Claude Code and the command-line installer; not shipped with the plugin. |
@@ -30,14 +33,14 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 ## Agent format
 
-Every agent except `pod-lead` is a fork of `plugins/agentville/agents/worker.md`, with its own personality, workflows and tool allow and deny lists. The format is fixed:
+Every agent except `pod-lead` and `conductor` is a fork of `plugins/agentville/agents/worker.md`, with its own personality, workflows and tool allow and deny lists. The format is fixed:
 
 1. **Role:** who the agent is, in a few lines.
 2. **Constraints:** the core blocks (`<!-- core:begin ... -->` to `<!-- core:end ... -->`) copied verbatim from the worker, then the agent's own rules numbered from 7.
 3. **Workflows:** as many as the agent needs. Each has Input, Process and Output.
 4. **Exception handler:** what the agent does when the brief is unclear, a check fails, another agent is needed, or the budget runs out.
 
-`pod-lead` holds no core blocks, numbers its own rules from 1 and may hold the `Agent` tool; `measure.py` exempts it from A3, A5, A6 and A16 only.
+`pod-lead`, `conductor` and the maintainer-only `lookout` are standalone: each holds no core blocks and numbers its own rules from 1. Only `pod-lead` may hold the `Agent` tool; `conductor` and `lookout` hold none and talk to other sessions through `ListAgents` and `SendMessage` only. The shipped `measure.py` gives the standalone exemption (A3, A5, A6 and A16 only) to `pod-lead` and `conductor`; the maintainer `measure.py` also gives it to `lookout`.
 
 Do:
 

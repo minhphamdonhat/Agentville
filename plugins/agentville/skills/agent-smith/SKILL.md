@@ -2,7 +2,7 @@
 name: "agent-smith"
 description: "Compiles a Claude Code subagent as a fork of the base worker agent: settles its personality, workflows, rules, exception handling and tools with the user, keeps the worker core (identity, base rules including relay and the report shape) verbatim, validates it, evals it against the base worker and installs it. Use when asked to create, write, compile or fork an agent or subagent file, to give an agent new workflows or tools, or to fix and re-test an existing compiled agent."
 metadata:
-  version: 2.0.0
+  version: 2.0.1
 ---
 
 # Role
