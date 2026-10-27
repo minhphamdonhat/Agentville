@@ -1,8 +1,8 @@
 ---
 name: "root-agent"
-description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. Use when the steering names this skill or imports this file."
+description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK, delivery stated only from an ACK). Use when the steering names this skill or imports this file."
 metadata:
-  version: 2.1.0
+  version: 2.3.1
 ---
 
 # root-agent
@@ -11,7 +11,7 @@ Goal: the agent that holds this skill routes every request to `Skill(agentville:
 
 ## 1. Routing
 
-* Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it. Load it before anything else in the request, and again for each new request.
+* Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it. Load it before anything else in the request, and again for each new request; the one exception is the ACK for a message that arrives from another session (section 7), which goes out first.
 * Orchestrate owns the stages, every spawn and the dispatch of each child. You spawn nothing on your own, and you read nothing yourself.
 
 Do:
@@ -41,6 +41,7 @@ Don't:
 Use only these tools, of those you hold, and never read a file yourself, not the steering and not a skill's files; delegate every read to a worker.
 
 * `Skill` to load skills, `Agent` to spawn children and `SendMessage` to follow up with them, both only as `Skill(agentville:orchestrate)` directs; `TaskOutput` to read a background child's output and `ListAgents` to see which agents you can message.
+* `SendMessage` and `ListAgents` also to message another session, only as `Skill(agentville:intercommunicate)` directs (section 7).
 * `AskUserQuestion` to ask the user questions; a loaded workflow says when.
 * `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` and `TaskStop` to keep the task list.
 * `CronCreate`, `CronList`, `CronDelete`, `ScheduleWakeup`, `Monitor` and, when present, `mcp__claude-code-remote__send_later` to schedule work, wait on it and watch it.
@@ -87,6 +88,18 @@ Don't:
 * Call `SendUserFile` in Claude Code because the tool is present; give the path.
 * Give a workspace path in Claude chat, or paste the file into the reply; send the file.
 
+## 7. Cross-session messages
+
+* Follow `Skill(agentville:intercommunicate)` for every message to, or from, a session that is not a child you spawned or the session that started you: check the target with `ListAgents`, compile the message under `Skill(agentville:relay)`, require an immediate ACK and treat only the ACK as delivery confirmation.
+* Send a plain `SendMessage` with no ACK to a child you spawned or to the session that started you, compiled under `Skill(agentville:relay)` in both directions.
+* When a message arrives from another session, send its ACK to the `from` address first, before loading orchestrate (the one exception to the order in section 1), then work on it.
+
+Do:
+* Load `Skill(agentville:intercommunicate)` before you message the `acme-api-lead` session, and tell the user the message is undelivered when step 5 of that skill finds no ACK after one resend (the next message from the target holds none, or your next turn begins with nothing from the target).
+
+Don't:
+* Report a cross-session message as delivered because `SendMessage` returned without error; read the next message from the target for the ACK, as the Do item shows.
+
 ## Pre-send check
 
 1. The request went through `Skill(agentville:orchestrate)` (§1).
@@ -96,3 +109,4 @@ Don't:
 5. Each task's state matches the work done (§5).
 6. Surface checked: in Claude chat every file for the user went through `SendUserFile`; in Claude Code, or when unsure, none did and each came as a path (§6).
 7. Every relay output in the reply was compiled into voice: no tags, no claim labels in agent notation, and the stage line orchestrate sets kept (§2).
+8. Every message to another session went through `Skill(agentville:intercommunicate)`: target listed, ACK required, delivery stated only from an ACK (§7).

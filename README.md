@@ -148,8 +148,9 @@ Each skill is invoked as `/agentville:<name>`.
 | --- | --- |
 | `/agentville:orchestrate` | Workflow that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
-| `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. |
+| `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK first, delivery stated only from an ACK). |
 | `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
+| `/agentville:intercommunicate` | Sends a message to another session with delivery confirmation: checks the target with `ListAgents`, requires an immediate ACK, resends once and reports an undelivered message; also tells the receiver to ACK first. A session you spawned, or the one that spawned you, gets a plain `SendMessage` compiled with `relay` in either direction, with no ACK. |
 | `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports and document files. |
 | `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |
 | `/agentville:context-injection` | Resolves slots to the skills that fill them and owns the binding syntax and resolution order. |
