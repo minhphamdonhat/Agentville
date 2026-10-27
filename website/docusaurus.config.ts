@@ -1,6 +1,23 @@
-import {themes as prismThemes} from 'prism-react-renderer';
+import type {PrismTheme} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+
+// Code theme built from the site palette: cream text on dark brown (#3b2416).
+// Every colour is at least 7:1 on the background.
+const agentvilleCode: PrismTheme = {
+  plain: {color: '#fbf0d2', backgroundColor: '#3b2416'},
+  styles: [
+    {types: ['comment', 'prolog', 'doctype', 'cdata'], style: {color: '#d4bd98', fontStyle: 'italic'}},
+    {types: ['punctuation', 'operator'], style: {color: '#e8d5b0'}},
+    {types: ['keyword', 'selector', 'important', 'atrule'], style: {color: '#f2b92e'}},
+    {types: ['string', 'char', 'inserted', 'regex'], style: {color: '#b5d99c'}},
+    {types: ['builtin', 'class-name', 'boolean'], style: {color: '#9fd18b'}},
+    {types: ['number', 'tag', 'deleted', 'symbol', 'constant'], style: {color: '#f4a597'}},
+    {types: ['function', 'variable'], style: {color: '#ffd98a'}},
+    {types: ['attr-name', 'property'], style: {color: '#e6c36a'}},
+    {types: ['attr-value', 'url'], style: {color: '#b5d99c'}},
+  ],
+};
 
 const config: Config = {
   title: 'Agentville',
@@ -93,8 +110,9 @@ const config: Config = {
       copyright: 'Agentville is released under the MIT licence. Built with Docusaurus.',
     },
     prism: {
-      // Code blocks sit on a dark wood panel, so they take the dark Prism palette.
-      theme: prismThemes.dracula,
+      // Code blocks sit on the dark brown panel (--av-code-bg), so both modes use the palette theme.
+      theme: agentvilleCode,
+      darkTheme: agentvilleCode,
       additionalLanguages: ['bash', 'powershell'],
     },
   } satisfies Preset.ThemeConfig,

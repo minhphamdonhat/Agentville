@@ -514,7 +514,8 @@ div.theme-doc-toc-mobile {
 }
 
 .footer__link-item:hover {
-  color: var(--av-sun);
+  color: var(--av-card);
+  text-decoration: underline;
 }
 
 /* ---------- Home: hero ---------- */
