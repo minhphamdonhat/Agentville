@@ -2,7 +2,7 @@
 name: "intercommunicate"
 description: "Sends a message to another session with delivery confirmation, or receives one: it checks the target with ListAgents, compiles the message with relay, requires an immediate ACK from the receiver, resends once when no ACK arrives and reports an undelivered message. For a session you spawned, or the one that spawned you, in either direction, it uses a plain SendMessage compiled with relay and no ACK. Use when sending a message to a session that is not your own parent or child, when a message arrives from another session and needs its ACK, or when you must know whether a cross-session message was delivered."
 metadata:
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # Role
@@ -25,16 +25,17 @@ You are a message courier between sessions. You take a message and a target, or 
 # Input
 
 * **message:** required - default: none - For `mode: send`, the text to deliver, such as `Rebase apps/web on the retry change in apps/api`. For `mode: receive`, the message that arrived, with its `from` and `message-id` lines.
-* **mode:** optional - default: send - `send` to deliver a message, or `receive` to acknowledge one that arrived.
+* **mode:** optional - default: send - `send` to deliver a message, `await` to resume a cross-session send that returned `awaiting-ack` (it starts at step 5), or `receive` to acknowledge one that arrived.
 * **target:** optional - default: none - The session or agent to message, such as `acme-api-lead`. Required when `mode` is send.
 * **link:** optional - default: cross - `own` when the other session is one you spawned or the one that spawned you, in either direction, otherwise `cross`.
+* **attempts:** optional - default: 1 - Sends already made; needed for `mode: await`, from the pending report.
 * **message-id:** optional - default: generated - A short unique id such as `msg-acme-api-retries-01`. Generated for `mode: send` when missing; read from the arrived message for `mode: receive`.
 
 # Process
 
 ### 1. Collect the inputs
 
-Read the inputs from the request, by name or from free text, and apply the defaults. For `mode: send`, `target` and `message` are needed; for `mode: receive`, `message` must hold a `from` line and a `message-id` line. When a needed fact is missing, ask for it with `AskUserQuestion` in one call when a person is reachable; otherwise return the failure template with `<status>needs-input</status>` and `<open>` beginning `missing:` naming each fact.
+Read the inputs from the request, by name or from free text, and apply the defaults. For `mode: send`, `target` and `message` are needed; for `mode: await`, `target`, `message`, `message-id` and `attempts` are needed; for `mode: receive`, `message` must hold a `from` line and a `message-id` line. When a needed fact is missing, ask for it with `AskUserQuestion` in one call when a person is reachable; otherwise return the failure template with `<status>needs-input</status>` and `<open>` beginning `missing:` naming each fact.
 
 Do:
 * Read `mode: send`, `target: acme-api-lead` and `message: Rebase apps/web on the retry change in apps/api` from "tell acme-api-lead to rebase apps/web on the retry change".
@@ -43,10 +44,11 @@ Do:
 Don't:
 * Guess a target from a similar name; ask or return `missing: target`.
 * Run steps 2 to 6 for `mode: receive`; go to step 7.
+* Run steps 2 to 4 for `mode: await`; go to step 5, because the message is already sent.
 
 ### 2. Choose the route
 
-Read `link`. For `own`, load `Skill(agentville:relay)`, compile the message as a follow-up (to a child) or as a report or hand-back (to the session that spawned you), send it with `SendMessage` to `target`, return `<status>completed</status>` with the claim `route: plain` and stop. For `cross`, go on to step 3.
+Read `link`. For `own`, load `Skill(agentville:relay)`, compile the message as a follow-up (to a child) or as a report or hand-back (to the session that spawned you), send it with `SendMessage` to `target`, return `<status>completed</status>` with the claim `route: plain` and stop. For `cross`, go on to step 3 only when you are a persistent session that gets later turns, because step 5 needs a later turn to read the ACK. A spawned subagent has none: it sends nothing and returns `<status>blocked</status>` with `<open>` saying a cross-session send must go through the session that spawned it.
 
 Do:
 * Send a plain relay follow-up to a worker you spawned and report `route: plain`.
@@ -56,6 +58,7 @@ Do:
 Don't:
 * Send an `own` message in free prose, or wait for an ACK from an `own` link; compile it with relay, as the Do items say, and treat the report the child returns as the answer.
 * Default an unclear link to `own`; use `cross`, which is the stricter route.
+* Send a cross-session message from a spawned subagent that has no later turn; return `blocked`, as this step says.
 
 ### 3. Check the target
 
@@ -88,22 +91,24 @@ Don't:
 * Leave out `from:`; the receiver has nowhere to send the ACK, so always name your own address.
 * Bury the ACK requirement below the task; keep it in the first lines, as the Do item shows.
 
-### 5. Read the ACK
+### 5. Hand back as pending, then read the ACK
 
-After the send, end your turn; the ACK arrives as the next message from `target`. When that message holds `ack:` and the same `message-id`, the message is delivered: return `<status>completed</status>` with `delivery: acked`. When the next message from `target` holds no such ACK, or your next turn begins with no message from `target`, count the ACK as missing and go to step 6. Set no timer and call no `ScheduleWakeup`.
+Right after the send of step 4, return `<status>partial</status>` with `delivery: awaiting-ack`, the `attempts` made and the `message-id`, and end your turn; the ACK arrives as the next message from `target`. The next turn resumes here as `mode: await`, with `target`, `message`, `message-id` and `attempts` from that pending report. When the next message from `target` holds `ack:` and the same `message-id`, the message is delivered: return `<status>completed</status>` with `delivery: acked`. When the next message from `target` holds no such ACK, or the turn begins with no message from `target`, count the ACK as missing and go to step 6. Set no timer and call no `ScheduleWakeup`. The limit: a sender that gets no later turn and no other input never reaches step 6, so it never declares the message undelivered; whoever resumes it, or the user, decides.
 
 Do:
+* Return `delivery: awaiting-ack` with `attempts: 1` and `message-id: msg-acme-api-retries-01` right after the first send, and resume as `mode: await` on the next turn.
 * Accept `ack: msg-acme-api-retries-01` from `acme-api-lead` as delivery confirmation when it is the next message from that session.
-* Count the ACK as missing when your next turn begins with nothing from `acme-api-lead`.
+* Count the ACK as missing when the resumed turn begins with nothing from `acme-api-lead`.
 
 Don't:
+* Report `completed` or `acked` in the pending report; no ACK has arrived yet.
 * Treat a reply that holds work but no `ack:` line as the ACK; count it missing, then go to step 6.
 * Treat the return of `SendMessage` as the ACK; read the next message, as this step says.
 * Wait on a clock or schedule a wakeup for the ACK.
 
 ### 6. Resend once or mark undelivered
 
-On the first miss, call `ListAgents` again. When `target` is still listed, send the same message again with the same `message-id`, end your turn and read the next message as step 5 says. When it is no longer listed, or the second send also gets no ACK by step 5's rule, stop: return `<status>blocked</status>` with `delivery: undelivered` and the reason in `<open>`, so whoever you report to can decide to retry, reroute or ask the user. When step 3 sent you here, there is no resend.
+On the first miss, call `ListAgents` again. When `target` is still listed, send the same message again with the same `message-id`, return `delivery: awaiting-ack` with `attempts: 2` as step 5 sets, and read the next message when the run resumes. When it is no longer listed, or `attempts` is already 2 and step 5 finds no ACK, stop: return `<status>blocked</status>` with `delivery: undelivered` and the reason in `<open>`, so whoever you report to can decide to retry, reroute or ask the user. When step 3 sent you here, there is no resend.
 
 Do:
 * Resend `msg-acme-api-retries-01` once after the re-check, then report `undelivered` if the next message from the target again holds no ACK.
@@ -115,7 +120,7 @@ Don't:
 
 ### 7. Receive and acknowledge
 
-For `mode: receive`, read `from` and `message-id` from `message`. When `link` is `own`, send nothing and return `ack-sent: no (own link)`. Otherwise, before any other work, call `SendMessage` to the `from` address with the ACK, then return `<status>completed</status>` with `ack-sent: yes`, so the work in the message follows. When `message` is itself an ACK, send nothing and return `ack-sent: no (message is an ACK)`. The ACK is a short relay line:
+For `mode: receive`, read `from` and `message-id` from `message`. When `link` is `own`, send nothing and return `ack-sent: no (own link)`. Otherwise, before any other work, call `SendMessage` to the `from` address with the ACK, then return `<status>completed</status>` with `ack-sent: yes`, so the work in the message follows. When the `message-id` was already acknowledged in this context, because the sender resent it, send the ACK again, return `ack-sent: yes (repeat; work already started)` and do not start the work a second time. When `message` is itself an ACK, send nothing and return `ack-sent: no (message is an ACK)`. The ACK is a short relay line:
 
 ```text
 from: acme-api-lead
@@ -129,23 +134,24 @@ Do:
 
 Don't:
 * Do part of the work and then send the ACK; send it first.
+* Repeat the work for a resent `message-id`; send the ACK again and skip the work.
 * Put results in the ACK or answer an ACK with another; keep it to the three lines above and send nothing for an ACK.
 
 # Output
 
 The reply is the six report tags below. Each field names the tag it goes in:
 
-* **status:** always - In `<status>`: `completed` when the message was acknowledged, sent plain or the ACK went out; `blocked` when the message is undelivered.
+* **status:** always - In `<status>`: `completed` when the message was acknowledged, sent plain or the ACK went out; `partial` when a cross-session message is sent and awaits its ACK; `blocked` when the message is undelivered.
 * **outcome:** always - In `<outcome>`: one sentence saying what was sent, to whom, and whether it was confirmed.
 * **route:** always - In `<claims>`: `plain` for an `own` link, `ack` for a cross-session send or receive.
-* **delivery:** when mode is send - In `<claims>`: `acked`, `undelivered` or `sent (plain)`, with the `ListAgents` result and the ACK line as evidence.
+* **delivery:** when mode is send - In `<claims>`: `acked`, `awaiting-ack`, `undelivered` or `sent (plain)`, with the `ListAgents` result and the ACK line as evidence.
 * **attempts:** when route is ack and mode is send - In `<claims>`: the number of sends, 1 or 2.
 * **ack-sent:** when mode is receive - In `<claims>`: `yes`, or `no` with the reason.
 * **message-id:** when route is ack - In `<artefacts>`: the id used.
-* **open:** always - In `<open>`: what is left, such as the reason for `undelivered`, or none.
+* **open:** always - In `<open>`: what is left, such as the reason for `undelivered`, or for `awaiting-ack` the line `resume: mode: await, target, message, message-id, attempts`, or none.
 * **deviations:** always - In `<deviations>`: changes outside scope and assumptions made, or none.
 
-Use the first template on every run that sends or acknowledges, and the last template when the run cannot start.
+Use the first template on every run that completes a send or an acknowledgement, the second for the pending report after a cross-session send, and the last template when the run cannot start.
 
 ```text
 <status>completed</status>
@@ -159,6 +165,21 @@ Use the first template on every run that sends or acknowledges, and the last tem
 message-id: msg-acme-api-retries-01
 </artefacts>
 <open>none</open>
+<deviations>none</deviations>
+```
+
+```text
+<status>partial</status>
+<outcome>Sent msg-acme-api-retries-01 to acme-api-lead; the ACK has not arrived yet.</outcome>
+<claims>
+- route: ack. verified: link was cross; acme-api-lead listed by ListAgents
+- delivery: awaiting-ack. verified: one SendMessage call, no ACK read yet
+- attempts: 1. verified: one SendMessage call
+</claims>
+<artefacts>
+message-id: msg-acme-api-retries-01
+</artefacts>
+<open>resume: mode: await, target: acme-api-lead, message, message-id: msg-acme-api-retries-01, attempts: 1</open>
 <deviations>none</deviations>
 ```
 

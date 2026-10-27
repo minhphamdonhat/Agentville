@@ -2,7 +2,7 @@
 name: "root-agent"
 description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK, delivery stated only from an ACK). Use when the steering names this skill or imports this file."
 metadata:
-  version: 2.3.0
+  version: 2.3.1
 ---
 
 # root-agent
@@ -95,7 +95,7 @@ Don't:
 * When a message arrives from another session, send its ACK to the `from` address first, before loading orchestrate (the one exception to the order in section 1), then work on it.
 
 Do:
-* Load `Skill(agentville:intercommunicate)` before you message the `acme-api-lead` session, and tell the user the message is undelivered when the next message from the target holds no ACK after one resend.
+* Load `Skill(agentville:intercommunicate)` before you message the `acme-api-lead` session, and tell the user the message is undelivered when step 5 of that skill finds no ACK after one resend (the next message from the target holds none, or your next turn begins with nothing from the target).
 
 Don't:
 * Report a cross-session message as delivered because `SendMessage` returned without error; read the next message from the target for the ACK, as the Do item shows.
