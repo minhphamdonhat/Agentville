@@ -150,6 +150,7 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
 | `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names and a live task list. |
 | `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
+| `/agentville:intercommunicate` | Sends a message to another session with delivery confirmation: checks the target with `ListAgents`, requires an immediate ACK, resends once and reports an undelivered message; also tells the receiver to ACK first. A session you spawned, or the one that spawned you, gets a plain relay `SendMessage`. |
 | `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports and document files. |
 | `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |
 | `/agentville:context-injection` | Resolves slots to the skills that fill them and owns the binding syntax and resolution order. |
