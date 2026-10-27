@@ -76,7 +76,7 @@ Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
-| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/tests.md) |
+| Checks and reproduction | [Tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/29/tests.md) |
 | Validator evidence | Folder `run-4` at `7da0f7b` (runs 1 to 4 kept locally), `SHA256SUMS` hash `02cd20c053c9` |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
