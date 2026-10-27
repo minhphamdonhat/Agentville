@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Agentville',
   tagline: 'A team of helpers for Claude that plans, checks and reports its work',
-  favicon: 'img/favicon.svg',
+  favicon: 'img/favicon.png',
 
   url: 'https://minhphamdonhat.github.io',
   baseUrl: '/Agentville/',
@@ -37,23 +37,27 @@ const config: Config = {
         },
         blog: false,
         theme: {
-          // Pixel fonts, self-hosted from the site build (OFL-1.1): no CDN request.
-          // VT323 loads from its package CSS; custom.css declares Press Start 2P.
-          customCss: [require.resolve('@fontsource/vt323/400.css'), './src/css/custom.css'],
+          // Fonts are self-hosted from the site build (OFL-1.1): no CDN request.
+          // custom.css declares Pixelify Sans and Nunito from their @fontsource files.
+          customCss: './src/css/custom.css',
         },
       } satisfies Preset.Options,
     ],
   ],
 
   themeConfig: {
+    // Light mode only: the cosy 8-bit palette has no night variant.
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'light',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Agentville',
       logo: {
-        alt: 'Agentville',
-        src: 'img/favicon.svg',
+        alt: 'Agentville home',
+        src: 'img/wordmark-letters.png',
+        width: 211,
+        height: 40,
       },
       items: [
         {type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs'},
@@ -67,7 +71,7 @@ const config: Config = {
       ],
     },
     footer: {
-      style: 'dark',
+      style: 'light',
       links: [
         {
           title: 'Docs',
@@ -89,8 +93,8 @@ const config: Config = {
       copyright: 'Agentville is released under the MIT licence. Built with Docusaurus.',
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      // Code blocks sit on a dark wood panel, so they take the dark Prism palette.
+      theme: prismThemes.dracula,
       additionalLanguages: ['bash', 'powershell'],
     },
   } satisfies Preset.ThemeConfig,

@@ -2,7 +2,7 @@
 name: docs-site
 description: 'Maintainer standard for the Agentville documentation site, the Docusaurus project in website/: where pages live and how the sidebar lists them, the plain-language Chat and Cowork path versus the technical pages, the theme and Excalidraw diagrams, how a page is written (frontmatter, admonitions, screenshot placeholders, the Last checked footer with sources, Instructions copied byte for byte from README.md, British English), how the site is built and checked (npm ci, npm run build with broken links failing, npm audit, the security scan), and how it is deployed and refreshed (the docs workflow, agentville-docs--vX.Y.Z tags, the Pages source and the github-pages environment). Use when adding, editing, moving or reviewing a page under website/, when changing sidebars.ts, docusaurus.config.ts, package.json, the theme or home page there, when fixing a failed docs build or audit finding, or when preparing or checking a docs deploy or re-checking install steps against the Claude help pages.'
 metadata:
-  version: 1.4.0
+  version: 1.5.0
 ---
 
 # docs-site
@@ -126,17 +126,19 @@ Wrong: "Moved `Last checked` to today on every page without opening the sources.
 
 ## 7. Theme and diagrams
 
-The site uses the Docusaurus classic theme with a green primary colour, follows the reader's light or dark setting and draws diagrams as Excalidraw scenes compiled to SVG.
+The site uses the Docusaurus classic theme with a cosy 8-bit look in light mode only, and draws diagrams as Excalidraw scenes compiled to SVG.
 
-- Set colours only through the `--ifm-color-primary` variables on `:root` and `[data-theme='dark']` in `website/src/css/custom.css`, and keep both modes, with `respectPrefersColorScheme: true` and the Prism `github` and `dracula` themes in `docusaurus.config.ts`.
-- Self-host the two pixel fonts, both under the SIL Open Font License 1.1: Press Start 2P for headings, the navbar and buttons, and VT323 for body text. Install them as exact-version `@fontsource/press-start-2p` and `@fontsource/vt323` packages, load VT323's `400.css` through `customCss` in `docusaurus.config.ts`, and declare Press Start 2P in `custom.css` with `@font-face` rules under the bare name `PressStart2P` that point at the package's files, so the build serves the font files and the page makes no request to Google Fonts or another CDN.
-- Name each font family literally in `font-family`, unquoted (`PressStart2P`, `VT323`), never only inside a custom property: the production CSS minifier drops an `@font-face` whose family it cannot match, and `npm run build -- --no-minify` keeps rules a normal build drops.
-- Keep the theme's monospace stack as the fallback behind each pixel font, `font-display: swap`, body text at 1.25rem (20px) or larger and Press Start 2P at 1rem (16px) or larger, in rem units; add no other font package.
+- Set colours only as tokens on `:root` in `website/src/css/custom.css` (the `--av-*` palette and the `--ifm` variables Docusaurus reads); the rules read tokens only. The palette is cream `#fbf0d2` page, `#fff8e4` cards, dark brown `#3b2416` text instead of black, wood brown `#8a5a33`, roof red `#b3392b`, link `#8f2f22`, leaf green `#3f7d34` and sun yellow `#f2b92e`, with hard pixel borders and shadows and no radius. Keep body text at a contrast of 4.5:1 or more on its background.
+- Keep light mode only: `colorMode` in `docusaurus.config.ts` sets `defaultMode: 'light'`, `disableSwitch: true` and `respectPrefersColorScheme: false`, and code blocks take the Prism `dracula` theme on their dark wood panel.
+- Use the pixel art in `website/static/img/`: `wordmark-letters.png` as the navbar logo, `wordmark.png` in the home hero, `house-isometric.png` as the home illustration and `favicon.png` (the small house) as the favicon. Keep `image-rendering: pixelated` on the art, and keep each PNG optimised (palette-quantised, sized for twice its display width).
+- Self-host the two fonts, both under the SIL Open Font License 1.1: Pixelify Sans for headings only, and Nunito for body text, navigation and buttons. Install them as exact-version `@fontsource/pixelify-sans` and `@fontsource/nunito` packages, and declare both in `custom.css` with `@font-face` rules that point at the packages' files, Pixelify Sans under the bare name `PixelifySans`, so the build serves the font files and the page makes no request to Google Fonts or another CDN; `customCss` loads `custom.css` only.
+- Name each font family literally in `font-family`, unquoted (`PixelifySans`, `Nunito`), never only inside a custom property: the production CSS minifier drops an `@font-face` whose family it cannot match, and `npm run build -- --no-minify` keeps rules a normal build drops.
+- Keep a system sans-serif stack as the fallback behind each font, `font-display: swap`, body text at 1.125rem (18px) or larger and headings at 1rem (16px) or larger, in rem units; add no other font package.
 - Draw each diagram as an Excalidraw scene in ink on white with one pastel tint, and compile it to SVG with Excalidraw's own `exportToSvg`, so the fonts are embedded and the page makes no font request.
 - Keep the source scene in `website/static/diagrams/<name>.excalidraw` and the compiled SVG in `website/static/img/diagrams/<name>.svg`, and commit both together; set `"source"` in the scene to `https://excalidraw.com`, never a local address with a port.
 - Compile with `website/scripts/build-diagrams.mjs`, which bundles Excalidraw with esbuild, opens it in headless Chromium through Playwright, aborts every request outside 127.0.0.1 and writes one SVG per scene. Install its packages outside `website/`, at exact versions, so the site's lock file and bundle stay as they are: `npm install --prefix <deps> --save-exact @excalidraw/excalidraw@0.18.1 react@19.3.1 react-dom@19.3.1 esbuild@0.28.2`, plus `playwright@1.63.0` in the same folder and its Chromium (`npx --prefix <deps> playwright install chromium`); the compiler loads Playwright from `<deps>` only. Then run `node website/scripts/build-diagrams.mjs --deps <deps>` from the repository root.
 - Show a diagram in a page as `<figure className="diagram-figure">` holding a Markdown image with alt text that states the whole flow, a `<figcaption>`, and, right after the figure, a plain numbered list of the same steps, then explain each loop-back or branch in plain sentences.
-- Keep the `.diagram-figure img` rule in `custom.css` (white background and padding), because the SVG is ink on white and would be unreadable on the dark page.
+- Keep the `.diagram-figure img` rule in `custom.css` (white background and padding), because the SVG is ink on white and needs its own white sheet on the cream page.
 
 Correct: "Edit `six-stages.excalidraw`, run the compiler, commit both files, and update the alt text and the step list in `how-it-works.md` to match."
 
@@ -153,4 +155,4 @@ Run each item before saving or handing over a docs change. The section holds the
 5. `npm ci && npm run build` exits 0, `npm audit` shows 0 critical and 0 high with fixes in `overrides`, and the security scan shows no critical or high finding (§4).
 6. No docs tag was created or pushed unless the user asked for that tag, and every action in `docs.yml` is pinned to a commit SHA (§5).
 7. `Last checked` moved only on pages whose steps were compared with their sources today (§6).
-8. Colours go through the `--ifm` variables in both light and dark modes, the only fonts are the self-hosted Press Start 2P and VT323 packages with no CDN request, and every diagram is an Excalidraw scene compiled to SVG with embedded fonts, committed with its source, readable in dark mode and shown with alt text and a plain list of its steps (§7).
+8. Colours are tokens on `:root` in light mode only, body text contrast is 4.5:1 or more, the only fonts are the self-hosted Pixelify Sans and Nunito packages with no CDN request, and every diagram is an Excalidraw scene compiled to SVG with embedded fonts, committed with its source, shown on a white sheet with alt text and a plain list of its steps (§7).
