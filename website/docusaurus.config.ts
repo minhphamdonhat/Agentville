@@ -71,9 +71,9 @@ const config: Config = {
     },
     navbar: {
       logo: {
-        alt: 'Agentville home',
-        src: 'img/wordmark-letters.png',
-        width: 211,
+        alt: 'Agentville',
+        src: 'img/wordmark-text.png',
+        width: 216,
         height: 40,
       },
       items: [
