@@ -101,7 +101,7 @@ With the `claude` command on your `PATH`, the installer runs `claude plugin mark
 
 ## Three ways to run it
 
-In Claude Code, installing Agentville makes `pod-lead` the main agent by default, so `orchestrate` runs on every request. Chat and Cowork ignore plugin settings, so there you opt in. Pick one way:
+Installing Agentville changes no main agent: the plugin ships no default settings, so in every surface you opt in. Pick one way:
 
 1. **Chat.** Install the plugin through Customize, then put these lines at the top of your custom instructions:
 
@@ -110,13 +110,13 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
    - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
 
-2. **Claude Code with pod-lead as the main agent.** The plugin ships a `settings.json` with `{"agent": "pod-lead"}`, so an installed plugin makes `pod-lead` the main agent of every session. `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session only, start `claude --agent agentville:pod-lead`. Your own `agent` setting overrides the plugin's.
+2. **Claude Code with pod-lead as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set the `agent` key in your own `~/.claude/settings.json` or the project's `.claude/settings.json`. The subagents docs show that key with a bare agent name, as in `{ "agent": "code-reviewer" }`, and the plugin docs give a plugin agent's full name as `<plugin>:<name>`; for this plugin's agent, `claude --agent agentville:pod-lead` is the documented form.
 
 3. **Claude Code with another agent.** The documented ways to use an agent other than `pod-lead`:
 
    * Start one session with `claude --agent <name>`.
-   * Name another agent in your own `agent` key in `~/.claude/settings.json`; it overrides the plugin's.
-   * Disable the plugin with `claude plugin disable agentville@minhphamdo` (`claude plugin disable --help`: "Disable an enabled plugin"). Inferred, not documented: this drops its defaults along with its skills. No documented value unsets `agent` back to the built-in agent.
+   * Name another agent in your own `agent` key in `~/.claude/settings.json`.
+   * Keep the built-in main agent: the plugin sets no `agent`, so a session without your own `agent` key or `--agent` flag runs the built-in agent.
 
    To make that agent follow Agentville, add these lines to your project's `CLAUDE.md`:
 
@@ -133,7 +133,6 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
 | --- | --- | --- | --- |
 | Skills | Yes | Yes | Yes |
 | Agents | Yes | Yes | Ignored per the docs |
-| `settings.json` (`agent`) | Yes | Ignored | Ignored |
 | Hooks | Yes | Yes | Ignored |
 
 Chat now shares Cowork's Agent tool and file writing in some accounts, so `dispatch` can still spawn there; when an `agentville:` agent type is missing, it falls back to `general-purpose`. `dispatch` spawns a variant such as `agentville:worker-sonnet-high` only when the session's Agent tool has no `effort` parameter; otherwise it spawns the base agent and passes model and effort, and a missing variant falls back to the base agent with the model passed and records `effort unenforced, variant missing`.
@@ -150,7 +149,7 @@ Each skill is invoked as `/agentville:<name>`.
 | --- | --- |
 | `/agentville:orchestrate` | Playbook that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
-| `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK first, delivery stated only from an ACK). |
+| `/agentville:root-agent` | Standing rules for an agent that talks to the user, whatever playbook its session runs: it follows the playbook a second steering line (`Route every request ... through Skill({playbook})`) or its agent definition names (such as `orchestrate` for `pod-lead`), else works directly; voice on every reply, the answer first, a fixed tool list with no file reads while a playbook delegates, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK first, delivery stated only from an ACK). |
 | `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
 | `/agentville:intercommunicate` | Sends a message to another session with delivery confirmation: checks the target with `ListAgents`, requires an immediate ACK, resends once and reports an undelivered message; also tells the receiver to ACK first. A session you spawned, or the one that spawned you, gets a plain `SendMessage` compiled with `relay` in either direction, with no ACK. |
 | `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports and document files. |

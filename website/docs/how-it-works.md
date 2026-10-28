@@ -45,7 +45,7 @@ The Claude you talk to leads the request but does not do the work itself. It han
 
 | Helper | Job |
 | --- | --- |
-| Lead (the Claude you talk to) | Runs the whole request: picks the stages, hands out the tasks and writes to you. In Claude Code this lead is an agent called pod-lead. |
+| Lead (the Claude you talk to) | Runs the whole request: picks the stages, hands out the tasks and writes to you. In Claude Code this lead can be an agent called pod-lead, when you start Claude Code with it. |
 | Worker | Does the work: writes, edits, looks things up in your files. |
 | Validator | Checks that the work does what it should, and keeps the evidence. It never changes the work itself. |
 | Reviewer | Reads the finished work against the plan and the evidence, and gives a verdict. |
