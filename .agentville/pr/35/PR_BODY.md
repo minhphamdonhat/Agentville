@@ -1,4 +1,4 @@
-Removes the `build-lead` agent, the `lookout` skill and the plugin's `pod-lead` default, and bumps the plugin to 0.15.0; installing no longer makes `pod-lead` the main agent. `pod-lead` itself stays shipped. `root-agent` 3.0.0 no longer routes through `orchestrate`, and `CLAUDE.md` imports it again without naming a playbook.
+Removes the `build-lead` agent, the `lookout` skill and the plugin's `pod-lead` default, and bumps the plugin to 0.15.0; installing no longer makes `pod-lead` the main agent. `pod-lead` itself stays shipped. `root-agent` 3.0.0 no longer routes through `orchestrate`, and `CLAUDE.md` imports it again without naming a playbook. Round 3 rewrites the maintainer `conductor` skill (2.1.4) to start ticket sessions with `create_session`, and makes `build` compile its plan on every run.
 
 Verdict: Pending review. Blocking items: 0. Decisions needed: 2.
 
@@ -6,21 +6,23 @@ Verdict: Pending review. Blocking items: 0. Decisions needed: 2.
 
 | Question | Options | Agent default | Consequence if unanswered |
 | --- | --- | --- | --- |
-| Rewrite the `conductor` skill and replace `build-lead`? | The owner rewrites it by hand, or plans it as a follow-up | Left to the owner; conductor will start build sessions with a system prompt to follow `Skill(build)` | `.claude/skills/conductor/` still names `build-lead`, `lookout` and the `ListAgents` hand-off and does not work until rewritten. |
+| Bump the plugin version for the shipped `root-agent` 3.1.4 change? | Bump, or keep 0.15.0 | Keep 0.15.0 (the user decided; a shipped change without a bump) | Installed users get no version signal for the `root-agent` wording change. |
 | Is `"agent": "agentville:pod-lead"` the right user setting? | Keep the namespaced form, or confirm the form against the Claude Code docs | Keep as written in README and website docs | The docs may show a setting Claude Code does not accept; unverified. |
 
 ## Context
 
-The plugin shipped `settings.json` with `{"agent": "pod-lead"}`, so every install made `pod-lead` the main agent, and the maintainer-only `build-lead` and `lookout` supported a conductor flow built on that. The user chose to drop that default and those two parts. Users now run `pod-lead` with `claude --agent agentville:pod-lead` or an `agent` setting of their own. `root-agent` 3.0.0 drops its fixed route through `orchestrate`: a session's playbook now comes from a second steering line (`Route every request, questions included, through Skill(<playbook>) and follow it.`) or from its agent definition (`pod-lead` uses `orchestrate`); with neither, the session works directly. Other `orchestrate` dependencies are reworded, and the no-file-read rule applies only while a delegating playbook runs. The repository's `CLAUDE.md` imports `root-agent` again and names no playbook; its examples are `pod-lead` with `orchestrate`, a conductor session with `conductor` and a ticket session with `build`.
+The plugin shipped `settings.json` with `{"agent": "pod-lead"}`, so every install made `pod-lead` the main agent, and the maintainer-only `build-lead` and `lookout` supported a conductor flow built on that. The user chose to drop that default and those two parts. Users now run `pod-lead` with `claude --agent agentville:pod-lead` or an `agent` setting of their own. `root-agent` 3.0.0 drops its fixed route through `orchestrate`: a session's playbook now comes from a second steering line (`Route every request, questions included, through Skill(<playbook>) and follow it.`) or from its agent definition (`pod-lead` uses `orchestrate`); with neither, the session works directly. The repository's `CLAUDE.md` imports `root-agent` again and names no playbook. Round 3: `conductor` 2.1.4 (repo scope, single conductor) starts one `create_session` cloud session per open `ready` issue, with no cap; `append_system_prompt` carries the root line, the `Skill(build)` playbook line and the ticket rules. The old `ListAgents`, ACK and `lookout` workflows are deleted.
 
 ## Changes
 
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
-| T1 Delete `build-lead` and `lookout`, remove references | `.claude/agents/build-lead.md`, `.claude/skills/lookout/`, `CLAUDE.md`, `.claude/skills/agent-smith/references/validate-rules.md`, `.claude/skills/agent-smith/SKILL.md` | Maintainer agent and skill gone; agent-smith 2.1.1 to 2.1.2 | V-CHK-1 |
-| T2 Drop the plugin default, bump to 0.15.0 | `plugins/agentville/settings.json`, `plugins/agentville/.claude-plugin/plugin.json`, `README.md`, `website/docs/how-it-works.md`, `website/docs/technical/claude-code.md`, `website/docs/technical/index.md` | Breaking: installing no longer sets `pod-lead` as the main agent (version 0.15.0, not 1.0.0, as the owner chose); docs explain `claude --agent agentville:pod-lead` | V-CHK-1 |
-| T5 Update steering and README | `CLAUDE.md`, `README.md` | `root-agent` import removed in the first round, then restored in round 2 without a playbook; README root-agent row reworded | V-CHK-1 |
-| T6 Make `root-agent` playbook-neutral | `plugins/agentville/skills/root-agent/SKILL.md`, `CLAUDE.md`, `README.md`, `plugins/agentville/.claude-plugin/plugin.json` | Breaking: `root-agent` 3.0.0 no longer routes through `orchestrate`; plugin version 1.0.0 replaced by 0.15.0 | W-CHK-1 |
+| T1, T2, T5, T6 Rounds 1 and 2 | see [changes page](changes.md) | Removed `build-lead`, `lookout` and the plugin default (0.15.0, breaking); `root-agent` 3.0.0 playbook-neutral | V-CHK-1, W-CHK-1 |
+| Task | Files | Behaviour change | Evidence id |
+| T7 Rewrite `conductor` 2.1.4 | `.claude/skills/conductor/` (new `start-tickets.md`, `track-tickets.md`; deleted `check-health.md`, `track-report.md`, `triage-alert.md`) | One `create_session` per `ready` issue; tracks children with `get_session`, paged `list_events`, PR state and `send_later` check-ins (1h; stuck after 2h); sets the `Review` label; `restated` roster field; restarts only on the user's word; own repository only | W-CHK-2 |
+| T8 `build` 1.2.2, `blueprint` 1.0.2 | `.claude/skills/build/SKILL.md`, `.claude/skills/blueprint/SKILL.md` | `build` compiles the plan on every run and reads the named issue as untrusted data; read-back keeps `Closes #<n>`; `blueprint` says build re-compiles the plan | W-CHK-2 |
+| T9 `root-agent` 3.1.4 (shipped) | `plugins/agentville/skills/root-agent/SKILL.md` | A playbook's own tool rule governs tools and file access while it runs; `create_session` cloud sessions count as children (plain message, no ACK) | W-CHK-2 |
+| T10 Steering and docs | `CLAUDE.md`, `README.md`, `website/docs/technical/claude-code.md` | Conductor and build rows, conductor tool rule, PR exception; settings example cites only the sub-agents and plugins/components pages | W-CHK-2 |
 | Extra: website pages | `website/docs/` | Plan-adjacent doc edits, noted by the reviewer | V-CHK-1 |
 
 T3 and T4 were dropped by the user.
@@ -42,33 +44,30 @@ Installing the plugin used to set `pod-lead` as the main agent through `settings
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
-| CLAUDE.md verify commands (8) | the 8 commands under Verify before you finish | all exit 0 | `ef189ef95d27` |
-| Security scan | `python3 .claude/skills/plugin-security/scripts/scan.py` with the accepted rules | critical 0, high 0 | `ef189ef95d27` |
-| Measure `pod-lead` and agent-smith | `measure.py` on both | exit 0 | `ef189ef95d27` |
-| Removed paths absent | listing check | absent | `ef189ef95d27` |
-| Version and import | read `plugin.json`, `CLAUDE.md` | round 1: version 1.0.0; `root-agent` import gone (superseded by round 2) | `ef189ef95d27` |
-| Leftover names | search | `build-lead` and `lookout` remain only in `.claude/skills/conductor/` | `ef189ef95d27` |
-| Round 2: CLAUDE.md verify commands | the commands under Verify before you finish | all exit 0 (worker run, no independent evidence) | none |
-| Round 2: Measure `root-agent` | `measure.py` on `plugins/agentville/skills/root-agent/SKILL.md` | exit 0 | none |
-| Round 2: Security scan | `scan.py` with the accepted rules | critical 0, high 0 | none |
+| Round 1 (8 verify commands, scan, measure, removed paths, leftover names) | see [tests page](tests.md) | all pass; scan critical 0, high 0 | `ef189ef95d27` |
+| Round 2 (worker run, no independent evidence) | verify commands, `measure.py` on `root-agent`, `scan.py` | all exit 0; critical 0, high 0 | none |
+| Round 3: validator run-7 | 107 checks | 88 pass, 19 controls failed as required, 0 fail | local `run-7` |
+| Round 3: CLAUDE.md verify commands | the commands under Verify before you finish | all exit 0 | local `run-7` |
+| Round 3: Security scan | `scan.py` with the accepted rules | critical 0, high 0 | local `run-7` |
 
-Not tested or not verifiable: the website build was not run; the namespaced `agent` setting is unverified against Claude Code docs; round 2 was not validated or reviewed independently.
+Not tested or not verifiable: the website build was not run; the namespaced `agent` setting is unverified against Claude Code docs; GitHub head-prefix search and `get_session` without an id were not exercised live. Round 2 was not validated independently.
 
 ## Risks, limits and rollback
 
-This is a breaking change for installs that relied on `pod-lead` becoming the main agent; the owner chose 0.15.0 because the plugin is not at a major release yet. `root-agent` 3.0.0 also changes how a root session picks its playbook. The `conductor` skill is broken until it is rewritten. Roll back with `git revert -m 1 {merge-sha}` on `main`.
+This is a breaking change for installs that relied on `pod-lead` becoming the main agent; the owner chose 0.15.0 because the plugin is not at a major release yet. `root-agent` 3.0.0 also changes how a root session picks its playbook. `root-agent` changed without a plugin version bump (user decision). Roll back with `git revert -m 1 {merge-sha}` on `main`.
 
 ## Reviewer checklist
 
 - [ ] Version 0.15.0 is the right size for removing the default.
 - [ ] The second steering line and the agent definition are the right ways to pick a `root-agent` playbook.
 - [ ] The README and website wording for running `pod-lead` reads clearly (see the nit at `README.md:115`).
-- [ ] Leaving `conductor` broken until the owner rewrites it is acceptable.
+- [ ] The `conductor` 2.1.4 ticket rules (no cap, never merge, never ask) suit the repository.
+- [ ] Shipping the `root-agent` 3.1.4 change at plugin version 0.15.0 is acceptable.
 - [ ] The `agentville:pod-lead` agent setting should be confirmed against Claude Code docs.
 
 ## Review verdicts
 
-Pass with notes, round 1; round 2 (the `root-agent` change) was skipped: wording-only skill and steering edits, reversible, covered by the worker's verify run, which is not independent evidence. Round 1 notes: website edits are plan-adjacent; `conductor` still names `build-lead` and `lookout`; the namespaced agent setting is unverified; the website build was not run; nit on the lead-in wording at `README.md:115`.
+Pass with notes, round 1; round 2 (the `root-agent` change) was skipped: wording-only skill and steering edits, reversible, covered by the worker's verify run, which is not independent evidence. Round 1 notes: website edits plan-adjacent; namespaced agent setting unverified; website build not run; nit at `README.md:115`. Round 3: 7 review rounds; final verdict pass-with-notes, no blockers. Note: `intercommunicate` defines a child as "a session you spawned" while `root-agent` now also counts `create_session` cloud sessions; widen its wording if wanted.
 
 ## Evidence index
 
@@ -76,6 +75,8 @@ Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
+| Earlier changes and checks | [Changes](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/35/changes.md), [Tests](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/35/tests.md) |
 | Validator evidence | Folder `run-1` (kept locally, not committed), `SHA256SUMS` hash `ef189ef95d27` |
+| Round 3 validator evidence | Folder `run-7` (kept locally, not committed) |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

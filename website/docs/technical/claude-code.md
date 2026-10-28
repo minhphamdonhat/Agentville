@@ -29,7 +29,7 @@ If you added Agentville in Claude Chat or Cowork, it also syncs to Claude Code a
 
 ## Three ways to run it
 
-1. **Claude Code with `pod-lead` as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set `"agent": "agentville:pod-lead"` in your own `~/.claude/settings.json` or the project's `.claude/settings.json`. The plugin itself ships no default settings, so installing it changes no main agent.
+1. **Claude Code with `pod-lead` as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set the `agent` key in your own `~/.claude/settings.json` or the project's `.claude/settings.json`. The subagents docs show that key with a bare agent name, as in `{ "agent": "code-reviewer" }`, and the plugin docs give a plugin agent's full name as `<plugin>:<name>`; for this plugin's agent, `claude --agent agentville:pod-lead` is the documented form. The plugin itself ships no default settings, so installing it changes no main agent.
 2. **Claude Code with another agent.** Start one session with `claude --agent <name>`, or name another agent in your own `agent` key in `~/.claude/settings.json`. To make that agent follow Agentville, add these lines to your project's `CLAUDE.md`:
 
    ```markdown
@@ -63,5 +63,7 @@ Last checked: 25 October 2026
 Sources:
 
 - [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins)
+- [Create custom subagents](https://code.claude.com/docs/en/sub-agents)
+- [Plugin components reference](https://code.claude.com/docs/en/plugins/components.md)
 - [Use plugins in Claude](https://support.claude.com/en/articles/13837440-use-plugins-in-claude)
 - [Agentville README](https://github.com/minhphamdonhat/Agentville#readme)

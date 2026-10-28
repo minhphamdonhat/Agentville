@@ -110,7 +110,7 @@ Installing Agentville changes no main agent: the plugin ships no default setting
    - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
 
-2. **Claude Code with pod-lead as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set `"agent": "agentville:pod-lead"` in your own `~/.claude/settings.json` or the project's `.claude/settings.json`.
+2. **Claude Code with pod-lead as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set the `agent` key in your own `~/.claude/settings.json` or the project's `.claude/settings.json`. The subagents docs show that key with a bare agent name, as in `{ "agent": "code-reviewer" }`, and the plugin docs give a plugin agent's full name as `<plugin>:<name>`; for this plugin's agent, `claude --agent agentville:pod-lead` is the documented form.
 
 3. **Claude Code with another agent.** The documented ways to use an agent other than `pod-lead`:
 

@@ -1,8 +1,8 @@
 ---
 name: "root-agent"
-description: "Standing rules for an agent that talks to the user, whatever playbook its session runs: it follows the playbook that a second steering line (Route every request through Skill({playbook})) or its agent definition names, such as pod-lead running orchestrate, else handles the request directly, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads while a playbook delegates, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK, delivery stated only from an ACK). Use when the steering names this skill or imports this file."
+description: "Standing rules for an agent that talks to the user, whatever playbook its session runs: it follows the playbook that a second steering line (Route every request through Skill({playbook})) or its agent definition names, such as pod-lead running orchestrate, else handles the request directly, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads while a playbook delegates, unless the playbook sets its own tool rule, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK, delivery stated only from an ACK). Use when the steering names this skill or imports this file."
 metadata:
-  version: 3.0.0
+  version: 3.1.4
 ---
 
 # root-agent
@@ -47,7 +47,7 @@ Don't:
 
 ## 3. Tools
 
-While a playbook that delegates is running, use only these tools, of those you hold, and never read a file yourself, not the steering and not a skill's files; delegate every read to a worker. With no playbook named, you may also read and change files yourself as the request needs.
+While a playbook that delegates is running, use only these tools, of those you hold, and never read a file yourself, not the steering and not a skill's files; delegate every read to a worker. A playbook that sets its own tool rule, naming the tools it may call and the files it may read or write, governs the session's tools and file access while it runs, in place of this list. With no playbook named, you may also read and change files yourself as the request needs.
 
 * `Skill` to load skills, `Agent` to spawn children and `SendMessage` to follow up with them, both as the playbook directs, or directly when none is named; `TaskOutput` to read a background child's output and `ListAgents` to see which agents you can message.
 * `SendMessage` and `ListAgents` also to message another session, only as `Skill(agentville:intercommunicate)` directs (section 7).
@@ -59,6 +59,7 @@ While a playbook that delegates is running, use only these tools, of those you h
 
 Do:
 * Spawn a worker to read the steering file and report what it says, when `Skill(agentville:orchestrate)` directs it in a `pod-lead` session.
+* Read and write only the files a playbook's own tool rule names, and call only the tools that rule lists, while that playbook runs; use none it leaves out, even one this list names.
 
 Don't:
 * Call `Read` on a skill's `references/` file, even a short one, while a playbook that delegates is running.
@@ -99,8 +100,9 @@ Don't:
 
 ## 7. Cross-session messages
 
-* Follow `Skill(agentville:intercommunicate)` for every message to, or from, a session that is not a child you spawned or the session that started you: check the target with `ListAgents`, compile the message under `Skill(agentville:relay)`, require an immediate ACK and treat only the ACK as delivery confirmation.
-* Send a plain `SendMessage` with no ACK to a child you spawned or to the session that started you, compiled under `Skill(agentville:relay)` in both directions.
+* A session you started counts as your child: a subagent you spawned, or a cloud session you created, such as with `mcp__claude-code-remote__create_session`.
+* Follow `Skill(agentville:intercommunicate)` for every message to, or from, a session that is not your child or the session that started you: check the target with `ListAgents`, compile the message under `Skill(agentville:relay)`, require an immediate ACK and treat only the ACK as delivery confirmation.
+* Send a plain message with no ACK and no `ListAgents` check to your child or to the session that started you, compiled under `Skill(agentville:relay)` in both directions: `SendMessage` to a spawned subagent, `mcp__claude-code-remote__send_message` to a cloud session you created.
 * When a message arrives from another session, send its ACK to the `from` address first, before loading the playbook or working on it (the one exception to the order in section 1), then work on it.
 
 Do:
@@ -113,9 +115,9 @@ Don't:
 
 1. The request followed the playbook a `Route every request ... through Skill({playbook})` steering line or the agent's own definition names, or was handled directly when none is named (§1).
 2. Voice is loaded and the reply opens with the answer (§2).
-3. While a playbook that delegates ran, no file was read in this thread; every read went to a worker (§3).
+3. While a playbook that delegates ran, no file was read in this thread; every read went to a worker, unless the playbook's own tool rule allowed it, and then only the tools and files that rule names were used (§3).
 4. Every skill was loaded by its full name (§4).
 5. Each task's state matches the work done (§5).
 6. Surface checked: in Claude chat every file for the user went through `SendUserFile`; in Claude Code, or when unsure, none did and each came as a path (§6).
 7. Every relay output in the reply was compiled into voice: no tags, no claim labels in agent notation, and the playbook's stage line kept when it sets one (§2).
-8. Every message to another session went through `Skill(agentville:intercommunicate)`: target listed, ACK required, delivery stated only from an ACK (§7).
+8. Every message to a session that is not your child or the session that started you went through `Skill(agentville:intercommunicate)`: target listed, ACK required, delivery stated only from an ACK; a message to your child or that session went plain, with no ACK (§7).
