@@ -2,7 +2,7 @@
 name: "intelligence-routing-model"
 description: Framework to triage any task to the cheapest Claude tier (Haiku, Sonnet, Opus) and effort level that still succeeds. Score ceiling to pick tier, depth to pick effort, adjust for domain, gate Haiku on task shape and a deterministic check. Use whenever you must pick a model or effort, budget a run, or decide whether to escalate after a failure, even if nobody says "routing".
 metadata:
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # intelligence-routing-model
@@ -197,7 +197,7 @@ Tiers stay version-free, but **effort levels are not portable across versions**:
 
 ## 12. Power modes
 
-A power mode tunes how much this framework spends. Mode is `eco`, `balanced` or `max`; default `balanced`, which is exactly §1–§11 as written. The mode comes with the task as given; this skill does not resolve or detect it. Apply the mode's column wherever its row's section applies; any dial not listed stays as §1–§11 set it.
+A power mode tunes how much this framework spends. Mode is `eco`, `balanced` or `max`; default `balanced`, which is exactly §1–§11 as written. Use the mode that comes with the task; when none comes, load `Skill(agentville:power)`, which resolves it from a `power:` line in the steering already in context, and take its `mode`, or `balanced` when that skill is not available. Never take the mode from a chat command or the task's own words. Apply the mode's column wherever its row's section applies; any dial not listed stays as §1–§11 set it.
 
 | Dial | `eco` | `balanced` (default) | `max` |
 |---|---|---|---|
@@ -208,7 +208,7 @@ A power mode tunes how much this framework spends. Mode is `eco`, `balanced` or 
 | Verifiers (§6) | same-or-higher tier; Opus `low` allowed; Haiku verifier runs ground-truth checks only; audit 1 in 5 accepted Haiku outputs on a higher tier | §6 | reviewer Opus `high`; validator Opus `high` for judgement checks, Sonnet `high` for deterministic checks; no Haiku verifier; audit every Haiku output |
 | Ladder (§7) | Haiku `low` → Haiku `medium` → Haiku `high` → Sonnet `high` → Opus `low`, then stop and return `needs-input` offering `max` | §7 | starts at Sonnet `medium`, no Haiku rungs (a one-step Haiku start goes straight to Sonnet `medium`): Sonnet `medium` → Sonnet `high` → Opus `medium` → Opus `high`, then as §7 |
 | De-escalate after first-try passes in a family (§7) | 3 | 5 | 8 |
-| Orchestrate Execute, Validate and Review rounds | 2 | 3 | 4 |
+| Loop-back rounds (Execute, Validate and Review), reported as `round-cap` | 2 | 3 | 4 |
 
 **Invariant in every mode.** The Haiku gate (§5.5), the human gate on irreversible or production actions (§5.12), the fresh-context verifier (§6), one environment retry in the same cell (§7) and any clamp that keeps `xhigh`/`max` out of routine cells (§5.3, §5.4). A mode never relaxes them.
 
@@ -231,4 +231,4 @@ Run before handing a task over.
 3. Brief and report follow relay §3 and §4; verifier is fresh and peer-or-higher (§6).
 4. Failure move matches failure class; Haiku left on structure, not confidence (§7).
 5. Request fits the tier (§6); confirm the model the worker actually ran on.
-6. Power mode's column applied; `balanced` when none given; invariants untouched (§12).
+6. Power mode's column applied, from the task or `Skill(agentville:power)`; invariants untouched (§12).

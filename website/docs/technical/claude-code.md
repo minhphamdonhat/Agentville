@@ -37,7 +37,7 @@ If you added Agentville in Claude Chat or Cowork, it also syncs to Claude Code a
    - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
 
-   To use your own workflow, fork `orchestrate` into a new skill and name it in the second line.
+   To use your own playbook, fork `orchestrate` into a new skill and name it in the second line.
 3. **Chat or Cowork.** See [Get started](../get-started.md).
 
 ## What loads where

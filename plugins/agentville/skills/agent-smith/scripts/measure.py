@@ -2,8 +2,10 @@
 """Measure a compiled agent file against the script-checked rules of references/validate-rules.md.
 
 Usage: measure.py <agent.md> [--base <base-worker.md>] [--allow-agent]
---base defaults to assets/base/worker.md in this skill. --allow-agent permits the Agent tool,
-only when the user asked for it by name.
+The base agent is `metadata.base` in the agent's frontmatter, default `worker`. The worker resolves to --base,
+which defaults to assets/base/worker.md in this skill; any other base resolves to <base>.md next to the agent,
+then in the plugin agents folder, then <project>/.claude/agents ($CLAUDE_PROJECT_DIR, else the working folder),
+then <home>/.claude/agents. --allow-agent permits the Agent tool, only when the user asked for it by name.
 Prints key: value lines; the last is failures: <rule ids or none>.
 Exit: 0 no failures (warnings allowed), 1 rule failures, 2 usage or read error.
 Stdlib only; runs under python3 -I.
@@ -26,7 +28,14 @@ MAX_LINES = 500
 FOREIGN_NS = "anthropic-skills" + ":"
 HEAD_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
-STANDALONE_AGENTS = {"pod-lead"}
+# The base agent a fork declares as `metadata.base`; absent means the worker.
+DEFAULT_BASE_NAME = "worker"
+# The plugin agents folder: this skill ships at <plugin>/skills/agent-smith, next to <plugin>/agents.
+PLUGIN_AGENTS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(HERE))), "agents")
+# A fork of a standalone base (no worker core blocks) copies the base's numbered rules between these markers.
+BASE_BEGIN = "<!-- base:begin {} -->"
+BASE_END = "<!-- base:end {} -->"
+BASE_MARKER_RE = re.compile(r"<!-- base:(begin|end) [a-z0-9-]+ -->")
 # Core variant: an agent with no file or shell tool may omit these constraints-core items. Nothing else differs.
 CORE_VARIANTS = {"scout": (1, 2)}
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
@@ -251,11 +260,138 @@ def parse_agent(path):
             "exception_items": exc_items, "core": blocks, "core_errors": marker_errors}
 
 
+def declared_base(fm):
+    """The `metadata.base` value, or None when the frontmatter declares no base.
+
+    Reads block metadata (`metadata:` then an indented `base: pod-lead`) and inline metadata
+    (`metadata: {version: 1.0.0, base: pod-lead}`) alike: the key may follow a brace or comma, and the
+    value stops at a comma or closing brace."""
+    m = re.search(r"(?:^|[\s{,])base:\s*([^\s,{}]+)", fm.get("metadata", ""))
+    return m.group(1).strip("\"'") if m else None
+
+
+def base_folders(agent_path):
+    """The folders a declared base is looked up in, in order."""
+    project = os.environ.get("CLAUDE_PROJECT_DIR", "")
+    if not project or project.startswith("${"):
+        project = os.getcwd()
+    return [os.path.dirname(agent_path), PLUGIN_AGENTS,
+            os.path.join(project, ".claude", "agents"), os.path.join(os.path.expanduser("~"), ".claude", "agents")]
+
+
+def resolve_base(name, agent_path):
+    """Return (path of <name>.md or None, the paths searched); the agent file itself never counts."""
+    searched = []
+    for folder in base_folders(agent_path):
+        p = os.path.join(folder, name + ".md")
+        searched.append(p)
+        if os.path.isfile(p) and os.path.realpath(p) != os.path.realpath(agent_path):
+            return p, searched
+    return None, searched
+
+
+def trim(lines):
+    """Join lines after dropping leading and trailing blank ones."""
+    lo, hi = 0, len(lines)
+    while lo < hi and not lines[lo].strip():
+        lo += 1
+    while hi > lo and not lines[hi - 1].strip():
+        hi -= 1
+    return "\n".join(lines[lo:hi])
+
+
+def constraints_body(agent):
+    """A standalone base's numbered rules: the whole `# Constraints` section, blank edges trimmed."""
+    if "Constraints" not in agent["sections"]:
+        return None
+    lo, hi = agent["sections"]["Constraints"]
+    return trim(agent["lines"][lo + 1:hi])
+
+
+def base_block(lines, name):
+    """(begin index, inner text) of the fork's copy of base `name`, or (None, state) when it is absent or broken."""
+    begin, end = BASE_BEGIN.format(name), BASE_END.format(name)
+    starts = [i for i, l in enumerate(lines) if l.strip() == begin]
+    if not starts:
+        return None, "missing"
+    if len(starts) > 1:
+        return None, "duplicate"
+    j = next((k for k in range(starts[0] + 1, len(lines)) if lines[k].strip() == end), None)
+    if j is None:
+        return None, "unterminated"
+    return starts[0], trim(lines[starts[0] + 1:j])
+
+
+def is_core_marker(line):
+    return bool(CORE_BEGIN_RE.match(line) or CORE_END_RE.match(line))
+
+
 def section_of(agent, index):
     for t, (lo, hi) in agent["sections"].items():
         if lo < index < hi:
             return t
     return None
+
+
+def a5_worker_core(a, base_path, base, variant, name, fails, out):
+    """A5 for a fork of the worker or of a worker fork: core blocks identical to the base's and in their home section."""
+    if base is None:
+        try:
+            base = parse_agent(base_path)
+        except ReadError as e:
+            raise ReadError(f"base: {e}")
+    if a["core_errors"]:
+        fails.add("A5")
+        out += ["core_error: " + e for e in a["core_errors"]]
+    role = variant.group(1) if variant else name
+    for cname in sorted(set(base["core"]) | set(CORE_HOME)):
+        mine, theirs = a["core"].get(cname), base["core"].get(cname)
+        if theirs is not None and cname == "constraints" and role in CORE_VARIANTS:
+            theirs = (theirs[0], theirs[1], drop_core_items(theirs[2], CORE_VARIANTS[role]))
+        if theirs is None:
+            state = "missing in base"
+        elif mine is None:
+            state = "missing"
+        elif mine[2] != theirs[2]:
+            state = "differs"
+        elif CORE_HOME.get(cname) and section_of(a, mine[0]) != CORE_HOME[cname]:
+            state = "misplaced"
+        else:
+            state = "identical"
+        if state != "identical":
+            fails.add("A5")
+        out.append(f"core: {cname} | {state}")
+    if "constraints" in a["core"] and "Constraints" in a["sections"]:
+        lo, _ = a["sections"]["Constraints"]
+        first = next((i for i, l, f in a["rows"] if i > lo and l.strip()), None)
+        if first != a["core"]["constraints"][0] and role not in CORE_VARIANTS:
+            fails.add("A5")
+            out.append("core_error: constraints core is not first in Constraints")
+
+
+def a5_base_copy(a, base_name, base, fails, out):
+    """A5 for a fork of a standalone base: the base's numbered rules copied verbatim between base markers,
+    first in Constraints; the fork holds no worker core block."""
+    want = constraints_body(base)
+    begin, got = base_block(a["lines"], base_name)
+    if want is None:
+        state = "missing in base"
+    elif begin is None:
+        state = got
+    elif got != want:
+        state = "differs"
+    elif section_of(a, begin) != "Constraints":
+        state = "misplaced"
+    else:
+        lo, _ = a["sections"]["Constraints"]
+        first = next((i for i, l, f in a["rows"] if i > lo and l.strip()), None)
+        state = "identical" if first == begin else "not first in Constraints"
+    if state != "identical":
+        fails.add("A5")
+    out.append(f"core: base {base_name} | {state}")
+    if a["core"] or a["core_errors"]:
+        fails.add("A5")
+        out.append("core_error: a fork of a standalone base holds no worker core block")
 
 
 def measure(path, base_path, allow_agent):
@@ -275,7 +411,7 @@ def measure(path, base_path, allow_agent):
         out.append("tools_omitted: yes (worker inherits every tool; disallowedTools is the control)")
     if not NAME_RE.match(name) or len(name) > 64 or not desc or len(desc) > 1024 or (not tools and not inherits_all):
         fails.add("A1")
-    vm = re.search(r"(?:^|\s)version:\s*(\S+)", fm.get("metadata", ""))
+    vm = re.search(r"(?:^|[\s{,])version:\s*([^\s,{}]+)", fm.get("metadata", ""))
     version = vm.group(1) if vm else ""
     if not re.match(r"^\d+\.\d+\.\d+$", version):
         fails.add("A1")
@@ -312,52 +448,64 @@ def measure(path, base_path, allow_agent):
     if a["h1"] != SECTIONS:
         fails.add("A4")
 
-    # A5 core blocks identical to the base worker and in their home section
-    try:
-        base = parse_agent(base_path)
-    except ReadError as e:
-        raise ReadError(f"base: {e}")
-    if a["core_errors"]:
-        fails.add("A5")
-        out += ["core_error: " + e for e in a["core_errors"]]
-    role = variant.group(1) if variant else name
-    for cname in sorted(set(base["core"]) | set(CORE_HOME)):
-        mine, theirs = a["core"].get(cname), base["core"].get(cname)
-        if theirs is not None and cname == "constraints" and role in CORE_VARIANTS:
-            theirs = (theirs[0], theirs[1], drop_core_items(theirs[2], CORE_VARIANTS[role]))
-        if theirs is None:
-            state = "missing in base"
-        elif mine is None:
-            state = "missing"
-        elif mine[2] != theirs[2]:
-            state = "differs"
-        elif CORE_HOME.get(cname) and section_of(a, mine[0]) != CORE_HOME[cname]:
-            state = "misplaced"
+    # Which base the agent forks: `metadata.base`, default the worker. An agent that declares no base and holds no
+    # core or base marker is standalone, not a fork: it skips the core-block checks (A5, A16) and the
+    # workflow-role check (A6) only; the spawning check (A3) applies to it as to every agent.
+    base_name = declared_base(fm)
+    standalone = (base_name is None and not any(is_core_marker(l) for l in lines)
+                  and not any(BASE_MARKER_RE.search(l) for l in lines))
+    roles = set(ROLES)
+    mode, base = "worker", None
+    if standalone:
+        mode = "standalone"
+        out.append("base: none")
+        out.append("standalone: yes (no base and no core blocks; skips A5, A6, A16; A3 applies)")
+    elif base_name in (None, DEFAULT_BASE_NAME):
+        out.append(f"base: {DEFAULT_BASE_NAME}" + (" (default)" if base_name is None else "") + f" | {base_path}")
+    elif not NAME_RE.match(base_name) or len(base_name) > 64:
+        mode = "unresolved"
+        fails.add("A19")
+        out.append(f"base_error: metadata.base {base_name!r} is not a kebab-case agent name")
+    else:
+        found, searched = resolve_base(base_name, path)
+        if found is None:
+            mode = "unresolved"
+            fails.add("A19")
+            out.append(f"base_error: base agent {base_name!r} not found; looked for: " + ", ".join(searched))
         else:
-            state = "identical"
-        if state != "identical":
-            fails.add("A5")
-        out.append(f"core: {cname} | {state}")
-    if "constraints" in a["core"] and "Constraints" in a["sections"]:
-        lo, _ = a["sections"]["Constraints"]
-        first = next((i for i, l, f in a["rows"] if i > lo and l.strip()), None)
-        if first != a["core"]["constraints"][0] and role not in CORE_VARIANTS:
-            fails.add("A5")
-            out.append("core_error: constraints core is not first in Constraints")
+            base_path = found
+            try:
+                base = parse_agent(base_path)
+            except ReadError as e:
+                raise ReadError(f"base: {e}")
+            worker_like = any(is_core_marker(l) for l in base["lines"])
+            mode = "worker" if worker_like else "standalone-fork"
+            out.append(f"base: {base_name} | {base_path} | " + ("worker fork" if worker_like else "standalone"))
+
+    if mode == "worker":
+        a5_worker_core(a, base_path, base, variant, name, fails, out)
+    elif mode == "standalone-fork":
+        a5_base_copy(a, base_name, base, fails, out)
+        roles |= {wf["role"] for wf in base["workflows"] if wf["role"]}
+    else:
+        out.append("core: skipped (" + ("standalone" if standalone else "base not resolved") + ")")
 
     # A16 the constraints core makes every report a set of flat tags that opens with the status tag
-    ret = a["core"].get("constraints")
-    status_rule = bool(ret) and STATUS_LINE in ret[2] and EVERY_FIELD in ret[2]
-    out.append("status_line_rule: " + ("yes" if status_rule else "no"))
-    if not status_rule:
-        fails.add("A16")
+    if mode == "worker":
+        ret = a["core"].get("constraints")
+        status_rule = bool(ret) and STATUS_LINE in ret[2] and EVERY_FIELD in ret[2]
+        out.append("status_line_rule: " + ("yes" if status_rule else "no"))
+        if not status_rule:
+            fails.add("A16")
+    else:
+        out.append("status_line_rule: skipped (no worker core)")
 
     # A6 workflows
     wfs = a["workflows"]
     out.append(f"workflows: {len(wfs)}")
     names = []
     for wf in wfs:
-        ok = (wf["name"] is not None and wf["role"] in ROLES
+        ok = (wf["name"] is not None and wf["role"] in roles
               and wf["h3"] == ["Input", "Process", "Output"] and wf["inputs"] and not wf["bad_inputs"]
               and wf["steps"] and wf["steps"] == list(range(1, len(wf["steps"]) + 1))
               and wf["outputs"] and not wf["bad_outputs"])
@@ -378,7 +526,7 @@ def measure(path, base_path, allow_agent):
     # A8 leftovers, A9 namespace, A11 size
     leftovers, foreign, bare = 0, [], []
     for i, line, fen in a["rows"]:
-        stripped = re.sub(r"<!-- core:(begin|end) [a-z-]+ -->", "", line)
+        stripped = BASE_MARKER_RE.sub("", re.sub(r"<!-- core:(begin|end) [a-z-]+ -->", "", line))
         leftovers += stripped.count("[[") + stripped.count("{{ CORE") + stripped.count("<!--")
         if FOREIGN_NS in line:
             foreign.append(str(i + 1))
@@ -406,11 +554,8 @@ def measure(path, base_path, allow_agent):
     if len(lines) > MAX_LINES:
         fails.add("A11")
 
-    # The pod-lead is a standalone agent, not a worker fork: it skips the core-block checks (A5, A16),
-    # the spawning check (A3) and the workflow-role check (A6) only.
-    if name in STANDALONE_AGENTS:
-        out.append("standalone: yes (skips A3, A5, A6, A16)")
-        fails -= {"A3", "A5", "A6", "A16"}
+    if standalone:
+        fails -= {"A5", "A6", "A16"}
 
     order = lambda s: int(s[1:])
     out.append("warnings: " + (", ".join(sorted(warns, key=order)) or "none"))

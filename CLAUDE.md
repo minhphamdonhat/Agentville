@@ -1,6 +1,6 @@
 # Agentville steering file
 
-Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent except `pod-lead` is a fork of one base worker with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. The root-agent policy is imported at the end.
+Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent is either standalone or a fork of a base agent (the worker by default) with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. The root-agent policy is imported at the end.
 
 The plugin ships from `plugins/agentville/` and installs as one versioned unit. Its skills are namespaced `agentville:<skill>` and its agents `agentville:<agent>`. `README.md` owns the skill and agent tables and the three ways to run the plugin.
 
@@ -8,7 +8,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 
 | Path | Holds |
 | --- | --- |
-| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md`, `validator.md`, `reviewer.md` and `pod-lead.md` (standalone, not a worker fork). |
+| `plugins/agentville/agents/` | Shipped agents: `worker.md` (the base), `scout.md`, `validator.md`, `reviewer.md`, `pod-lead.md` (standalone, not a fork) and `conductor.md` (standalone root agent, not a fork). |
 | `plugins/agentville/agents/<base>-<model>-<effort>.md` | Generated variants of `worker`, `validator`, `reviewer` and `scout` (for example `worker-sonnet-high.md`), 36 in all. The only agents that set `model` and `effort`. Never hand-edited; `scripts/gen_agent_variants.py` writes them from their base, and its `--check` flag reports drift. |
 | `scripts/gen_agent_variants.py` | Maintainer script that generates and checks the variants. Run `python3 scripts/gen_agent_variants.py` after any base agent edit. |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
@@ -18,26 +18,30 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude-plugin/marketplace.json` | Marketplace entries `agentville`, `agentville-beta` and `agentville-dev`, each pointing at the plugin folder on one branch. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
 | `.claude/skills/release-flow/` | Maintainer-only release flow; not shipped. |
-| `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it before any push (see Security and publishing). |
-| `.claude/skills/pr-report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and creates or updates that one PR (see Security and publishing). |
+| `.claude/skills/plugin-security/` | Maintainer-only security scan of the repository's refs, history and plugin components; not shipped. Run it by hand when you want a check; no push or commit waits for it. |
+| `.claude/skills/report/` | Maintainer-only report skill bound to the `report` slot; not shipped. It renders the report as the GitHub PR description for the current branch and its base, with overflow pages in `.agentville/pr/<pr-number>/`, and, in a Claude Code cloud session only (`CLAUDE_CODE_REMOTE` is `true`), pushes the branch and creates or updates that one PR; anywhere else it writes `report.md` to the topic folder and pushes nothing (see Security and publishing). |
 | `.claude/skills/docs-site/` | Maintainer-only standard for the documentation site in `website/`: page layout and sidebar, writing a page, build and audit checks, deploy and refresh; not shipped. |
+| `.claude/skills/blueprint/` | Maintainer-only playbook that runs Discuss and Plan for a request, records the plan, then stops; not shipped. |
+| `.claude/skills/build/` | Maintainer-only playbook that runs Execute, Validate, Review and Report from a recorded plan; not shipped. |
+| `.claude/agents/lookout.md` | Maintainer-only root agent that watches a task source and alerts `conductor`; not shipped. |
+| `.claude/agents/build-lead.md` | Maintainer-only fork of `pod-lead` that plans from a ticket, runs the build playbook, opens the PR when none exists and reports the PR number to `conductor`; not shipped. |
 | `agentville/`, `agentville/cli/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` distribution and console script. `agentville/__init__.py` holds `__version__` and `agentville/__main__.py` runs `python -m agentville`; the installer code is in `agentville/cli/` (`app.py` the command, `console.py`, `files.py`, `targets/`), its tests in `tests/cli/`. Later parts of the package, such as `agentville/townhall/`, sit beside `cli/`. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `website/` | Docusaurus documentation site for Claude Chat and Cowork users, with technical pages for Claude Code and the command-line installer; not shipped with the plugin. |
 | `.github/workflows/docs.yml` | Builds `website/` and deploys it to GitHub Pages. |
 | `.agentville/topics/` | Agents' workspace: `<topic-id>/` holds the topic documents, which stay local and git-ignored, `<topic-id>/evidence/run-<N>/` the validator's evidence and `<topic-id>/<agent>/{artefacts,scratch}` each agent's run folders. The workspace's own `.gitignore` (`*/evidence/`, `*/*/artefacts/`, `*/*/scratch/`) keeps evidence and run folders out of commits, and the root `.gitignore` ignores everything else under `.agentville/topics/`. |
-| `.agentville/pr/<pr-number>/` | Tracked PR description pages, written by `pr-report`: `PR_BODY.md` and the detail pages a PR body links to, under `pending/` until the PR has a number. |
+| `.agentville/pr/<pr-number>/` | Tracked PR description pages, written by `report`: `PR_BODY.md` and the detail pages a PR body links to, under `pending/` until the PR has a number. |
 
 ## Agent format
 
-Every agent except `pod-lead` is a fork of `plugins/agentville/agents/worker.md`, with its own personality, workflows and tool allow and deny lists. The format is fixed:
+Every agent is either standalone or a fork. A standalone agent has no base and holds no core or base markers: `pod-lead`, `conductor` and the maintainer-only `lookout`. A fork names its base in `metadata.base` (absent means `worker`, `plugins/agentville/agents/worker.md`) and copies the base's core or base-marked Constraints verbatim, which `measure.py` checks; it has its own personality, workflows and tool allow and deny lists. The format is fixed:
 
 1. **Role:** who the agent is, in a few lines.
-2. **Constraints:** the core blocks (`<!-- core:begin ... -->` to `<!-- core:end ... -->`) copied verbatim from the worker, then the agent's own rules numbered from 7.
+2. **Constraints:** the base's Constraints copied verbatim, then the agent's own rules numbered on. For a fork of the worker these are the core blocks (`<!-- core:begin ... -->` to `<!-- core:end ... -->`), then rules from 7; for a fork of a standalone base they are the base's whole Constraints between `<!-- base:begin <base> -->` and `<!-- base:end <base> -->`, then rules numbered on. A standalone agent numbers its own rules from 1.
 3. **Workflows:** as many as the agent needs. Each has Input, Process and Output.
 4. **Exception handler:** what the agent does when the brief is unclear, a check fails, another agent is needed, or the budget runs out.
 
-`pod-lead` holds no core blocks, numbers its own rules from 1 and may hold the `Agent` tool; `measure.py` exempts it from A3, A5, A6 and A16 only.
+`measure.py` gives the standalone exemption (A5, A6 and A16 only) to any agent that declares no `metadata.base` and holds no core or base marker; A3 applies to every agent, standalone or not, and passes for an agent holding `Agent` only with `--allow-agent`, so `pod-lead` and `build-lead` are measured with that flag. A fork of a standalone base is not exempt: A5 checks its base copy and A6 also accepts its base's workflow roles. Only `pod-lead` and the maintainer-only `build-lead` (a fork of `pod-lead`) may hold the `Agent` tool. `lookout` holds none and talks to other sessions through `ListAgents` and `SendMessage` only. `conductor` holds `ListAgents` and `SendMessage` for messages, plus `mcp__claude-code-remote__create_session` (cloud sessions only, one fresh session per ticket) and `mcp__github__issue_write` (the `Review` label only).
 
 Do:
 
@@ -51,7 +55,7 @@ Don't:
 * Give a child the `Agent` tool unless the user asked for it by name. Children hand back a `spawn-request:` instead.
 * Write `model` or `effort` in an agent's frontmatter, except in a generated variant. `dispatch` chooses both on every spawn for every other agent.
 * Hand-edit a variant or build one with `agent-smith`; `scripts/gen_agent_variants.py` writes them.
-* Make a shipped agent or skill commit, push, open or merge a pull request, or mention doing so.
+* Make a shipped agent or skill commit, push, open or merge a pull request, or mention doing so. The one exception is `conductor`: it may tell the sessions it starts to open their pull request and may set the `Review` label on the ticket's issue; it never commits, pushes, opens or merges itself.
 
 A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `worker`, `validator`, `reviewer` or `scout`, `<model>` one of `haiku`, `sonnet` or `opus`, and `<effort>` one of `low`, `medium` or `high`. Its `name` equals the file stem, and it is the only agent that sets `model` and `effort`, both, equal to the parts of its name; `measure.py` fails rule A2 otherwise. After any edit to a base agent, regenerate the variants with `python3 scripts/gen_agent_variants.py`.
 
@@ -61,10 +65,16 @@ A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `wo
 
 Slots (`workspace`, `toolbelt`, `draft`, `plan`, `report`) work like dependency injection. `Skill(agentville:context-injection)` owns the two-step use, the binding syntax and the resolution order, and each slot's default skill owns its contract. Both pairs of smiths enforce the two-step use (agent rule A18, skill rule 22); `measure.py` holds the slots in one `SLOTS` constant and owns the exemption grammar. Add a future slot to `SLOTS` in all four `measure.py` files.
 
-This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`, and the `report` slot to the maintainer `pr-report` skill, which publishes the report as the PR for the current branch and its base:
+This repository binds the `workspace` slot to the default, which writes to `{{ PROJECT_ROOT }}/.agentville/topics/`, and the `report` slot to the maintainer `report` project skill, which publishes the report as the PR for the current branch and its base:
 
 * `workspace: Skill(agentville:workspace)`
-* `report: Skill(pr-report)`
+* `report: Skill(report)`
+
+This repository's `report` is a project skill in `.claude/skills/report/` that is distinct from the plugin's `agentville:report`, which the explicit binding overrides. It picks its route by surface: when the environment variable `CLAUDE_CODE_REMOTE` is `true` (Claude Code on the web), it commits and pushes the working branch at once and creates or updates the one PR for that branch and its base, without asking; in a local session, or when the variable is absent or not `true`, it writes the report to `report.md` in the topic folder and returns that path, with no commit, push or PR.
+
+This repository also steers `conductor` with one line, so each ticket session it starts in the cloud is a `build-lead`:
+
+* `conductor: session-agent: build-lead`
 
 ## Two pairs of smiths
 
@@ -84,6 +94,7 @@ The shipped pair lets users choose a scope and nothing else; its scripts refuse 
 * **Rules and steps:** write Do and Don't lists, with an example where a rule needs one.
 * **Paths:** write placeholders, never host paths: `{{ SKILL_ROOT }}`, `{{ PROJECT_ROOT }}` and `{{ USER_ROOT }}`.
 * **Skill references:** use the full namespace, such as `Skill(agentville:relay)`. A bare name is wrong, and the old `anthropic-skills:` namespace fails validation. An external skill with no valid namespace in this repository, such as `/skill-creator`, keeps its bare name.
+* **Power mode:** only `dispatch` and `intelligence-routing-model` name or invoke `Skill(agentville:power)`, which reads the mode from a `power: <mode>` steering line; no other skill or agent mentions power, and no chat command sets it.
 * **Human-facing text:** follow `voice`. Text another agent reads follows `relay`. Every skill and agent returns relay §4 XML output (the six tags, fields inside them, failure in the same tags); only the root agent writes for a person, compiling relay into `voice`. skill-smith enforces this by script, and agent-smith by its judged rules.
 
 ## Working in this repository
@@ -106,10 +117,9 @@ Do:
 * Write paths as `{{ PROJECT_ROOT }}`, `{{ SKILL_ROOT }}` and `{{ USER_ROOT }}`, and use `localhost` or `127.0.0.1` for a local address.
 * Use Acme in every few-shot example: one project with applications under it (`apps/web`, `apps/api`) or documentation work (`docs/`).
 * Keep exactly one `Co-Authored-By:` trailer per commit, and write Conventional Commits as set under Working in this repository.
-* Keep the plugin's components least-privilege: a tool list names only what the agent needs (the one exception is `worker`, with its generated variants: it omits `tools` and inherits every tool, MCP included, with its `disallowedTools` list as the control; PS-09, accepted by design for worker files only), MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control), and the maintainer-only `pr-report` skill, which does not ship either, pushes only the current working branch, never with force and only after the pre-publish gate (PS-06, accepted by design: that push rule is the control).
+* Keep the plugin's components least-privilege: a tool list names only what the agent needs (the one exception is `worker`, with its generated variants: it omits `tools` and inherits every tool, MCP included, with its `disallowedTools` list as the control; PS-09, accepted by design for worker files only), MCP and script sources pin a commit SHA (tags can move), marketplace entries tracking the `main`, `beta` and `release` branches are the intended release channels (PS-25, accepted by design), and the maintainer-only `release-flow` skill, which does not ship, asks before every push, merge, tag and deletion (PS-06, accepted by design: the frontmatter rules forbid extra keys such as `disable-model-invocation`, so the ask-before-act rule is the control), and the maintainer-only `report` skill, which does not ship either, pushes only the current working branch, never with force and only in a cloud session (PS-06, accepted by design: that push rule is the control).
 * Write for any OS, Claude Code first: shell steps default to bash on Linux and macOS and to PowerShell on Windows unless the user's project `CLAUDE.md` or steering says otherwise; run `python3` on Linux and macOS and `py -3` on Windows; in Python use `pathlib`, `tempfile` and `encoding="utf-8"`; keep LF line endings, which `.gitattributes` pins.
-* Run the pre-publish gate before any push: `python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md' --fail-on medium`. It covers all refs and fixes every finding at medium or above. Until the history squash it fails on PII-02 and PS-52 in history; the squash removes both. `.claude/skills/plugin-security/SKILL.md` holds the full procedure.
-* Let the `pr-report` skill commit and push the current working branch automatically, as every agent here does, after the pre-publish gate passes, create or update its one PR for that branch and its base, and commit its own PR pages under `.agentville/pr/` on that working branch. It never pushes `main`, `beta` or `release`, never force-pushes and never merges; merging waits for the owner.
+* Let the `report` skill commit and push the current working branch automatically, and create or update its one PR for that branch and its base, only in a Claude Code cloud session (`CLAUDE_CODE_REMOTE` set to `true`), and commit its own PR pages under `.agentville/pr/` on that working branch. In a local session it writes `report.md` to the topic folder and does not commit, push or open a PR. It never pushes `main`, `beta` or `release`, never force-pushes and never merges; merging waits for the owner.
 
 Don't:
 
@@ -147,19 +157,23 @@ python3 .claude/skills/skill-smith/scripts/test_scripts.py
 git diff --no-index --quiet plugins/agentville/agents/worker.md plugins/agentville/skills/agent-smith/assets/base/worker.md
 git diff --no-index --quiet plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
 python3 scripts/gen_agent_variants.py --check
-python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
+python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*.claude/skills/report/SKILL.md' --accept 'PS-06:.claude/skills/pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
 ```
 
-On Windows run `py -3` for `python3`; the commands are otherwise the same in PowerShell. `git diff --no-index --quiet` exits 0 when the two files are identical, so it replaces `cmp` everywhere in this file. The scan is read-only and must show no critical or high finding. The everyday run keeps the default gate; the pre-publish gate is the `--fail-on medium` command under Security and publishing.
+The `PS-06:.claude/skills/pr-report/SKILL.md` accept covers the old path that `main` still holds until this branch merges; remove it after the merge.
+
+On Windows run `py -3` for `python3`; the commands are otherwise the same in PowerShell. `git diff --no-index --quiet` exits 0 when the two files are identical, so it replaces `cmp` everywhere in this file. The scan is read-only and must show no critical or high finding. The scan is optional and manual; no rule makes a push or commit wait for it.
 
 After you edit a skill or an agent, validate the file you changed:
 
 ```bash
 python3 plugins/agentville/skills/skill-smith/scripts/measure.py plugins/agentville/skills/SKILL_NAME/SKILL.md
 python3 plugins/agentville/skills/agent-smith/scripts/measure.py plugins/agentville/agents/AGENT_NAME.md
+python3 plugins/agentville/skills/agent-smith/scripts/measure.py --allow-agent plugins/agentville/agents/pod-lead.md
+python3 .claude/skills/agent-smith/scripts/measure.py --allow-agent .claude/agents/build-lead.md
 ```
 
-Substitute `SKILL_NAME` and `AGENT_NAME`. Exit code 0 means no failures; warnings are allowed.
+Substitute `SKILL_NAME` and `AGENT_NAME`. The maintainer-only `build-lead` holds the `Agent` tool and forks `pod-lead`, so it is measured with the maintainer `measure.py` and `--allow-agent`, and its output must show `core: base pod-lead | identical`. `pod-lead` holds `Agent` too and is measured with the shipped `measure.py` and `--allow-agent`; `conductor` and `lookout` hold no `Agent` tool and need no flag. Exit code 0 means no failures; warnings are allowed.
 
 `eval.py` in agent-smith spends model usage. Run it only when the user asks for it.
 
