@@ -17,6 +17,7 @@ Thumbs.db
 # Python package build and tooling
 dist/
 build/
+!.claude/skills/build/
 *.egg-info/
 .venv/
 .pytest_cache/

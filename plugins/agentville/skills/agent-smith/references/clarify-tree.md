@@ -4,21 +4,22 @@ Read by SKILL.md step 3. It defines the slots of an agent's contract, the order 
 
 ## Slots
 
-A slot is one decision of the contract. A slot is settled when the user has answered it or accepted its recommended answer. The final round shows every slot as `<slot>: <value>`, in the order below. The core sections (identity, core constraints) are fixed by the base worker and are never a slot.
+A slot is one decision of the contract. A slot is settled when the user has answered it or accepted its recommended answer. The final round shows every slot as `<slot>: <value>`, in the order below. The core sections (the worker's identity and core constraints, or a standalone base's numbered rules) are fixed by the base agent and are never a slot.
 
 | Slot | Prerequisites | Recommended answer comes from |
 |---|---|---|
 | agent-name | none | The analysis; kebab-case, at most 64 characters, not taken by an existing agent |
+| base | agent-name | `worker`, unless the request names another agent to fork, such as `validator` or `pod-lead`; settled without a question when the `base` input is given |
 | description | agent-name | What the agent does and the roles it serves, then when to spawn it; at most 1,024 characters |
 | personality | description | Two to four sentences on how the agent works and what it values |
-| workflows | description | Workflow names, each with its `Role:` (worker, validator, reviewer or scout) and when it applies |
+| workflows | description | Workflow names, each with its `Role:` (worker, validator, reviewer or scout, or a role of a standalone base's workflows) and when it applies |
 | workflow-inputs | workflows | Per workflow, each input as `name: required or optional - default - description` |
 | workflow-steps | workflow-inputs | Per workflow, numbered steps; each names its tool or `Skill(namespace:name)`, or hands back a spawn request |
 | workflow-outputs | workflow-steps | Per workflow, the returned fields as `name: always or when <condition> - <tag>: what it holds`, each in one of the six relay §4 tags |
 | rules | workflows | Extending rules, each with a one-clause reason; they follow the core constraints and never contradict them |
 | exceptions | workflow-steps | Each condition the agent can hit and the relay §4 status token it reports |
 | tools | workflow-steps | Every tool a step names, and nothing else; asked as its own explicit question, always last |
-| disallowed-tools | tools | The base worker's denied tools minus any the user granted |
+| disallowed-tools | tools | The base agent's denied tools minus any the user granted |
 
 Settle the install `scope` (project or user, never a plugin) outside this tree: SKILL.md step 4 owns it, so never ask it here.
 
@@ -26,7 +27,7 @@ Settle the install `scope` (project or user, never a plugin) outside this tree: 
 
 The frontier is every open slot whose prerequisites are settled. Ask it in this order, at most four questions per `AskUserQuestion` call:
 
-1. agent-name, description and personality.
+1. agent-name, base, description and personality.
 2. workflows.
 3. workflow-inputs, workflow-steps and workflow-outputs, one workflow per round when there are several.
 4. rules and exceptions.
