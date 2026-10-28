@@ -157,10 +157,8 @@ python3 .claude/skills/skill-smith/scripts/test_scripts.py
 git diff --no-index --quiet plugins/agentville/agents/worker.md plugins/agentville/skills/agent-smith/assets/base/worker.md
 git diff --no-index --quiet plugins/agentville/agents/worker.md .claude/skills/agent-smith/assets/base/worker.md
 python3 scripts/gen_agent_variants.py --check
-python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*.claude/skills/report/SKILL.md' --accept 'PS-06:.claude/skills/pr-report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
+python3 .claude/skills/plugin-security/scripts/scan.py --accept 'PS-06:*release-flow/SKILL.md' --accept 'PS-06:*.claude/skills/report/SKILL.md' --accept 'PS-25:*.claude-plugin/marketplace.json' --accept 'PS-09:*agents/worker.md' --accept 'PS-09:*agents/worker-*-*.md'
 ```
-
-The `PS-06:.claude/skills/pr-report/SKILL.md` accept covers the old path that `main` still holds until this branch merges; remove it after the merge.
 
 On Windows run `py -3` for `python3`; the commands are otherwise the same in PowerShell. `git diff --no-index --quiet` exits 0 when the two files are identical, so it replaces `cmp` everywhere in this file. The scan is read-only and must show no critical or high finding. The scan is optional and manual; no rule makes a push or commit wait for it.
 
