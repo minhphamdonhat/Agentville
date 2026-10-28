@@ -94,6 +94,7 @@ The shipped pair lets users choose a scope and nothing else; its scripts refuse 
 * **Rules and steps:** write Do and Don't lists, with an example where a rule needs one.
 * **Paths:** write placeholders, never host paths: `{{ SKILL_ROOT }}`, `{{ PROJECT_ROOT }}` and `{{ USER_ROOT }}`.
 * **Skill references:** use the full namespace, such as `Skill(agentville:relay)`. A bare name is wrong, and the old `anthropic-skills:` namespace fails validation. An external skill with no valid namespace in this repository, such as `/skill-creator`, keeps its bare name.
+* **Power mode:** only `dispatch` and `intelligence-routing-model` name or invoke `Skill(agentville:power)`, which reads the mode from a `power: <mode>` steering line; no other skill or agent mentions power, and no chat command sets it.
 * **Human-facing text:** follow `voice`. Text another agent reads follows `relay`. Every skill and agent returns relay §4 XML output (the six tags, fields inside them, failure in the same tags); only the root agent writes for a person, compiling relay into `voice`. skill-smith enforces this by script, and agent-smith by its judged rules.
 
 ## Working in this repository

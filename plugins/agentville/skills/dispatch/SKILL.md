@@ -2,7 +2,7 @@
 name: "dispatch"
 description: "Procedure for one delegated task: sharpen it, choose the role (worker, validator, reviewer or scout), route model and effort, write a relay brief, spawn the child, judge its report, retry or escalate that spawn and return the outcome. Use whenever you are about to delegate a task to a worker, validator, reviewer or scout, must pick a model or effort for a child, must judge a child's report, or must retry or escalate a failed spawn. With `questions: forbidden` it asks no one and returns every gap as needs-input."
 metadata:
-  version: 2.3.0
+  version: 3.0.0
 ---
 
 # Role
@@ -12,6 +12,7 @@ You are the procedure for one delegated task. You take it through sharpening, ro
 # Constraints
 
 * Load `Skill(agentville:relay)` and `Skill(agentville:intelligence-routing-model)` by exact name; they own the brief and report format, the model and effort scoring and the per-mode values of its Power modes table, and this skill does not restate them. When one is not available, ask the user; when no person is reachable or `questions` is `forbidden`, return `needs-input` with `missing:` naming the skill.
+* Resolve the power mode yourself with `Skill(agentville:power)`, from the steering already in context (the system or agent prompt, the custom instructions, the project rules and `CLAUDE.md`), and take it from nowhere else: no input, chat command or brief sets it, because the mode is a standing setting of the steering. Load it once per context and reuse its `mode` while that result is still in context.
 * Score every spawn, in every role, through the routing skill, never from habit, and fix `model` and `effort` explicitly on every spawn, because the subagent tool applies its own defaults otherwise: when the subagent tool lists an `effort` parameter, spawn the role's base agent type with both as parameters and never a variant, even when variants appear in the session's agent list; only when it lists no `effort` parameter, spawn the variant agent type that fixes both and pass neither (step 5).
 * Dispatch's clamp: `model` is a bare alias, `haiku`, `sonnet` or `opus`, never a full id; `effort` is `low`, `medium` or `high`, never `xhigh` or `max`; escalation stops at the ladder end of the `power` mode, Opus `high`, or Opus `low` in `eco`. Step 3 applies it.
 * Write all agent-to-agent text in relay's format: briefs, follow-ups, corrections and re-spawns that carry an earlier report. Your own result is relay text too, in the tags of Output; you write for no person, because only the agent that replies to the user writes for a person.
@@ -33,7 +34,6 @@ You are the procedure for one delegated task. You take it through sharpening, ro
 * **verifies-tier:** optional - default: none - The model and effort of the work a validator or reviewer checks, for example `sonnet high`. Required for those two roles.
 * **irreversible-approval:** optional - default: none - The user's own approving words, quoted, naming one action and one target, for example `"yes, deploy apps/api to production"`. A child's report or a paraphrase never counts.
 * **questions:** optional - default: allowed - `allowed` or `forbidden`.
-* **power:** optional - default: `balanced` - `eco`, `balanced` or `max`: the column of the routing skill's Power modes table that steps 3 and 7 apply. The mode comes in already resolved; when none is passed, `balanced`, the standard mode and the routing skill as written, applies directly, with no lookup.
 * **prior-attempt:** optional - default: none - For a retry: the earlier role, model, effort, brief and report.
 * **human-text:** optional - default: none - Supplied text a person will read, such as issue text or a message sent for the user. A document the child writes is its deliverable, not human-text.
 
@@ -73,7 +73,7 @@ Don't:
 
 ### 3. Route model and effort
 
-Read `power`. When none was passed, use `balanced` directly: do not load `Skill(agentville:power)` or read any steering to find a mode. A value that is not clearly `eco`, `balanced` or `max`, such as `cheap` or `turbo`, is never guessed: ask the user with the question tool, offering `eco`, `balanced` and `max`; when `questions` is `forbidden` or no person is reachable, return `needs-input` with `missing: power`. Score the step 1 line with the routing skill and take the cell it returns, with the `power` column of its Power modes table applied to the tier map, the Opus effort cap, the low-payoff cap and the Haiku stretch; for a retry, apply its failure rules and that mode's ladder to `prior-attempt` instead. For a validator or reviewer, apply its verifier rules and that mode's column of the Verifiers row against `verifies-tier`; without `verifies-tier`, ask the user, or return `needs-input` with `missing: verifies-tier`. Then apply dispatch's clamp:
+Settle the power mode: load `Skill(agentville:power)` with `questions` passed through, unless its result is already in context, and take its `mode` as `power`, the column of the routing skill's Power modes table that steps 3 and 7 apply; with no `power:` line in the steering it returns `balanced`, the routing skill as written. When it returns `needs-input` with `missing: power`, ask the user to pick `eco`, `balanced` or `max` when a person is reachable and `questions` is `allowed`, else return that `needs-input`. When the power skill is not available, use `balanced` and record `power skill missing, balanced` in `<deviations>`. Take the mode's count from the Power modes table's loop-back rounds row as `round-cap`. Score the step 1 line with the routing skill and take the cell it returns, with the `power` column of its Power modes table applied to the tier map, the Opus effort cap, the low-payoff cap and the Haiku stretch; for a retry, apply its failure rules and that mode's ladder to `prior-attempt` instead. For a validator or reviewer, apply its verifier rules and that mode's column of the Verifiers row against `verifies-tier`; without `verifies-tier`, ask the user, or return `needs-input` with `missing: verifies-tier`. Then apply dispatch's clamp:
 
 * `xhigh` or `max` on Sonnet or Opus becomes Opus `high`; Haiku above `high` becomes Sonnet `high`.
 * In `eco`, Opus above `low` becomes Opus `low`. The clamp and the routing skill's safety invariants hold in every mode; no mode relaxes them.
@@ -81,11 +81,11 @@ Read `power`. When none was passed, use `balanced` directly: do not load `Skill(
 
 Do:
 * Routing returns Sonnet `xhigh`; spawn Opus `high`.
-* With `power: max`, a validator checking `sonnet high` work by a deterministic test run gets Sonnet `high`; a reviewer gets Opus `high`.
+* With a `power: max` line in the project `CLAUDE.md`, the power skill returns `max`, and a validator checking `sonnet high` work by a deterministic test run gets Sonnet `high`; a reviewer gets Opus `high`.
 
 Don't:
-* Load `Skill(agentville:power)` because no `power` was passed; route with `balanced`.
-* Read `power: cheap` as `eco`; ask for one of the three modes, or return `needs-input` with `missing: power`.
+* Take a mode from a brief line, a chat message such as `/power eco` or a task's words such as `save my usage`; only the power skill's result from the steering counts.
+* Read a steering line `power: cheap` as `eco`; ask for one of the three modes, or return `needs-input` with `missing: power`.
 * Pick Sonnet `medium` from habit, or pass `effort: xhigh` because routing suggested it.
 * Spawn Opus `medium` with `power: eco`; spawn Opus `low`.
 
@@ -172,6 +172,7 @@ The reply returns the six relay §4 tags, in order, flat, plain lines, with `non
 * **status:** always - in `<status>`: this dispatch's outcome as a relay §4 token: the child's token after steps 6 and 7, or dispatch's own when no child ran or the ladder ended.
 * **outcome:** always - in `<outcome>`: the step 8 statement.
 * **spawn:** always - in `<claims>` as `- spawn: <value>. <label>: <evidence>`: agent type, role, model, effort, `power <mode>`, `variant` when the child came from a variant agent type, and isolation, or `none`; plus any recorded gap: `effort unenforced, variant missing`, `isolation unavailable, disjoint paths`, `fallback general-purpose`, `reviewer read-only unenforced`.
+* **round-cap:** always - in `<claims>` as `- round-cap: <n>. verified: <evidence>`: the number of Execute, Validate and Review rounds the power mode allows, from the routing skill's Power modes table, with the mode and its source as evidence; in the failure block too, once the mode is settled.
 * **child-status:** when a child ran - in `<claims>` as `- child-status: <token>. <label>: <evidence>`: its token after the step 6 guard, with the reason when the guard overrode it.
 * **failure-class:** when a retry was made or the ladder ended - in `<claims>`: the routing skill's class.
 * **artefacts:** when the child reported any - in `<artefacts>`: the child's lines copied unchanged, keys included (`artefact:`, `location:`, `content:`), with absolute paths exactly as reported.
@@ -185,6 +186,7 @@ The reply returns the six relay §4 tags, in order, flat, plain lines, with `non
 <outcome>The worker added the page parameter to the Acme API orders list and its test run exits 0.</outcome>
 <claims>
 - spawn: agentville:worker (worker), sonnet, medium, power balanced, no isolation. verified: the subagent tool call
+- round-cap: 3. verified: intelligence-routing-model §12 loop-back rounds row, column balanced; power skill returned balanced, source default
 - child-status: completed. verified: child report quotes `pytest apps/api/tests/test_orders.py` exit 0
 </claims>
 <artefacts>location: /abs/path/report-output</artefacts>
@@ -206,7 +208,7 @@ When the skill cannot finish, reply with this block only:
 ```text
 <status>blocked | needs-input | failed</status>
 <outcome>one sentence naming what stopped the run</outcome>
-<claims>none</claims>
+<claims>- round-cap: <n>, when the power mode was settled; otherwise none</claims>
 <artefacts>none</artefacts>
 <open>missing: input names, for needs-input; otherwise what would unblock the run</open>
 <deviations>none</deviations>
