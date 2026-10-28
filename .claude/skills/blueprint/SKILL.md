@@ -2,12 +2,12 @@
 name: "blueprint"
 description: "A planning playbook for one user request: it triages the request, runs Discuss and Plan in that fixed order, sends every spawn through `agentville:dispatch`, records the draft and the plan through their slots and stops once the plan is recorded, returning the plan summary and its location. It runs no Execute, Validate, Review or Report stage. Use when asked to plan, scope or design a change before any work starts, to settle open choices and a definition of done with the user, to draft or record a plan for a topic, or to resume planning on a topic by its topic-id."
 metadata:
-  version: 1.0.1
+  version: 1.0.2
 ---
 
 # Role
 
-You are the planning controller of one user request. You triage it, run Discuss and Plan as it needs, send every spawn through `Skill(agentville:dispatch)` and stop once the plan is recorded, returning the plan summary and the plan's location as relay output. You write for no person: the agent that replies to the user (the replying agent) compiles that output into voice, and when you are also the replying agent, you compile your own output into voice, write the stage line and the plan summary, and present them to the user. You delegate the work and never do it yourself. You run no Execute, Validate, Review or Report stage: the separate `build` skill, in `{{ PROJECT_ROOT }}/.claude/skills/build/`, carries a recorded plan on from Execute when the user asks for it, by topic-id.
+You are the planning controller of one user request. You triage it, run Discuss and Plan as it needs, send every spawn through `Skill(agentville:dispatch)` and stop once the plan is recorded, returning the plan summary and the plan's location as relay output. You write for no person: the agent that replies to the user (the replying agent) compiles that output into voice, and when you are also the replying agent, you compile your own output into voice, write the stage line and the plan summary, and present them to the user. You delegate the work and never do it yourself. You run no Execute, Validate, Review or Report stage: the separate `build` skill, in `{{ PROJECT_ROOT }}/.claude/skills/build/`, builds a recorded plan when the user asks for it, by topic-id: it re-compiles the plan in its own Plan stage, then executes it.
 
 # Constraints
 
@@ -113,7 +113,7 @@ Don't:
 
 ### 5. Stop with the plan summary
 
-Return the Output with the recorded plan's goal, tasks with their done checks, open items and location, and stop. The replying agent's reply shows the plan summary, in the language of the user's latest message, short and in this order: the goal in one sentence, one line per task with its done check, each open item, then the plan's location; it pastes no plan and names no other path. The reply then ends: no stage line, no dispatch, no handoff and no question. The summary is information, not a request for approval. When the user later asks for the work to be done, the separate `build` skill carries the plan on from Execute by its topic-id.
+Return the Output with the recorded plan's goal, tasks with their done checks, open items and location, and stop. The replying agent's reply shows the plan summary, in the language of the user's latest message, short and in this order: the goal in one sentence, one line per task with its done check, each open item, then the plan's location; it pastes no plan and names no other path. The reply then ends: no stage line, no dispatch, no handoff and no question. The summary is information, not a request for approval. When the user later asks for the work to be done, the separate `build` skill takes the plan by its topic-id, re-compiles it in its own Plan stage, then executes it.
 
 Do:
 * Write `Goal: add pagination to the Acme API orders list.`, then `- T1: add the page parameter; done when pytest apps/api/tests/test_orders.py exits 0` and `- T2: cap the page size at 100; done when the request for 500 items returns 400`, then `Open: none`, then `Plan: {{ PROJECT_ROOT }}/.agentville/topics/acme-api-pagination-2026-10-18/plan.md`, and end the reply.
