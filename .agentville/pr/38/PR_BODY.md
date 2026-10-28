@@ -59,7 +59,7 @@ Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
-| PR body source | [PR_BODY.md](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/PR_BODY.md) |
+| PR body source | [PR_BODY.md](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/38/PR_BODY.md) |
 | Validator evidence | Folder `run-1` in the topic workspace (git-ignored, not committed), files 01 to 10; `SHA256SUMS` hash not given |
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
