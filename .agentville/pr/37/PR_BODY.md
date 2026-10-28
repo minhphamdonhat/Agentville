@@ -19,7 +19,7 @@ The issue is a test ticket to check that the conductor starts a build session. I
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
 | T1: add the footer line | `README.md` | Gains 2 lines: a blank line, then `Built with Agentville.`; no other file changes | run-1 checks 1-3 |
-| Describe the PR | `.agentville/pr/pending/` | No runtime change | none |
+| Describe the PR | `.agentville/pr/37/` | No runtime change | none |
 
 ## Architecture changes
 
@@ -63,7 +63,7 @@ Head: {head-sha}
 
 | Evidence | Where |
 | --- | --- |
-| PR description source | [PR_BODY.md](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/pending/PR_BODY.md) |
+| PR description source | [PR_BODY.md](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/37/PR_BODY.md) |
 | Validator evidence | Folder `run-1` of the topic workspace (local, git-ignored), 11 checks plus `summary.md`; no `SHA256SUMS` file was written |
 
 Open note: the build playbook ran with the agentville plugin skills (root-agent, dispatch, workspace) not loadable in its session, so its children were spawned directly and the plan was written straight to the topic folder.
