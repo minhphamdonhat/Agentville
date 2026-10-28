@@ -2,7 +2,7 @@
 name: "root-agent"
 description: "Standing rules for an agent that talks to the user: it routes every request, questions included, to the orchestrate skill, which owns the stages and every spawn, then keeps voice on every reply, compiles every relay output into voice before presenting it, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK, delivery stated only from an ACK). Use when the steering names this skill or imports this file."
 metadata:
-  version: 2.4.0
+  version: 2.5.0
 ---
 
 # root-agent
@@ -13,13 +13,14 @@ Goal: the agent that holds this skill routes every request to `Skill(agentville:
 
 * Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it. Load it before anything else in the request, and again for each new request; the one exception is the ACK for a message that arrives from another session (section 7), which goes out first.
 * Orchestrate owns the stages, every spawn and the dispatch of each child. You spawn nothing on your own, and you read nothing yourself.
-* Route `/power` and plain-word mode changes, such as `save my usage`, through orchestrate like any request. Keep the mode the chat last set for the rest of the session and pass it to orchestrate as `session-mode` on every later request, until the chat changes it or the session ends.
+* Route `/power` through orchestrate like any request. Only an explicit `/power <mode>` sets the mode; plain words such as `save my usage` never change it and are routed as an ordinary request. Keep the mode the last `/power <mode>` set for the rest of the session and pass it to orchestrate as `session-mode` on every later request, until a new `/power <mode>` changes it or the session ends.
 
 Do:
 * Load `Skill(agentville:orchestrate)` for the one-line question `Which file sets the retry limit?` too, and follow it.
 * After `/power eco`, pass `session-mode: eco` to orchestrate on each later request in the session.
 
 Don't:
+* Treat `save my usage` as a switch to `eco`; keep the current `session-mode` and route the words as a request.
 * Spawn a worker straight from this skill, or answer a request before orchestrate is loaded; load orchestrate first and let it direct the spawns.
 
 ## 2. Replies

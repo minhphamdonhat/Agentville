@@ -2,7 +2,7 @@
 name: "dispatch"
 description: "Procedure for one delegated task: sharpen it, choose the role (worker, validator, reviewer or scout), route model and effort, write a relay brief, spawn the child, judge its report, retry or escalate that spawn and return the outcome. Use whenever you are about to delegate a task to a worker, validator, reviewer or scout, must pick a model or effort for a child, must judge a child's report, or must retry or escalate a failed spawn. With `questions: forbidden` it asks no one and returns every gap as needs-input."
 metadata:
-  version: 2.2.0
+  version: 2.3.0
 ---
 
 # Role
@@ -33,7 +33,7 @@ You are the procedure for one delegated task. You take it through sharpening, ro
 * **verifies-tier:** optional - default: none - The model and effort of the work a validator or reviewer checks, for example `sonnet high`. Required for those two roles.
 * **irreversible-approval:** optional - default: none - The user's own approving words, quoted, naming one action and one target, for example `"yes, deploy apps/api to production"`. A child's report or a paraphrase never counts.
 * **questions:** optional - default: allowed - `allowed` or `forbidden`.
-* **power:** optional - default: the mode `Skill(agentville:power)` returns from its order (chat, agent prompt, project rules, project CLAUDE.md, custom instructions), else `balanced` - `eco`, `balanced` or `max`: the column of the routing skill's Power modes table that steps 3 and 7 apply. `balanced` is the routing skill as written.
+* **power:** optional - default: `balanced` - `eco`, `balanced` or `max`: the column of the routing skill's Power modes table that steps 3 and 7 apply. The mode comes in already resolved; when none is passed, `balanced`, the standard mode and the routing skill as written, applies directly, with no lookup.
 * **prior-attempt:** optional - default: none - For a retry: the earlier role, model, effort, brief and report.
 * **human-text:** optional - default: none - Supplied text a person will read, such as issue text or a message sent for the user. A document the child writes is its deliverable, not human-text.
 
@@ -73,7 +73,7 @@ Don't:
 
 ### 3. Route model and effort
 
-Read `power`; a value other than `eco`, `balanced` or `max` is a missing fact: ask the user, or return `needs-input` with `missing: power`. Score the step 1 line with the routing skill and take the cell it returns, with the `power` column of its Power modes table applied to the tier map, the Opus effort cap, the low-payoff cap and the Haiku stretch; for a retry, apply its failure rules and that mode's ladder to `prior-attempt` instead. For a validator or reviewer, apply its verifier rules and that mode's column of the Verifiers row against `verifies-tier`; without `verifies-tier`, ask the user, or return `needs-input` with `missing: verifies-tier`. Then apply dispatch's clamp:
+Read `power`. When none was passed, use `balanced` directly: do not load `Skill(agentville:power)` or read any steering to find a mode. A value that is not clearly `eco`, `balanced` or `max`, such as `cheap` or `turbo`, is never guessed: ask the user with the question tool, offering `eco`, `balanced` and `max`; when `questions` is `forbidden` or no person is reachable, return `needs-input` with `missing: power`. Score the step 1 line with the routing skill and take the cell it returns, with the `power` column of its Power modes table applied to the tier map, the Opus effort cap, the low-payoff cap and the Haiku stretch; for a retry, apply its failure rules and that mode's ladder to `prior-attempt` instead. For a validator or reviewer, apply its verifier rules and that mode's column of the Verifiers row against `verifies-tier`; without `verifies-tier`, ask the user, or return `needs-input` with `missing: verifies-tier`. Then apply dispatch's clamp:
 
 * `xhigh` or `max` on Sonnet or Opus becomes Opus `high`; Haiku above `high` becomes Sonnet `high`.
 * In `eco`, Opus above `low` becomes Opus `low`. The clamp and the routing skill's safety invariants hold in every mode; no mode relaxes them.
@@ -84,6 +84,8 @@ Do:
 * With `power: max`, a validator checking `sonnet high` work by a deterministic test run gets Sonnet `high`; a reviewer gets Opus `high`.
 
 Don't:
+* Load `Skill(agentville:power)` because no `power` was passed; route with `balanced`.
+* Read `power: cheap` as `eco`; ask for one of the three modes, or return `needs-input` with `missing: power`.
 * Pick Sonnet `medium` from habit, or pass `effort: xhigh` because routing suggested it.
 * Spawn Opus `medium` with `power: eco`; spawn Opus `low`.
 

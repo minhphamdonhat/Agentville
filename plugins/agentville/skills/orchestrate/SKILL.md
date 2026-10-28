@@ -2,7 +2,7 @@
 name: "orchestrate"
 description: "A sample, opt-in request workflow: it triages the request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, in that fixed order, and sends every spawn through `agentville:dispatch`. Use when a loaded instruction routes requests through it or the user asks for the session workflow; then also to decide how much process a request deserves or which stage comes next, when a failed check or review means looping back, when a plan must be drafted before work starts, or when gaps and out-of-scope findings must reach the user."
 metadata:
-  version: 2.2.0
+  version: 2.3.0
 ---
 
 # Role
@@ -58,7 +58,7 @@ Don't:
 * **request:** required - default: none - The user's whole request in their words, such as `add pagination to the Acme API orders list and prove it works`.
 * **resume:** optional - default: none - A request to resume earlier work on a topic; the stage comes from the topic's recorded documents.
 * **context:** optional - default: none - Facts already known: working checkout, branch, environment, decisions the user already made, evidence from earlier work.
-* **session-mode:** optional - default: none - The power mode the chat set earlier in this session, such as `eco`; it lasts until the chat changes it or the session ends.
+* **session-mode:** optional - default: none - The power mode the last `/power <mode>` set in this session, such as `eco`; it lasts until a new `/power <mode>` changes it or the session ends.
 
 # Process
 
@@ -151,12 +151,13 @@ Don't:
 
 ### 6. Report
 
-For a question sent here by triage with no spawn, put the answer in `<outcome>` and record nothing. Otherwise dispatch a worker to draft the Report document from the children's results and evidence, correct the draft, then dispatch a worker to record the corrected text in the topic's report. Then return relay output (Output below) that carries what each task delivered, the Validate evidence (never dropped), the review verdicts, each skipped stage with its reason, and every escalated gap, blocker, decision, improvement and out-of-scope finding. The replying agent compiles it into voice and opens its reply with the answer. Say plainly in `<outcome>` when the outcome is partial, blocked or failed. A yes to an item is triaged as a new request (step 1).
+For a question or a `/power` request sent here by triage with no spawn, put the answer in `<outcome>` (for `/power`, the mode, its source and its plan hint from `Skill(agentville:power)`), record nothing and dispatch no worker, neither to draft nor to record the report. Otherwise dispatch a worker to draft the Report document from the children's results and evidence, correct the draft, then dispatch a worker to record the corrected text in the topic's report. Then return relay output (Output below) that carries what each task delivered, the Validate evidence (never dropped), the review verdicts, each skipped stage with its reason, and every escalated gap, blocker, decision, improvement and out-of-scope finding. The replying agent compiles it into voice and opens its reply with the answer. Say plainly in `<outcome>` when the outcome is partial, blocked or failed. A yes to an item is triaged as a new request (step 1).
 
 Do:
 * Return `<outcome>The pagination change is in, the validator's checks passed and the reviewer approved it.</outcome>`, with `<open>` holding `decision: the reviewer found an unplanned helper in the list service; plan it or leave it` and `decision: the export endpoint has the same paging bug; plan it or leave it`.
 
 Don't:
+* Dispatch a worker to draft or record a report for a bare `/power`; return the mode in `<outcome>` with no spawn.
 * Paste a child's report, write the Report for a person yourself, or start an escalated item without the user's yes.
 
 # Output

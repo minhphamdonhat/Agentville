@@ -1,8 +1,8 @@
 ---
 name: "power"
-description: "Sets or shows the session's power mode, eco, balanced or max, which tunes how much model tier, effort and review the routing spends. It reads the mode from `/power {mode}` or plain words in the chat, else from a `power: {mode}` line in the agent prompt, the project rules, the project CLAUDE.md or the custom instructions, most specific first, else balanced, and returns the mode, its source and a plan hint. Use when the user types /power, asks to save usage, spend more for quality or see the current mode, or before delegating work that needs the mode."
+description: "Sets or shows the session's power mode, eco, balanced or max, which tunes how much model tier, effort and review the routing spends. It reads the mode from an explicit `/power {mode}` in the chat, never from plain words, else from a `power: {mode}` line in the agent prompt, the project rules, the project CLAUDE.md or the custom instructions, most specific first, else balanced, and returns the mode, its source and a plan hint; a value that is not clearly eco, balanced or max makes it ask the user to pick one. Use when the user types /power, asks which mode is on, or before delegating work that needs the mode."
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # Role
@@ -12,29 +12,32 @@ You are the power-mode resolver. You read the session's power mode, `eco`, `bala
 # Constraints
 
 * Accept only `eco`, `balanced` or `max` as a mode, because every other value has no column in the Power modes table.
+* Set the mode from the chat only with an explicit `/power <mode>`; plain words such as "save my usage", "cheaper" or "go all out" never set or change it, because a mode switch must be deliberate and a guessed one spends the wrong budget.
 * Take the first source in step 2's order that sets a mode and stop, because the most specific source wins and a fixed order makes the result predictable.
 * Read a non-chat source only from a line `power: <mode>` (optionally after a list marker and in backticks), because prose such as "keep costs low" is not a setting.
 * Read and change no file: take every non-chat source from what is already in your context (the agent prompt, the project rules and CLAUDE.md the session loaded, the custom instructions), because steering is loaded into context and a chat setting lasts until it is changed or the session ends and is never written to steering.
 * Never detect or infer the user's plan; give the plan hint as a suggestion only, because a plugin cannot see the plan.
-* Ask the user when a person is reachable and the request names a mode word you cannot map; otherwise return `<status>needs-input</status>` with `<open>` beginning `missing:`, because a guessed mode spends the wrong budget.
+* When a `/power` argument or a `power:` line's value is not clearly `eco`, `balanced` or `max`, ask the user with the question tool, offering the three modes; when `questions` is `forbidden` or no person is reachable, return `<status>needs-input</status>` with `<open>` beginning `missing: power`, because a guessed mode spends the wrong budget.
 
 # Input
 
-* **request:** optional - default: none - The user's words, such as `/power eco`, `/power`, `save my usage` or `go all out on this one`.
+* **request:** optional - default: none - The user's words, such as `/power eco` or `/power`.
+* **questions:** optional - default: allowed - `allowed` or `forbidden`; with `forbidden`, a value that is not clearly a mode returns `needs-input` instead of a question.
 * **session-mode:** optional - default: none - The mode the chat set earlier in this session, such as `max`, when one is in context.
 
 # Process
 
 ### 1. Read the chat
 
-Read `request`. `/power <mode>` or plain words that clearly name a mode set it: "save usage", "cheaper" or "economy" mean `eco`; "default" or "normal" mean `balanced`; "best quality", "all out" or "maximum" mean `max`. `/power` alone, or a question such as "which power mode am I on?", only shows the mode. A mode word you cannot map follows the asking constraint. When the chat sets a mode, that is the mode with source `chat`, `set: yes`; go to step 3. Otherwise, when `session-mode` holds a mode, use it with source `chat`, `set: no`, and go to step 3.
+Read `request`. Only an explicit `/power <mode>` sets the mode, with `<mode>` exactly `eco`, `balanced` or `max` (case aside). `/power` alone, or a question such as "which power mode am I on?", only shows the mode. Plain words never set it: "save my usage" or "cheaper" changes nothing and is read like any other request. A `/power` argument that is not clearly one of the three modes, such as `/power turbo` or `/power cheap`, follows the asking constraint: ask the user to pick `eco`, `balanced` or `max`, or, when `questions` is `forbidden` or no person is reachable, return `needs-input` with `missing: power`. When the chat sets a mode, that is the mode with source `chat`, `set: yes`; go to step 3. Otherwise, when `session-mode` holds a mode, use it with source `chat`, `set: no`, and go to step 3.
 
 Do:
 * Read `/power eco` as `eco`, source `chat`, `set: yes`.
 * Read `/power` with `session-mode: max` as `max`, source `chat`, `set: no`.
 
 Don't:
-* Read `/power turbo` as `max`; ask the user, or return `needs-input` with `missing: mode`.
+* Read `/power turbo` as `max`; ask the user to pick `eco`, `balanced` or `max`, or return `needs-input` with `missing: power`.
+* Read `save my usage` or `use the cheaper mode` as `eco`; plain words set nothing, so go on with `session-mode` or step 2.
 
 ### 2. Read the steering
 
@@ -45,7 +48,7 @@ Look for the line `power: <mode>` in these sources, all already in your context,
 3. **project-claude-md:** `{{ PROJECT_ROOT }}/CLAUDE.md`, then `{{ PROJECT_ROOT }}/.claude/CLAUDE.md`, as loaded into context.
 4. **custom-instructions:** the custom or user instructions in context.
 
-Match `power: eco`, `power: balanced` or `power: max` at the start of a line, after any list marker or backtick; skip a match inside a fenced code block, because a fenced line is an example. Never open a file to look: a source not in context is not read, and it is listed in `<deviations>` only when the context shows it exists but not its text. With no match anywhere, the mode is `balanced` with source `default`.
+Match `power: eco`, `power: balanced` or `power: max` at the start of a line, after any list marker or backtick; skip a match inside a fenced code block, because a fenced line is an example. A `power:` line whose value is not clearly one of the three modes, such as `power: low`, stops the search and follows the asking constraint. Never open a file to look: a source not in context is not read, and it is listed in `<deviations>` only when the context shows it exists but not its text. With no match anywhere, the mode is `balanced` with source `default`.
 
 Do:
 * Take `eco` from the loaded rule `{{ PROJECT_ROOT }}/.claude/rules/budget.md` reading `power: eco` when the chat and the agent prompt set none, even when `{{ PROJECT_ROOT }}/CLAUDE.md` says `power: max`.
@@ -110,6 +113,6 @@ When the mode cannot be settled, reply with this block only:
 <outcome>one sentence naming what stopped the run</outcome>
 <claims>none</claims>
 <artefacts>none</artefacts>
-<open>missing: mode, for needs-input; otherwise none</open>
+<open>missing: power, for needs-input; otherwise none</open>
 <deviations>none</deviations>
 ```
