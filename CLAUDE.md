@@ -1,6 +1,6 @@
 # Agentville steering file
 
-Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent is either standalone or a fork of a base agent (the worker by default) with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. No root-agent policy is imported.
+Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent is either standalone or a fork of a base agent (the worker by default) with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. The root-agent policy is imported at the end and applies to every root session here, whatever playbook it runs.
 
 The plugin ships from `plugins/agentville/` and installs as one versioned unit. Its skills are namespaced `agentville:<skill>` and its agents `agentville:<agent>`. `README.md` owns the skill and agent tables and the three ways to run the plugin.
 
@@ -12,7 +12,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `plugins/agentville/agents/<base>-<model>-<effort>.md` | Generated variants of `worker`, `validator`, `reviewer` and `scout` (for example `worker-sonnet-high.md`), 36 in all. The only agents that set `model` and `effort`. Never hand-edited; `scripts/gen_agent_variants.py` writes them from their base, and its `--check` flag reports drift. |
 | `scripts/gen_agent_variants.py` | Maintainer script that generates and checks the variants. Run `python3 scripts/gen_agent_variants.py` after any base agent edit. |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
-| `plugins/agentville/skills/root-agent/SKILL.md` | Standing rules for an agent that delegates every task; shipped for users, and not imported by this repository. |
+| `plugins/agentville/skills/root-agent/SKILL.md` | Standing rules for an agent that talks to the user, neutral about the playbook; this repository imports it below, so it applies to every root session here. |
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
 | `.claude-plugin/marketplace.json` | Marketplace entries `agentville`, `agentville-beta` and `agentville-dev`, each pointing at the plugin folder on one branch. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
@@ -171,4 +171,6 @@ Substitute `SKILL_NAME` and `AGENT_NAME`. `pod-lead` holds `Agent` and is measur
 
 ## Root-agent policy
 
-This repository imports no root-agent policy, and the plugin sets no main agent: a session here runs the agent it was started with and follows this file. The shipped `root-agent` skill stays available to users who name it in their own steering.
+This repository imports the root-agent policy below, so its rules apply to every root session here. No playbook is forced, and the plugin sets no main agent: each session picks its playbook from a second steering line of its own (`Route every request, questions included, through Skill({playbook}) and follow it.`, in its custom instructions, agent file or appended system prompt) or from its agent definition, and this file names no playbook line. A `pod-lead` session runs `Skill(agentville:orchestrate)`, a conductor session runs `Skill(conductor)`, and a ticket session runs the `Skill(build)` playbook. A session that names no playbook works directly under the root-agent rules.
+
+@plugins/agentville/skills/root-agent/SKILL.md
