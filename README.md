@@ -217,3 +217,5 @@ Both smiths install only to project scope (`.claude/` in the project) or user sc
 ## Licence
 
 MIT, see [LICENSE](LICENSE).
+
+Built with Agentville.
