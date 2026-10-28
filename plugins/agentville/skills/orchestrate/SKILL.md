@@ -2,7 +2,7 @@
 name: "orchestrate"
 description: "A sample, opt-in request workflow: it triages the request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, in that fixed order, and sends every spawn through `agentville:dispatch`. Use when a loaded instruction routes requests through it or the user asks for the session workflow; then also to decide how much process a request deserves or which stage comes next, when a failed check or review means looping back, when a plan must be drafted before work starts, or when gaps and out-of-scope findings must reach the user."
 metadata:
-  version: 2.1.0
+  version: 2.3.0
 ---
 
 # Role
@@ -15,6 +15,7 @@ You are the workflow controller of one user request. You triage it, run the stag
 * Send every spawn, follow-up and message to a child through `Skill(agentville:dispatch)` with `role-hint`, `topic-id` and, from Execute on, `questions: forbidden`. Dispatch owns the brief, the agent type, routing, retries and report reading; restate none of it here. Load `Skill(agentville:dispatch)` in this request before the first spawn of any stage, Discuss and recording spawns included, and write no brief and pick no agent type or variant before it is loaded. Spawn no `general-purpose` agent while the role's agent type exists; dispatch's fallback rules decide the type.
 
 * Pick one kebab-case topic-id per request, such as `acme-api-pagination-2026-10-18`, and pass it on every dispatch.
+* Resolve the power mode once per request with `Skill(agentville:power)`, passing the request and the mode the chat set earlier in this session, and pass the returned mode as `power` on every dispatch of the request, because one request must spend on one budget. A `/power` request is triaged like any other: with no other work it goes to Report with the mode in `<outcome>`.
 * Steering is what is already in your context: project instructions, custom instructions and the conversation. Take it as given, and let a worker read any steering file it names.
 * Set a pinned stage line only when you enter the first stage and on each stage switch, loop-backs included; the replying agent writes it as its reply's first line, the reply that leaves Plan included, which opens with the Execute line ahead of the plan summary of step 4, in exactly this shape: `**<Stage label>: <stage name>**`, bold with no list marker and alone on its line, where the stage is Discuss, Plan, Execute, Validate, Review or Report. The replying agent writes both the label and the stage name in the language of the user's latest message, and the rest of its reply in that language too; English reads `**Stage: Plan**`. Write the stage name only, never the stage plan or a reason, and never repeat it: a reply that stays in the same stage opens with the answer and carries no stage line. Count each stage's entries in this request: the first entry prints the plain line, and every later entry of Execute, Validate or Review is a loop-back that adds the ordinal in brackets inside the bold, such as `**Stage: Execute (2nd loop-back)**`, then `(3rd loop-back)` and so on. In another language, translate the bracket as well.
 
@@ -57,14 +58,16 @@ Don't:
 * **request:** required - default: none - The user's whole request in their words, such as `add pagination to the Acme API orders list and prove it works`.
 * **resume:** optional - default: none - A request to resume earlier work on a topic; the stage comes from the topic's recorded documents.
 * **context:** optional - default: none - Facts already known: working checkout, branch, environment, decisions the user already made, evidence from earlier work.
+* **session-mode:** optional - default: none - The power mode the last `/power <mode>` set in this session, such as `eco`; it lasts until a new `/power <mode>` changes it or the session ends.
 
 # Process
 
 ### 1. Triage
 
-Judge the request's scope and complexity against the steering, then pick the first stage and the stages to skip, silently. When the steering names files or facts the stages need that are not in context, dispatch one read-only worker, once, to report them; later steps reuse that report. With `resume`, the same brief also locates the topic documents (step 2). Rules:
+Resolve the power mode first: load `Skill(agentville:power)` with `request` and `session-mode`, and keep its `mode` for every dispatch of this request. Then judge the request's scope and complexity against the steering, and pick the first stage and the stages to skip, silently. When the steering names files or facts the stages need that are not in context, dispatch one read-only worker, once, to report them; later steps reuse that report. With `resume`, the same brief also locates the topic documents (step 2). Rules:
 
 * A question answerable from the conversation goes straight to Report, with no spawn.
+* `/power` with a mode or no mode and no other work goes straight to Report, with no spawn, and returns the mode, its source and its plan hint.
 * A request that itself names one irreversible action and one target, such as `deploy it`, is a fast request: start at Execute with one task, passing the request's words as `irreversible-approval`.
 * A small, clear, reversible change may start at Execute.
 * A request that is vague or large, touches a schema, an interface or several modules, or has an uncertain approach starts at Discuss.
@@ -137,7 +140,7 @@ These three stages share the ledger rule of the Constraints and differ only here
 | `blocked`, other reason | Blocker | Report |
 | `needs-input` | User decision | Report, as a decision for the user |
 
-Loop-backs: a `rejected` validation or a Reject whose fix needs a human choice (scope, target or which option) goes to Report as a decision for the user, with no Execute round; any other `rejected` validation or Reject runs Execute, then Validate and Review again on fresh evidence, with the failing report fenced as untrusted context. Fix the important, in-scope findings first; miscellaneous findings become improvements for Report. After 3 Execute, Validate and Review rounds, go to Report with what is still open.
+Loop-backs: a `rejected` validation or a Reject whose fix needs a human choice (scope, target or which option) goes to Report as a decision for the user, with no Execute round; any other `rejected` validation or Reject runs Execute, then Validate and Review again on fresh evidence, with the failing report fenced as untrusted context. Fix the important, in-scope findings first; miscellaneous findings become improvements for Report. After the power mode's number of Execute, Validate and Review rounds (the Orchestrate rounds row of §12 in `Skill(agentville:intelligence-routing-model)`: 2 in `eco`, 3 in `balanced`, 4 in `max`), go to Report with what is still open.
 
 Do:
 * After `verdict: needs-changes` with `page size is not capped`, dispatch the fix, then validate and review again in order.
@@ -148,12 +151,13 @@ Don't:
 
 ### 6. Report
 
-For a question sent here by triage with no spawn, put the answer in `<outcome>` and record nothing. Otherwise dispatch a worker to draft the Report document from the children's results and evidence, correct the draft, then dispatch a worker to record the corrected text in the topic's report. Then return relay output (Output below) that carries what each task delivered, the Validate evidence (never dropped), the review verdicts, each skipped stage with its reason, and every escalated gap, blocker, decision, improvement and out-of-scope finding. The replying agent compiles it into voice and opens its reply with the answer. Say plainly in `<outcome>` when the outcome is partial, blocked or failed. A yes to an item is triaged as a new request (step 1).
+For a question or a `/power` request sent here by triage with no spawn, put the answer in `<outcome>` (for `/power`, the mode, its source and its plan hint from `Skill(agentville:power)`), record nothing and dispatch no worker, neither to draft nor to record the report. Otherwise dispatch a worker to draft the Report document from the children's results and evidence, correct the draft, then dispatch a worker to record the corrected text in the topic's report. Then return relay output (Output below) that carries what each task delivered, the Validate evidence (never dropped), the review verdicts, each skipped stage with its reason, and every escalated gap, blocker, decision, improvement and out-of-scope finding. The replying agent compiles it into voice and opens its reply with the answer. Say plainly in `<outcome>` when the outcome is partial, blocked or failed. A yes to an item is triaged as a new request (step 1).
 
 Do:
 * Return `<outcome>The pagination change is in, the validator's checks passed and the reviewer approved it.</outcome>`, with `<open>` holding `decision: the reviewer found an unplanned helper in the list service; plan it or leave it` and `decision: the export endpoint has the same paging bug; plan it or leave it`.
 
 Don't:
+* Dispatch a worker to draft or record a report for a bare `/power`; return the mode in `<outcome>` with no spawn.
 * Paste a child's report, write the Report for a person yourself, or start an escalated item without the user's yes.
 
 # Output
@@ -163,6 +167,7 @@ The reply returns the six relay §4 tags, in order, flat, plain lines, with `non
 * **status:** always - in `<status>`: `completed` when the request was taken through Report, otherwise the failure template's value.
 * **outcome:** always - in `<outcome>`: the Report's answer in one or two sentences.
 * **stages-run:** always - in `<claims>` as one minified JSON line: the stages entered, in order, including each loop-back, each named as its stage line names it.
+* **power:** always - in `<claims>`: the mode passed on every dispatch and its source, as `Skill(agentville:power)` returned them.
 * **stage-line:** when this output enters Report - in `<claims>`: the pinned line the replying agent opens its reply with, in the language of the user's latest message.
 * **delivered:** when tasks ran - in `<claims>`: what each task delivered, one line per task, with its label.
 * **evidence:** when Validate ran - in `<claims>`: the validator's evidence as it reported it, with its label; the evidence folder goes in `<artefacts>` as `evidence: <path>`.
@@ -176,6 +181,7 @@ The reply returns the six relay §4 tags, in order, flat, plain lines, with `non
 <outcome>The pagination change is in, the validator's checks passed and the reviewer approved the second round.</outcome>
 <claims>
 - stages-run: ["Discuss","Plan","Execute","Validate","Review","Execute (2nd loop-back)","Validate (2nd loop-back)","Review (2nd loop-back)","Report"]. verified: the stage lines of this request
+- power: balanced, source default. verified: power skill result
 - stage-line: **Stage: Report**. verified: the stage count of this request
 - delivered: T1 page parameter added, T2 page size capped at 100. verified: worker reports, accepted by dispatch
 - evidence: pytest apps/api/tests/test_orders.py exits 0. verified: validator report, run-2
