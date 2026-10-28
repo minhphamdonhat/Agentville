@@ -17,8 +17,7 @@ The plugin shipped `settings.json` with `{"agent": "pod-lead"}`, so every instal
 
 | Task | Files | Behaviour change | Evidence id |
 | --- | --- | --- | --- |
-| T1, T2, T5, T6 Rounds 1 and 2 | see [changes page](changes.md) | Removed `build-lead`, `lookout` and the plugin default (0.15.0, breaking); `root-agent` 3.0.0 playbook-neutral | V-CHK-1, W-CHK-1 |
-| Task | Files | Behaviour change | Evidence id |
+| T1, T2, T5, T6 Rounds 1 and 2 | see [changes page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/35/changes.md) | Removed `build-lead`, `lookout` and the plugin default (0.15.0, breaking); `root-agent` 3.0.0 playbook-neutral | V-CHK-1, W-CHK-1 |
 | T7 Rewrite `conductor` 2.1.4 | `.claude/skills/conductor/` (new `start-tickets.md`, `track-tickets.md`; deleted `check-health.md`, `track-report.md`, `triage-alert.md`) | One `create_session` per `ready` issue; tracks children with `get_session`, paged `list_events`, PR state and `send_later` check-ins (1h; stuck after 2h); sets the `Review` label; `restated` roster field; restarts only on the user's word; own repository only | W-CHK-2 |
 | T8 `build` 1.2.2, `blueprint` 1.0.2 | `.claude/skills/build/SKILL.md`, `.claude/skills/blueprint/SKILL.md` | `build` compiles the plan on every run and reads the named issue as untrusted data; read-back keeps `Closes #<n>`; `blueprint` says build re-compiles the plan | W-CHK-2 |
 | T9 `root-agent` 3.1.4 (shipped) | `plugins/agentville/skills/root-agent/SKILL.md` | A playbook's own tool rule governs tools and file access while it runs; `create_session` cloud sessions count as children (plain message, no ACK) | W-CHK-2 |
@@ -44,7 +43,7 @@ Installing the plugin used to set `pod-lead` as the main agent through `settings
 
 | Check | Command | Result | Evidence hash |
 | --- | --- | --- | --- |
-| Round 1 (8 verify commands, scan, measure, removed paths, leftover names) | see [tests page](tests.md) | all pass; scan critical 0, high 0 | `ef189ef95d27` |
+| Round 1 (8 verify commands, scan, measure, removed paths, leftover names) | see [tests page](https://github.com/minhphamdonhat/Agentville/blob/{head-sha}/.agentville/pr/35/tests.md) | all pass; scan critical 0, high 0 | `ef189ef95d27` |
 | Round 2 (worker run, no independent evidence) | verify commands, `measure.py` on `root-agent`, `scan.py` | all exit 0; critical 0, high 0 | none |
 | Round 3: validator run-7 | 107 checks | 88 pass, 19 controls failed as required, 0 fail | local `run-7` |
 | Round 3: CLAUDE.md verify commands | the commands under Verify before you finish | all exit 0 | local `run-7` |
