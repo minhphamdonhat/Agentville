@@ -29,7 +29,7 @@ If you added Agentville in Claude Chat or Cowork, it also syncs to Claude Code a
 
 ## Three ways to run it
 
-1. **Claude Code with `pod-lead` as the main agent.** The plugin ships a `settings.json` with `{"agent": "pod-lead"}`, so an installed plugin makes `pod-lead` the main agent of every session. `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session only, start `claude --agent agentville:pod-lead`. Your own `agent` setting overrides the plugin's.
+1. **Claude Code with `pod-lead` as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set `"agent": "agentville:pod-lead"` in your own `~/.claude/settings.json` or the project's `.claude/settings.json`. The plugin itself ships no default settings, so installing it changes no main agent.
 2. **Claude Code with another agent.** Start one session with `claude --agent <name>`, or name another agent in your own `agent` key in `~/.claude/settings.json`. To make that agent follow Agentville, add these lines to your project's `CLAUDE.md`:
 
    ```markdown
@@ -46,7 +46,6 @@ If you added Agentville in Claude Chat or Cowork, it also syncs to Claude Code a
 | --- | --- | --- | --- |
 | Skills | Yes | Yes | Yes |
 | Agents | Yes | Yes | Ignored per the docs |
-| `settings.json` (`agent`) | Yes | Ignored | Ignored |
 | Hooks | Yes | Yes | Ignored |
 
 ## Where its notes go

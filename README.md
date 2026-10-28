@@ -101,7 +101,7 @@ With the `claude` command on your `PATH`, the installer runs `claude plugin mark
 
 ## Three ways to run it
 
-In Claude Code, installing Agentville makes `pod-lead` the main agent by default, so `orchestrate` runs on every request. Chat and Cowork ignore plugin settings, so there you opt in. Pick one way:
+Installing Agentville changes no main agent: the plugin ships no default settings, so in every surface you opt in. Pick one way:
 
 1. **Chat.** Install the plugin through Customize, then put these lines at the top of your custom instructions:
 
@@ -110,13 +110,13 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
    - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
 
-2. **Claude Code with pod-lead as the main agent.** The plugin ships a `settings.json` with `{"agent": "pod-lead"}`, so an installed plugin makes `pod-lead` the main agent of every session. `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session only, start `claude --agent agentville:pod-lead`. Your own `agent` setting overrides the plugin's.
+2. **Claude Code with pod-lead as the main agent.** `pod-lead` runs every request through `orchestrate` and follows `root-agent`. To run it for one session, start `claude --agent agentville:pod-lead`. To make it the main agent of every session, set `"agent": "agentville:pod-lead"` in your own `~/.claude/settings.json` or the project's `.claude/settings.json`.
 
 3. **Claude Code with another agent.** The documented ways to use an agent other than `pod-lead`:
 
    * Start one session with `claude --agent <name>`.
-   * Name another agent in your own `agent` key in `~/.claude/settings.json`; it overrides the plugin's.
-   * Disable the plugin with `claude plugin disable agentville@minhphamdo` (`claude plugin disable --help`: "Disable an enabled plugin"). Inferred, not documented: this drops its defaults along with its skills. No documented value unsets `agent` back to the built-in agent.
+   * Name another agent in your own `agent` key in `~/.claude/settings.json`.
+   * Keep the built-in main agent: the plugin sets no `agent`, so a session without your own `agent` key or `--agent` flag runs the built-in agent.
 
    To make that agent follow Agentville, add these lines to your project's `CLAUDE.md`:
 
@@ -133,7 +133,6 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
 | --- | --- | --- | --- |
 | Skills | Yes | Yes | Yes |
 | Agents | Yes | Yes | Ignored per the docs |
-| `settings.json` (`agent`) | Yes | Ignored | Ignored |
 | Hooks | Yes | Yes | Ignored |
 
 Chat now shares Cowork's Agent tool and file writing in some accounts, so `dispatch` can still spawn there; when an `agentville:` agent type is missing, it falls back to `general-purpose`. `dispatch` spawns a variant such as `agentville:worker-sonnet-high` only when the session's Agent tool has no `effort` parameter; otherwise it spawns the base agent and passes model and effort, and a missing variant falls back to the base agent with the model passed and records `effort unenforced, variant missing`.

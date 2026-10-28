@@ -1,6 +1,6 @@
 # Agentville steering file
 
-Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent is either standalone or a fork of a base agent (the worker by default) with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. The root-agent policy is imported at the end.
+Agentville is a Claude Code plugin of small, composable skills and agents for building towns of agents that behave robustly, predictably and steerably. Every agent is either standalone or a fork of a base agent (the worker by default) with a fixed format, so a parent always knows what to send and what comes back. This file says where things live, which rules never bend and how to change the repository safely; workers read it before they touch anything. No root-agent policy is imported.
 
 The plugin ships from `plugins/agentville/` and installs as one versioned unit. Its skills are namespaced `agentville:<skill>` and its agents `agentville:<agent>`. `README.md` owns the skill and agent tables and the three ways to run the plugin.
 
@@ -12,8 +12,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `plugins/agentville/agents/<base>-<model>-<effort>.md` | Generated variants of `worker`, `validator`, `reviewer` and `scout` (for example `worker-sonnet-high.md`), 36 in all. The only agents that set `model` and `effort`. Never hand-edited; `scripts/gen_agent_variants.py` writes them from their base, and its `--check` flag reports drift. |
 | `scripts/gen_agent_variants.py` | Maintainer script that generates and checks the variants. Run `python3 scripts/gen_agent_variants.py` after any base agent edit. |
 | `plugins/agentville/skills/` | Shipped skills, one folder each, each with a `SKILL.md`. |
-| `plugins/agentville/skills/root-agent/SKILL.md` | Standing rules for an agent that delegates every task; this repository imports it below. |
-| `plugins/agentville/settings.json` | Plugin default setting: `{"agent": "pod-lead"}`, read by Claude Code only. |
+| `plugins/agentville/skills/root-agent/SKILL.md` | Standing rules for an agent that delegates every task; shipped for users, and not imported by this repository. |
 | `plugins/agentville/.claude-plugin/plugin.json` | Plugin manifest and version. |
 | `.claude-plugin/marketplace.json` | Marketplace entries `agentville`, `agentville-beta` and `agentville-dev`, each pointing at the plugin folder on one branch. |
 | `.claude/skills/agent-smith/`, `.claude/skills/skill-smith/` | Maintainer copies of the smiths, for building Agentville itself. |
@@ -23,9 +22,7 @@ The plugin ships from `plugins/agentville/` and installs as one versioned unit. 
 | `.claude/skills/docs-site/` | Maintainer-only standard for the documentation site in `website/`: page layout and sidebar, writing a page, build and audit checks, deploy and refresh; not shipped. |
 | `.claude/skills/blueprint/` | Maintainer-only playbook that runs Discuss and Plan for a request, records the plan, then stops; not shipped. |
 | `.claude/skills/build/` | Maintainer-only playbook that runs Execute, Validate, Review and Report from a recorded plan; not shipped. |
-| `.claude/skills/conductor/` | Maintainer-only skill that makes the session that loads it (`/conductor`) the conductor: it keeps a roster of tickets, hands each to an idle `build-lead` session found with `ListAgents` by a message with an ACK, reports a blocker when none is idle, ages tickets against an SLE, takes alerts from the watchers the steering names (default `lookout`) and sets the `Review` label when an owner reports its PR; not shipped. |
-| `.claude/skills/lookout/` | Maintainer-only skill that makes the session that loads it (`/lookout`) the watcher of one task source, alerting `conductor` and answering its Details requests; not shipped. |
-| `.claude/agents/build-lead.md` | Maintainer-only fork of `pod-lead` that runs the `build` playbook where `pod-lead` runs `orchestrate`: it takes a ticket `conductor` hands it by message, records a plan, builds it, at Report commits, pushes its working branch and creates or updates the PR automatically, and reports the PR number to `conductor`; not shipped. |
+| `.claude/skills/conductor/` | Maintainer-only skill that makes the session that loads it (`/conductor`) the conductor: it keeps a roster of tickets, hands each to an idle ticket session found with `ListAgents` by a message with an ACK, reports a blocker when none is idle, ages tickets against an SLE, takes alerts from the watchers the steering names and sets the `Review` label when an owner reports its PR; not shipped. |
 | `agentville/`, `agentville/cli/`, `tests/`, `pyproject.toml`, `install.*` | The installer CLI (`uvx agentville install`): the `agentville` distribution and console script. `agentville/__init__.py` holds `__version__` and `agentville/__main__.py` runs `python -m agentville`; the installer code is in `agentville/cli/` (`app.py` the command, `console.py`, `files.py`, `targets/`), its tests in `tests/cli/`. Later parts of the package, such as `agentville/townhall/`, sit beside `cli/`. |
 | `README.md` | Public description: install, the three ways to run it, and the skill and agent tables. |
 | `website/` | Docusaurus documentation site for Claude Chat and Cowork users, with technical pages for Claude Code and the command-line installer; not shipped with the plugin. |
@@ -42,7 +39,7 @@ Every agent is either standalone or a fork. A standalone agent has no base and h
 3. **Workflows:** as many as the agent needs. Each has Input, Process and Output.
 4. **Exception handler:** what the agent does when the brief is unclear, a check fails, another agent is needed, or the budget runs out.
 
-`measure.py` gives the standalone exemption (A5, A6 and A16 only) to any agent that declares no `metadata.base` and holds no core or base marker; A3 applies to every agent, standalone or not, and passes for an agent holding `Agent` only with `--allow-agent`, so `pod-lead` and `build-lead` are measured with that flag. A fork of a standalone base is not exempt: A5 checks its base copy and A6 also accepts its base's workflow roles. Only `pod-lead` and the maintainer-only `build-lead` (a fork of `pod-lead`) may hold the `Agent` tool. `conductor` and `lookout` are maintainer-only project skills, not agents, so they hold no tools of their own and limit the session's tools by rule: `conductor` to `ListAgents` and `SendMessage` for messages, plus `mcp__github__issue_write` (the `Review` label only), and `lookout` to `ListAgents` and `SendMessage` plus the read-only GitHub issue tools.
+`measure.py` gives the standalone exemption (A5, A6 and A16 only) to any agent that declares no `metadata.base` and holds no core or base marker; A3 applies to every agent, standalone or not, and passes for an agent holding `Agent` only with `--allow-agent`, so `pod-lead` is measured with that flag. A fork of a standalone base is not exempt: A5 checks its base copy and A6 also accepts its base's workflow roles. Only `pod-lead` may hold the `Agent` tool. `conductor` is a maintainer-only project skill, not an agent, so it holds no tools of its own and limits the session's tools by rule: to `ListAgents` and `SendMessage` for messages, plus `mcp__github__issue_write` (the `Review` label only).
 
 Do:
 
@@ -56,7 +53,7 @@ Don't:
 * Give a child the `Agent` tool unless the user asked for it by name. Children hand back a `spawn-request:` instead.
 * Write `model` or `effort` in an agent's frontmatter, except in a generated variant. `dispatch` chooses both on every spawn for every other agent.
 * Hand-edit a variant or build one with `agent-smith`; `scripts/gen_agent_variants.py` writes them.
-* Make a shipped agent or skill commit, push, open or merge a pull request, or mention doing so. The one exception is the maintainer-only `conductor` skill: it may tell the `build-lead` sessions it hands tickets to to open their pull request and may set the `Review` label on the ticket's issue; it never commits, pushes, opens or merges itself.
+* Make a shipped agent or skill commit, push, open or merge a pull request, or mention doing so. The one exception is the maintainer-only `conductor` skill: it may tell the ticket sessions it hands tickets to to open their pull request and may set the `Review` label on the ticket's issue; it never commits, pushes, opens or merges itself.
 
 A variant is a file named `<base>-<model>-<effort>.md`, with `<base>` one of `worker`, `validator`, `reviewer` or `scout`, `<model>` one of `haiku`, `sonnet` or `opus`, and `<effort>` one of `low`, `medium` or `high`. Its `name` equals the file stem, and it is the only agent that sets `model` and `effort`, both, equal to the parts of its name; `measure.py` fails rule A2 otherwise. After any edit to a base agent, regenerate the variants with `python3 scripts/gen_agent_variants.py`.
 
@@ -165,16 +162,13 @@ After you edit a skill or an agent, validate the file you changed:
 python3 plugins/agentville/skills/skill-smith/scripts/measure.py plugins/agentville/skills/SKILL_NAME/SKILL.md
 python3 plugins/agentville/skills/agent-smith/scripts/measure.py plugins/agentville/agents/AGENT_NAME.md
 python3 plugins/agentville/skills/agent-smith/scripts/measure.py --allow-agent plugins/agentville/agents/pod-lead.md
-python3 .claude/skills/agent-smith/scripts/measure.py --allow-agent .claude/agents/build-lead.md
 python3 .claude/skills/skill-smith/scripts/measure.py .claude/skills/SKILL_NAME/SKILL.md
 ```
 
-Substitute `SKILL_NAME` and `AGENT_NAME`. The maintainer-only `build-lead` holds the `Agent` tool and forks `pod-lead`, so it is measured with the maintainer `measure.py` and `--allow-agent`, and its output must show `core: base pod-lead | identical`. `pod-lead` holds `Agent` too and is measured with the shipped `measure.py` and `--allow-agent`. A maintainer-only skill, such as `conductor` or `lookout`, is measured with the maintainer skill-smith `measure.py`. Exit code 0 means no failures; warnings are allowed.
+Substitute `SKILL_NAME` and `AGENT_NAME`. `pod-lead` holds `Agent` and is measured with the shipped `measure.py` and `--allow-agent`. A maintainer-only skill, such as `conductor`, is measured with the maintainer skill-smith `measure.py`. Exit code 0 means no failures; warnings are allowed.
 
 `eval.py` in agent-smith spends model usage. Run it only when the user asks for it.
 
 ## Root-agent policy
 
-This repository's root agent follows the `root-agent` skill, imported below. It applies to the root agent only; spawned agents follow their own agent file. The imported `root-agent` routes every request, questions included, through `orchestrate`, which owns the stages and every spawn. An installed plugin also makes `pod-lead` the main agent in Claude Code, and `pod-lead` runs every request through `orchestrate`.
-
-@plugins/agentville/skills/root-agent/SKILL.md
+This repository imports no root-agent policy, and the plugin sets no main agent: a session here runs the agent it was started with and follows this file. The shipped `root-agent` skill stays available to users who name it in their own steering.
