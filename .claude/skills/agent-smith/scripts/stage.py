@@ -3,7 +3,10 @@
 
 stage.py create [name]                         make a marked scratch folder, print path: <abs path>
 stage.py fork <template> <base> <out> <name>   write <out> from the template, pasting the base
-                                               agent's core blocks over each {{ CORE x }} line
+                                               agent's core blocks over each {{ CORE x }} line; a base
+                                               with no core block (standalone) has its numbered rules
+                                               pasted between base markers over {{ CORE constraints }};
+                                               a base other than the worker is named as metadata.base
 stage.py seed <agent-file> <folder>            copy an existing agent file into a staging folder
 stage.py install <file> <dir> --scope plugin|project [--replace] [--project-root P]
                                                copy a compiled agent file into an agents folder;
@@ -28,6 +31,11 @@ MARKER = ".agent-smith-staging"
 CORE_LINE_RE = re.compile(r"^\{\{ CORE ([a-z-]+) \}\}\s*$")
 CORE_BEGIN_RE = re.compile(r"^<!-- core:begin ([a-z-]+) -->\s*$")
 CORE_END = "<!-- core:end {} -->"
+BASE_BEGIN = "<!-- base:begin {} -->"
+BASE_END = "<!-- base:end {} -->"
+DEFAULT_BASE_NAME = "worker"
+FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
+EXTEND_RE = re.compile(r"^\d+\. \*\*\[\[Extending rule title\]\]")
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SCOPES = ("plugin", "project")
 PLUGIN_NAME = "agentville"
@@ -124,6 +132,57 @@ def core_blocks(text):
     return out
 
 
+def frontmatter_name(text, fallback):
+    """The `name:` of an agent file's frontmatter, else the fallback."""
+    lines = text.split("\n")
+    if lines and lines[0].strip() == "---":
+        for line in lines[1:]:
+            if line.strip() == "---":
+                break
+            m = re.match(r"^name:\s*[\"']?([a-z0-9-]+)[\"']?\s*$", line)
+            if m:
+                return m.group(1)
+    return fallback
+
+
+def constraints_rules(text):
+    """A standalone base's numbered rules: its `# Constraints` section up to the next H1, blank edges trimmed."""
+    lines, fence, lo, hi = text.split("\n"), None, None, None
+    for i, line in enumerate(lines):
+        m = FENCE_RE.match(line)
+        if m:
+            fence = None if fence == m.group(1)[0] else (fence or m.group(1)[0])
+            continue
+        if fence is None and re.match(r"^#\s+\S", line):
+            if lo is not None:
+                hi = i
+                break
+            if line.strip() == "# Constraints":
+                lo = i + 1
+    if lo is None:
+        return None
+    body = lines[lo:hi if hi is not None else len(lines)]
+    while body and not body[0].strip():
+        body.pop(0)
+    while body and not body[-1].strip():
+        body.pop()
+    return body
+
+
+def add_metadata_base(lines, base_name):
+    """Insert `  base: <name>` under the frontmatter's `metadata:` key."""
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            break
+        if line.rstrip() == "metadata:":
+            j = i + 1
+            while j < len(lines) and lines[j].startswith((" ", "\t")) and lines[j].strip():
+                j += 1
+            lines.insert(j, f"  base: {base_name}")
+            return lines
+    die("refused: the template has no metadata: key to hold metadata.base")
+
+
 def create(args):
     if len(args) > 1:
         die("usage: stage.py create [name]")
@@ -157,24 +216,50 @@ def fork(args):
         die(f"refused: name must be kebab-case, at most 64 characters: {name}")
     if in_install_folder(os.path.abspath(out)):
         die("refused: write the fork under the staging folder, not an install folder")
-    blocks = core_blocks(read_text(base))
-    lines, missing = [], []
+    base_text = read_text(base)
+    base_name = frontmatter_name(base_text, os.path.splitext(os.path.basename(base))[0])
+    blocks = core_blocks(base_text)
+    rules = None if blocks else constraints_rules(base_text)
+    if not blocks and rules is None:
+        die(f"refused: base has neither core blocks nor a # Constraints section: {base}")
+    next_rule = 1 + max([int(m.group(1)) for m in (re.match(r"^(\d+)\. ", l) for l in rules or []) if m] or [0])
+    lines, missing, skip_blank = [], [], False
     for line in read_text(template).split("\n"):
+        if skip_blank and not line.strip():
+            skip_blank = False
+            continue
+        skip_blank = False
         m = CORE_LINE_RE.match(line)
+        if m and rules is not None:
+            # A standalone base has no worker core: its numbered rules stand in for the constraints core.
+            if m.group(1) == "constraints":
+                lines += [BASE_BEGIN.format(base_name)] + rules + [BASE_END.format(base_name)]
+            else:
+                skip_blank = True
+            continue
         if m:
             if m.group(1) not in blocks:
                 missing.append(m.group(1))
                 continue
             lines.append(blocks[m.group(1)])
+        elif rules is not None and EXTEND_RE.match(line):
+            lines.append(re.sub(r"^\d+", str(next_rule), line.replace("[[agent-name]]", name)))
         else:
             lines.append(line.replace("[[agent-name]]", name))
     if missing:
         die("refused: base has no core block for: " + ", ".join(missing))
+    if base_name != DEFAULT_BASE_NAME:
+        lines = add_metadata_base(lines, base_name)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="") as f:
         f.write("\n".join(lines))
     print(f"written: {os.path.abspath(out)}")
-    print("core: " + ", ".join(sorted(blocks)))
+    print(f"base: {base_name}" + (" (standalone)" if rules is not None else ""))
+    if rules is not None:
+        print(f"core: base {base_name}")
+        print(f"next-rule: {next_rule}")
+    else:
+        print("core: " + ", ".join(sorted(blocks)))
     return 0
 
 

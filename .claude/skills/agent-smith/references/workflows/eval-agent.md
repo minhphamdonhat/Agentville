@@ -7,7 +7,7 @@ Used by SKILL.md step 8.
 * **run-mode:** optional - default: ask - `headless` (run the `claude` CLI here, which spends model usage) or `dispatch` (write prompt files and grade the reports someone else returns).
 * **models:** optional - default: the session model - The model for headless runs, such as `sonnet`.
 * **workdir:** optional - default: none - A checkout the cases read, passed to the CLI with `--add-dir`.
-* **baseline:** optional - default: `{{ SKILL_ROOT }}/assets/base/worker.md` - The agent the compiled one is scored against; `none` when the agent under test is the base worker itself, so the baseline is plain `claude -p` with no agent, the compiled agent's `tools` allowed, its `disallowedTools` denied and the same model.
+* **baseline:** optional - default: the base file SKILL.md step 5 forked from, `{{ SKILL_ROOT }}/assets/base/worker.md` for the worker - The agent the compiled one is scored against; `none` when the agent under test is the base worker itself, so the baseline is plain `claude -p` with no agent, the compiled agent's `tools` allowed, its `disallowedTools` denied and the same model.
 
 # Process
 
@@ -50,12 +50,12 @@ Do:
 * A headless run that prints `run_errors: 1`: grade anyway, because the failed run is saved as a `failed` report.
 
 Don't:
-* Run the compiled agent and the base worker on different prompts; both get the same case, as the script does.
+* Run the compiled agent and its base agent on different prompts; both get the same case, as the script does.
 * Write a report file by hand to fill a gap; leave it missing so `grade` reports `not run`.
 
 ### 4. Grade
 
-Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its `<status>` tag holds a relay §4 token (and the case's `status`, when set), it follows the worker core's report shape, it holds every output field of the case's workflow (`always` and `when` alike, as the constraints core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base worker's score is the baseline.
+Run `python3 {{ SKILL_ROOT }}/scripts/eval.py grade <agent-file> <STAGING>/evals/evals.json <STAGING>/evals/out` with Bash. Each report passes when its `<status>` tag holds a relay §4 token (and the case's `status`, when set), it follows the worker core's report shape, it holds every output field of the case's workflow (`always` and `when` alike, as the constraints core demands), every `expect` string and no `forbid` string, and its sandbox meets the case's `expect_files` and `unchanged`. It prints one `grade:` line per report, a `score:` line and `result: pass` only when every compiled case passed; the base agent's score is the baseline.
 
 Do:
 * Record `score: compiled 4/4 vs base 2/4`, `result: pass`.

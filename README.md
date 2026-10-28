@@ -1,6 +1,8 @@
+<p align="center"><img src="website/static/img/wordmark.png" alt="Agentville" width="480"></p>
+
 # Agentville
 
-Agentville is a plugin of skills and agents for running work through agents: a workflow that triages each request and runs the stages it needs, a procedure that delegates one task at a time, writing standards for what agents and people read, standing rules for a delegating agent, and five swappable slots that each agent resolves for itself. It installs as one versioned unit; skills are namespaced `agentville:<skill>` and agents `agentville:<agent>`.
+Agentville is a plugin of skills and agents for running work through agents: a playbook that triages each request and runs the stages it needs, a procedure that delegates one task at a time, writing standards for what agents and people read, standing rules for a delegating agent, and five swappable slots that each agent resolves for itself. It installs as one versioned unit; skills are namespaced `agentville:<skill>` and agents `agentville:<agent>`.
 
 New to Agentville, or using it in Claude Chat or Cowork? The documentation site walks you through it in plain words: <https://minhphamdonhat.github.io/Agentville/>.
 
@@ -123,7 +125,7 @@ In Claude Code, installing Agentville makes `pod-lead` the main agent by default
    - Route every request, questions included, through `Skill(agentville:orchestrate)` and follow it.
    ```
 
-   To use your own workflow, fork `orchestrate` into a new skill and name it in the second line.
+   To use your own playbook, fork `orchestrate` into a new skill and name it in the second line.
 
 ### What loads where
 
@@ -146,13 +148,14 @@ Each skill is invoked as `/agentville:<name>`.
 
 | Skill | Purpose |
 | --- | --- |
-| `/agentville:orchestrate` | Workflow that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
+| `/agentville:orchestrate` | Playbook that `pod-lead` runs on every request: triages each request, runs the stages it needs from Discuss, Plan, Execute, Validate, Review and Report, and sends every spawn through `dispatch`. |
 | `/agentville:dispatch` | Takes one delegated task through sharpening, agent choice, model and effort routing, brief, spawn, report reading and failure handling. |
 | `/agentville:root-agent` | Standing rules for an agent that routes every request through `orchestrate`: voice on every reply, the answer first, a fixed tool list with no file reads, file delivery that depends on the surface, full skill names, a live task list and one rule for messages to or from other sessions (listed target, ACK first, delivery stated only from an ACK). |
 | `/agentville:relay` | Writing standard for text another agent reads, such as briefs, hand-backs and tool results; owns the report status tokens. |
 | `/agentville:intercommunicate` | Sends a message to another session with delivery confirmation: checks the target with `ListAgents`, requires an immediate ACK, resends once and reports an undelivered message; also tells the receiver to ACK first. A session you spawned, or the one that spawned you, gets a plain `SendMessage` compiled with `relay` in either direction, with no ACK. |
 | `/agentville:voice` | Writing standard for Markdown a person reads, such as chat replies, reports and document files. |
 | `/agentville:intelligence-routing-model` | Picks the cheapest Claude tier and effort level that still succeeds. |
+| `/agentville:power` | Loaded by `dispatch` and `intelligence-routing-model` only. Resolves the power mode, `eco`, `balanced` (default) or `max`, from a `power: <mode>` line in the steering: the system or agent prompt, rules, project `CLAUDE.md` or custom instructions; there is no chat command. The mode tunes model tier, effort, review and rounds. Suggests eco for Pro, balanced for Max 5x and max for Max 20x. |
 | `/agentville:context-injection` | Resolves slots to the skills that fill them and owns the binding syntax and resolution order. |
 | `/agentville:workspace` | Default for the `workspace` slot: a run's topic, artefacts and scratch folders. |
 | `/agentville:draft` | Used by `orchestrate` only. Default for the `draft` slot: records a topic's notes, decisions and open points in rounds. |
@@ -160,7 +163,8 @@ Each skill is invoked as `/agentville:<name>`.
 | `/agentville:report` | Used by `orchestrate` only. Default for the `report` slot: records a topic's outcome, evidence, review result, out-of-scope findings and open items. |
 | `/agentville:toolbelt` | Default for the `toolbelt` slot: discovers which verification tools are present for the checks a task needs. Discovery only; no network probes. |
 | `/agentville:skill-smith` | Creates, improves or converts a Claude skill, validates it and installs it to project or user scope. |
-| `/agentville:agent-smith` | Compiles an agent as a fork of the base worker, validates it, evals it against the worker and installs it to project or user scope. |
+| `/agentville:agent-smith` | Compiles an agent as a fork of a base agent (the worker by default, or another base such as `pod-lead`), validates it, evals it against its base and installs it to project or user scope. |
+| `/agentville:playbook-smith` | Builds a playbook, a request-level skill such as `orchestrate`; delegates the drafting and the install to `skill-smith`. |
 
 ## Agents
 
@@ -172,7 +176,7 @@ Each agent reads its role from a `<role>ROLE</role>` tag on the first line of th
 | `agentville:scout` | Researches external questions with web search and fetch only; holds no file or shell tool. |
 | `agentville:validator` | Proves a behaviour with independent checks and writes hashed evidence; never edits product code. |
 | `agentville:reviewer` | Reviews a diff against a plan, read-only, and reads the validator's evidence when present. |
-| `agentville:pod-lead` | Standalone lead, not a worker fork: runs every request through `orchestrate`, delegates all work and holds no edit, search or shell tool. |
+| `agentville:pod-lead` | Standalone lead, not a fork: runs every request through `orchestrate`, delegates all work and holds no edit, search or shell tool. |
 
 Each base agent except `pod-lead` also ships in nine variants, one per model and effort pair, named `<base>-<model>-<effort>`, with model `haiku`, `sonnet` or `opus` and effort `low`, `medium` or `high`, such as `agentville:reviewer-opus-high`. That makes 36 variants across worker, validator, reviewer and scout. Each is a copy of its base agent with `model` and `effort` fixed in its frontmatter, generated by the maintainer script `scripts/gen_agent_variants.py`; do not edit a variant by hand. `dispatch` uses a variant only when the session's Agent tool has no `effort` parameter.
 
@@ -196,8 +200,8 @@ Agents write only under `.agentville/topics/` in the project root:
 
 ```text
 .agentville/topics/
-  .gitignore                 # */evidence/, */*/artefacts/, */*/scratch/
-  <topic-id>/                # topic documents: tracked
+  .gitignore                 # tracked: */evidence/, */*/artefacts/, */*/scratch/
+  <topic-id>/                # topic documents: local, ignored by the root .gitignore
     evidence/run-<N>/        # validator evidence with SHA256SUMS: ignored
     <agent>/artefacts/       # what an agent keeps: ignored
     <agent>/scratch/         # throwaway files, deleted before the report: ignored

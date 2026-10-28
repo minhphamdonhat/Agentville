@@ -2,7 +2,7 @@
 name: "intelligence-routing-model"
 description: Framework to triage any task to the cheapest Claude tier (Haiku, Sonnet, Opus) and effort level that still succeeds. Score ceiling to pick tier, depth to pick effort, adjust for domain, gate Haiku on task shape and a deterministic check. Use whenever you must pick a model or effort, budget a run, or decide whether to escalate after a failure, even if nobody says "routing".
 metadata:
-  version: 1.0.3
+  version: 1.2.0
 ---
 
 # intelligence-routing-model
@@ -26,7 +26,7 @@ Never skip 1, 2 or 7.
 2. **Name the check.** Command, test, schema, exit code. No check → Unverifiability scores 2, effort cannot rescue you, Haiku is out (§5); add external reviewer.
 3. **Score** ceiling C and depth D (§2).
 4. **Adjust** D for domain (§3); clamp adjusted D to 0–6.
-5. **Map** to cell, apply guardrails (§4, §5).
+5. **Map** to cell, apply guardrails and the power mode's row (§4, §5, §12).
 6. **Hand over** with the contract (§6).
 7. **Grade, classify failure, move** (§7).
 
@@ -195,6 +195,33 @@ Generation and verification want different levels.
 
 Tiers stay version-free, but **effort levels are not portable across versions**: same label, different thinking, moving defaults. Each release, re-sweep effort on your evals and re-check §5.2, §5.3, §5.5, §5.6, the Haiku `xhigh`/`max` rule and §3.
 
+## 12. Power modes
+
+A power mode tunes how much this framework spends. Mode is `eco`, `balanced` or `max`; default `balanced`, which is exactly §1–§11 as written. Use the mode that comes with the task; when none comes, load `Skill(agentville:power)`, which resolves it from a `power:` line in the steering already in context, and take its `mode`, or `balanced` when that skill is not available. Never take the mode from a chat command or the task's own words. Apply the mode's column wherever its row's section applies; any dial not listed stays as §1–§11 set it.
+
+| Dial | `eco` | `balanced` (default) | `max` |
+|---|---|---|---|
+| Tier map (§4) | C 0–2 Haiku if the gate passes (§5.5), else Sonnet; C 3–5 Sonnet; C 6–7 Sonnet `high` unless two of Novelty, Domain depth, Consequence are 2 (§5.1), then Opus; C 8–10 Opus | §4 | Haiku only when D = 0 and one step, and that start leaves Haiku on failure to Sonnet `medium`; else as `balanced` |
+| Opus effort | capped at `low` | §4, §5.3, §5.4 | §4, §5.3, §5.4 |
+| Low-payoff effort cap (§3) | `low`; Haiku strict-schema output stays `high` | `medium` | `medium` |
+| Haiku stretch (§5.6) | up to C ≤ 5, provisional | up to C ≤ 4 | off |
+| Verifiers (§6) | same-or-higher tier; Opus `low` allowed; Haiku verifier runs ground-truth checks only; audit 1 in 5 accepted Haiku outputs on a higher tier | §6 | reviewer Opus `high`; validator Opus `high` for judgement checks, Sonnet `high` for deterministic checks; no Haiku verifier; audit every Haiku output |
+| Ladder (§7) | Haiku `low` → Haiku `medium` → Haiku `high` → Sonnet `high` → Opus `low`, then stop and return `needs-input` offering `max` | §7 | starts at Sonnet `medium`, no Haiku rungs (a one-step Haiku start goes straight to Sonnet `medium`): Sonnet `medium` → Sonnet `high` → Opus `medium` → Opus `high`, then as §7 |
+| De-escalate after first-try passes in a family (§7) | 3 | 5 | 8 |
+| Loop-back rounds (Execute, Validate and Review), reported as `round-cap` | 2 | 3 | 4 |
+
+**Invariant in every mode.** The Haiku gate (§5.5), the human gate on irreversible or production actions (§5.12), the fresh-context verifier (§6), one environment retry in the same cell (§7) and any clamp that keeps `xhigh`/`max` out of routine cells (§5.3, §5.4). A mode never relaxes them.
+
+**Plan hint.** `eco` suits Pro, `balanced` Max 5x, `max` Max 20x. A plugin cannot detect the user's plan: suggest, never infer.
+
+Do:
+* In `eco`, route a C 6 task with Novelty 2 only to Sonnet `high`; route C 6 with Novelty 2 and Consequence 2 to Opus `low`.
+* In `max`, start a C 1, D 2 extraction on Sonnet `medium`, not Haiku.
+
+Don't:
+* Skip the Haiku gate in `eco` because the stretch reaches C 5.
+* Raise Opus above `low` in `eco` after a failure; stop at Opus `low` and offer `max`.
+
 ## Pre-send check
 
 Run before handing a task over.
@@ -204,3 +231,4 @@ Run before handing a task over.
 3. Brief and report follow relay §3 and §4; verifier is fresh and peer-or-higher (§6).
 4. Failure move matches failure class; Haiku left on structure, not confidence (§7).
 5. Request fits the tier (§6); confirm the model the worker actually ran on.
+6. Power mode's column applied, from the task or `Skill(agentville:power)`; invariants untouched (§12).
